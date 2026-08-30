@@ -51,6 +51,10 @@ export interface Merchant {
   district: string; // e.g. "Kadıköy", "Çankaya", "Konak"
   neighborhood: string; // e.g. "Moda", "Tunalı", "Alsancak"
   address: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
   phone: string;
   whatsapp: string;
   rating: number;
