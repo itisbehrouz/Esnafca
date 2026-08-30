@@ -13,6 +13,7 @@ import {
   MessageCircle, 
   X, 
   ChevronRight, 
+  ChevronDown,
   Layers,
   Plus,
   Minus
@@ -22,8 +23,52 @@ import { useTheme } from "@/context/ThemeContext";
 import { CATEGORIES } from "@/data/categories";
 import { generateWhatsAppUrl } from "@/lib/whatsapp";
 
+export const DISTRICT_COORDINATES: Record<string, [number, number]> = {
+  // İstanbul
+  "Kadıköy": [40.9910, 29.0295],
+  "Moda": [40.9855, 29.0270],
+  "Caferağa": [40.9855, 29.0270],
+  "Osmanağa": [40.9910, 29.0295],
+  "Beşiktaş": [41.0425, 29.0065],
+  "Akaretler": [41.0410, 28.9995],
+  "Sinanpaşa": [41.0425, 29.0065],
+  "Gayrettepe": [41.0665, 29.0125],
+  "Levent": [41.0820, 29.0140],
+  "Şişli": [41.0585, 28.9810],
+  "Bomonti": [41.0585, 28.9810],
+  "Nişantaşı": [41.0520, 28.9920],
+  "Kağıthane": [41.0820, 28.9730],
+  "Gültepe": [41.0780, 28.9950],
+  "Sanayi": [41.0920, 28.9910],
+  "Üsküdar": [41.0260, 29.0150],
+  "Bakırköy": [40.9780, 28.8730],
+  "İstanbul": [41.0350, 29.0050],
+  // Ankara
+  "Çankaya": [39.9050, 32.8600],
+  "Tunalı": [39.9050, 32.8600],
+  "Kızılay": [39.9208, 32.8541],
+  "Ankara": [39.9208, 32.8541],
+  // İzmir
+  "Konak": [38.4350, 27.1420],
+  "Alsancak": [38.4350, 27.1420],
+  "Karşıyaka": [38.4570, 27.1120],
+  "Bostanlı": [38.4570, 27.1050],
+  "İzmir": [38.4237, 27.1428],
+  // Bursa & Antalya
+  "Bursa": [40.1885, 29.0610],
+  "Nilüfer": [40.2150, 28.9850],
+  "Antalya": [36.8969, 30.7133],
+  "Muratpaşa": [36.8850, 30.7080],
+};
+
 interface InteractiveMapViewProps {
   merchants: Merchant[];
+  selectedCity?: string;
+  selectedDistrict?: string;
+  selectedNeighborhood?: string;
+  activeLocationLabel?: string;
+  onOpenLocationModal?: () => void;
+  onClearLocation?: () => void;
   onSelectMerchant?: (merchant: Merchant) => void;
   onSwitchToListMode?: () => void;
 }
@@ -33,16 +78,9 @@ function getMerchantCoordinates(m: Merchant): [number, number] {
   if (m.coordinates) return [m.coordinates.lat, m.coordinates.lng];
   const text = `${m.city} ${m.district} ${m.neighborhood}`.toLowerCase();
   
-  if (text.includes("moda") || text.includes("caferağa")) return [40.9855, 29.0270];
-  if (text.includes("osmanağa") || text.includes("kadıköy")) return [40.9910, 29.0295];
-  if (text.includes("akaretler") || text.includes("vişnezade")) return [41.0410, 28.9995];
-  if (text.includes("sinanpaşa") || text.includes("çarşı")) return [41.0425, 29.0065];
-  if (text.includes("gayrettepe")) return [41.0665, 29.0125];
-  if (text.includes("bomonti") || text.includes("şişli")) return [41.0585, 28.9810];
-  if (text.includes("kağıthane")) return [41.0820, 28.9730];
-  if (text.includes("tunalı") || text.includes("çankaya") || text.includes("ankara")) return [39.9050, 32.8600];
-  if (text.includes("alsancak") || text.includes("konak") || text.includes("izmir")) return [38.4350, 27.1420];
-  if (text.includes("karşıyaka")) return [38.4570, 27.1120];
+  for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
+    if (text.includes(key.toLowerCase())) return coords;
+  }
 
   return [41.0425, 29.0065]; // Beşiktaş / Istanbul default
 }
@@ -58,6 +96,12 @@ const CATEGORY_EMOJIS: Record<string, string> = {
 
 export default function InteractiveMapView({
   merchants,
+  selectedCity = "Tüm Şehirler",
+  selectedDistrict = "Tüm Bölgeler",
+  selectedNeighborhood = "",
+  activeLocationLabel = "Tüm Türkiye",
+  onOpenLocationModal,
+  onClearLocation,
   onSelectMerchant,
   onSwitchToListMode,
 }: InteractiveMapViewProps) {
@@ -79,11 +123,20 @@ export default function InteractiveMapView({
   // Filtered merchants for the map
   const filteredMerchants = useMemo(() => {
     return merchants.filter((m) => {
+      // 1. City Filter
+      if (selectedCity !== "Tüm Şehirler" && m.city !== selectedCity) return false;
+      // 2. District Filter
+      if (selectedDistrict !== "Tüm Bölgeler" && m.district !== selectedDistrict) return false;
+      // 3. Neighborhood Filter
+      if (selectedNeighborhood && m.neighborhood !== selectedNeighborhood) return false;
+
+      // 4. Quick Filters
       if (selectedCategory !== "all" && m.category !== selectedCategory) return false;
       if (onlyVerified && !m.verified) return false;
       if (onlyOpen && !m.isOpenNow) return false;
       if (onlyPlus && m.tier !== "plus") return false;
 
+      // 5. Text Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchesName = m.name.toLowerCase().includes(q);
@@ -96,7 +149,17 @@ export default function InteractiveMapView({
       }
       return true;
     });
-  }, [merchants, selectedCategory, onlyVerified, onlyOpen, onlyPlus, searchQuery]);
+  }, [
+    merchants, 
+    selectedCity, 
+    selectedDistrict, 
+    selectedNeighborhood, 
+    selectedCategory, 
+    onlyVerified, 
+    onlyOpen, 
+    onlyPlus, 
+    searchQuery
+  ]);
 
   // 1. Initialize Leaflet Map
   useEffect(() => {
@@ -134,7 +197,50 @@ export default function InteractiveMapView({
     };
   }, []);
 
-  // 2. Render Markers whenever filteredMerchants or activeMerchant changes
+  // 2. React to Location Selection (Fly map to selected city / district / neighborhood)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    let targetCoords: [number, number] | null = null;
+    let zoomLevel = 13;
+
+    if (selectedNeighborhood) {
+      for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
+        if (selectedNeighborhood.toLowerCase().includes(key.toLowerCase())) {
+          targetCoords = coords;
+          zoomLevel = 15;
+          break;
+        }
+      }
+    }
+
+    if (!targetCoords && selectedDistrict !== "Tüm Bölgeler") {
+      for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
+        if (selectedDistrict.toLowerCase().includes(key.toLowerCase())) {
+          targetCoords = coords;
+          zoomLevel = 14;
+          break;
+        }
+      }
+    }
+
+    if (!targetCoords && selectedCity !== "Tüm Şehirler") {
+      for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
+        if (selectedCity.toLowerCase().includes(key.toLowerCase())) {
+          targetCoords = coords;
+          zoomLevel = 12;
+          break;
+        }
+      }
+    }
+
+    if (targetCoords) {
+      map.flyTo(targetCoords, zoomLevel, { duration: 1.2 });
+    }
+  }, [selectedCity, selectedDistrict, selectedNeighborhood]);
+
+  // 3. Render Markers whenever filteredMerchants or activeMerchant changes
   useEffect(() => {
     const map = mapInstanceRef.current;
     const group = markersGroupRef.current;
@@ -188,10 +294,10 @@ export default function InteractiveMapView({
     }
   }, [filteredMerchants, activeMerchant, searchQuery, onSelectMerchant]);
 
-  // 3. GPS Locate User
+  // 4. GPS Locate User with fallback to Location Picker
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
-      alert("Tarayıcınız konum servisini desteklemiyor.");
+      if (onOpenLocationModal) onOpenLocationModal();
       return;
     }
 
@@ -222,12 +328,15 @@ export default function InteractiveMapView({
       },
       () => {
         setIsLocating(false);
-        const map = mapInstanceRef.current;
-        if (map) {
-          map.flyTo([41.0425, 29.0065], 14, { duration: 1.0 });
+        // If GPS is disabled/blocked, smoothly open location selector modal for the user!
+        if (onOpenLocationModal) {
+          onOpenLocationModal();
+        } else {
+          const map = mapInstanceRef.current;
+          if (map) map.flyTo([41.0425, 29.0065], 14, { duration: 1.0 });
         }
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: false, timeout: 6000 }
     );
   };
 
@@ -245,12 +354,27 @@ export default function InteractiveMapView({
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* 2. Floating Top Search & Quick Filters Card (Matching Inspiration Screenshot) */}
-      <div className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-[460px] z-30 space-y-2 pointer-events-auto">
+      <div className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-[500px] z-30 space-y-2 pointer-events-auto">
         <div className="bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl rounded-3xl border border-black/[0.08] dark:border-white/[0.12] p-3 sm:p-3.5 shadow-2xl space-y-2.5 transition-all">
-          {/* Search Input Bar with Action Buttons */}
+          {/* Search Input Bar with Location Picker & GPS Action */}
           <div className="flex items-center gap-2">
+            {/* Location Selector Pill Button */}
+            {onOpenLocationModal && (
+              <button
+                type="button"
+                onClick={onOpenLocationModal}
+                className="flex items-center gap-1 px-2.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold text-black dark:text-white shrink-0 transition-all ios-press border border-black/[0.04] dark:border-white/[0.06]"
+                title="Şehir ve İlçe Değiştir"
+              >
+                <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
+                <span className="max-w-[100px] sm:max-w-[130px] truncate">{activeLocationLabel}</span>
+                <ChevronDown className="w-3 h-3 text-zinc-400 shrink-0" />
+              </button>
+            )}
+
+            {/* Search Input */}
             <div className="relative flex-1 flex items-center">
-              <Search className="absolute left-3.5 w-4 h-4 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
+              <Search className="absolute left-3 w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
               <input
                 type="text"
                 autoComplete="off"
@@ -262,16 +386,16 @@ export default function InteractiveMapView({
                 suppressHydrationWarning
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Mahalle, ilçe veya usta ara..."
-                className="w-full pl-10 pr-8 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 transition-all"
+                placeholder="Usta veya zanaat ara..."
+                className="w-full pl-8 pr-7 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 transition-all"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 p-1 rounded-full text-zinc-400 hover:text-black dark:hover:text-white"
+                  className="absolute right-2 p-1 rounded-full text-zinc-400 hover:text-black dark:hover:text-white"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                 </button>
               )}
             </div>
@@ -279,7 +403,7 @@ export default function InteractiveMapView({
             {/* Blue Apple Search Action Button */}
             <button
               type="button"
-              className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-extrabold shadow-sm transition-all ios-press shrink-0"
+              className="px-3.5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-extrabold shadow-sm transition-all ios-press shrink-0"
             >
               Ara
             </button>
@@ -289,7 +413,7 @@ export default function InteractiveMapView({
               type="button"
               onClick={handleLocateMe}
               disabled={isLocating}
-              title="Yakınımdaki Ustaları Bul (GPS)"
+              title="Konumumu Bul (GPS)"
               className={`p-2.5 rounded-2xl border transition-all ios-press shrink-0 flex items-center justify-center ${
                 isLocating
                   ? "bg-blue-50 dark:bg-blue-950/60 border-blue-400 text-blue-600 animate-spin"

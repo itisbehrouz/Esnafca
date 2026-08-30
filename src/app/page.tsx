@@ -213,6 +213,12 @@ function HomeContent() {
       {viewMode === "map" ? (
         <InteractiveMapView
           merchants={merchants}
+          selectedCity={selectedCity}
+          selectedDistrict={selectedDistrict}
+          selectedNeighborhood={selectedNeighborhood}
+          activeLocationLabel={activeLocationLabel}
+          onOpenLocationModal={() => setIsLocationModalOpen(true)}
+          onClearLocation={clearLocationFilter}
           onSwitchToListMode={() => setViewMode("list")}
         />
       ) : (
@@ -368,6 +374,11 @@ function HomeContent() {
         selectedCity={selectedCity}
         selectedDistrict={selectedDistrict}
         selectedNeighborhood={selectedNeighborhood}
+        onSelect={(city, district, neighborhood) => {
+          setSelectedCity(city);
+          setSelectedDistrict(district);
+          setSelectedNeighborhood(neighborhood || "");
+        }}
         onSelectLocation={(city, district, neighborhood) => {
           setSelectedCity(city);
           setSelectedDistrict(district);

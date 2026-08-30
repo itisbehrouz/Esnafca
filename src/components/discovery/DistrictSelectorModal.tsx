@@ -11,7 +11,8 @@ interface DistrictSelectorModalProps {
   selectedCity: string;
   selectedDistrict: string;
   selectedNeighborhood: string;
-  onSelect: (city: string, district: string, neighborhood: string) => void;
+  onSelect?: (city: string, district: string, neighborhood: string) => void;
+  onSelectLocation?: (city: string, district: string, neighborhood?: string) => void;
 }
 
 export function DistrictSelectorModal({
@@ -21,12 +22,18 @@ export function DistrictSelectorModal({
   selectedDistrict,
   selectedNeighborhood,
   onSelect,
+  onSelectLocation,
 }: DistrictSelectorModalProps) {
   // Navigation State: 'cities' | 'districts'
   const [viewState, setViewState] = useState<"cities" | "districts">("cities");
   const [activeCity, setActiveCity] = useState<City>(CITIES[0]);
   const [activeDistrict, setActiveDistrict] = useState<District | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const emitSelect = (cityName: string, districtName: string, nhName: string = "") => {
+    if (onSelect) onSelect(cityName, districtName, nhName);
+    if (onSelectLocation) onSelectLocation(cityName, districtName, nhName);
+  };
 
   // Live Instant Search Filter
   const searchResults = useMemo(() => {
@@ -64,25 +71,25 @@ export function DistrictSelectorModal({
   };
 
   const handleAllTurkey = () => {
-    onSelect("Tüm Şehirler", "Tüm Bölgeler", "");
+    emitSelect("Tüm Şehirler", "Tüm Bölgeler", "");
     onClose();
     setViewState("cities");
   };
 
   const handleAllCity = (cityName: string) => {
-    onSelect(cityName, "Tüm Bölgeler", "");
+    emitSelect(cityName, "Tüm Bölgeler", "");
     onClose();
     setViewState("cities");
   };
 
   const handleDistrictSelect = (cityName: string, districtName: string) => {
-    onSelect(cityName, districtName, "");
+    emitSelect(cityName, districtName, "");
     onClose();
     setViewState("cities");
   };
 
   const handleNeighborhoodSelect = (cityName: string, districtName: string, nhName: string) => {
-    onSelect(cityName, districtName, nhName);
+    emitSelect(cityName, districtName, nhName);
     onClose();
     setViewState("cities");
   };
