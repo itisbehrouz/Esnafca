@@ -419,9 +419,9 @@ export const MERCHANTS: Merchant[] = [
       sunday: "12:00 - 18:00",
     },
     isOpenNow: true,
-    heroImage: "https://images.unsplash.com/photo-1532592950058-2531a21743a3?auto=format&fit=crop&w=800&q=80",
+    heroImage: "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&w=800&q=80",
     galleryImages: [
-      "https://images.unsplash.com/photo-1532592950058-2531a21743a3?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&w=800&q=80",
     ],
     bio: "Beşiktaş Çarşı ve Türkali mahallesinde 18 yıldır minik dostlarımızın acil müdahale, aşılama, çip takma ve operasyonlarını sevgi ve tecrübeyle gerçekleştiriyoruz.",
     specialties: ["Acil Müdahale", "Mikroçip & Pasaport", "Kısırlaştırma", "Aşı Programı", "Medikal Bakım"],

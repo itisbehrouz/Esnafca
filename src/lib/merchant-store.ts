@@ -3,7 +3,7 @@
 import { Merchant, ServiceItem } from "@/types";
 import { MERCHANTS as INITIAL_MERCHANTS } from "@/data/seed-merchants";
 
-const STORAGE_KEY = "esnafca_dynamic_merchants_v1";
+const STORAGE_KEY = "esnafca_dynamic_merchants_v2";
 const PENDING_KEY = "esnafca_pending_applications_v1";
 
 export interface MerchantApplication {

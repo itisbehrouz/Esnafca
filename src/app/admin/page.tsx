@@ -349,6 +349,13 @@ export default function AdminPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                 <input
                   type="text"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  data-form-type="other"
+                  data-lpignore="true"
+                  suppressHydrationWarning
                   placeholder="Esnaf adı, usta veya ilçe ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}

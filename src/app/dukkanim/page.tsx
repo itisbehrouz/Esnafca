@@ -552,6 +552,10 @@ function MerchantPortalContent() {
                     <div className="flex-1">
                       <input
                         type="text"
+                        autoComplete="off"
+                        data-form-type="other"
+                        data-lpignore="true"
+                        suppressHydrationWarning
                         value={s.name}
                         onChange={(e) => handleServiceNameChange(s.id, e.target.value)}
                         placeholder="Hizmet Adı"
@@ -564,6 +568,10 @@ function MerchantPortalContent() {
                         <span className="text-[11px] text-zinc-400 font-medium">Min:</span>
                         <input
                           type="number"
+                          autoComplete="off"
+                          data-form-type="other"
+                          data-lpignore="true"
+                          suppressHydrationWarning
                           value={s.minPrice || ""}
                           onChange={(e) => handlePriceChange(s.id, "minPrice", e.target.value)}
                           className="w-16 text-xs font-extrabold text-black dark:text-white bg-transparent text-right focus:outline-none"
@@ -571,16 +579,20 @@ function MerchantPortalContent() {
                         <span className="text-xs font-bold text-zinc-500">₺</span>
                       </div>
 
-                      <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-xl">
-                        <span className="text-[11px] text-zinc-400 font-medium">Max:</span>
-                        <input
-                          type="number"
-                          value={s.maxPrice || ""}
-                          onChange={(e) => handlePriceChange(s.id, "maxPrice", e.target.value)}
-                          className="w-16 text-xs font-extrabold text-black dark:text-white bg-transparent text-right focus:outline-none"
-                        />
-                        <span className="text-xs font-bold text-zinc-500">₺</span>
-                      </div>
+                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-xl">
+                      <span className="text-[11px] text-zinc-400 font-medium">Max:</span>
+                      <input
+                        type="number"
+                        autoComplete="off"
+                        data-form-type="other"
+                        data-lpignore="true"
+                        suppressHydrationWarning
+                        value={s.maxPrice || ""}
+                        onChange={(e) => handlePriceChange(s.id, "maxPrice", e.target.value)}
+                        className="w-16 text-xs font-extrabold text-black dark:text-white bg-transparent text-right focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-zinc-500">₺</span>
+                    </div>
 
                       <button
                         onClick={() => handleDeleteService(s.id)}
