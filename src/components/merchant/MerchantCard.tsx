@@ -50,7 +50,7 @@ export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCar
             loading="lazy"
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 ease-out"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/20 pointer-events-none" />
 
           {/* Top Left: Tier / Verified Pill */}
           <div className="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none">
@@ -76,21 +76,28 @@ export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCar
             </div>
           </div>
 
-          {/* Bottom Left on Image: Live Status Beacon */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 pointer-events-none">
-            <span className="flex h-2.5 w-2.5 relative">
-              {merchant.isOpenNow && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              )}
-              <span
-                className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                  merchant.isOpenNow ? "bg-emerald-500" : "bg-zinc-400"
-                }`}
-              />
-            </span>
-            <span className="text-[11px] font-semibold text-white drop-shadow-xs">
-              {merchant.isOpenNow ? "Şu An Açık" : "Kapalı"}
-            </span>
+          {/* Bottom Row on Image: Live Status (Left) + Neighborhood/District (Right) */}
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="flex h-2.5 w-2.5 relative">
+                {merchant.isOpenNow && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                )}
+                <span
+                  className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                    merchant.isOpenNow ? "bg-emerald-500" : "bg-zinc-400"
+                  }`}
+                />
+              </span>
+              <span className="text-[11px] font-semibold text-white drop-shadow-xs">
+                {merchant.isOpenNow ? "Şu An Açık" : "Kapalı"}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 text-[11px] font-semibold text-white/95 drop-shadow-xs truncate max-w-[60%]">
+              <MapPin className="w-3 h-3 text-brand shrink-0" />
+              <span className="truncate">{merchant.neighborhood}, {merchant.district}</span>
+            </div>
           </div>
         </div>
 
@@ -109,12 +116,6 @@ export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCar
               <span>·</span>
               <span className="text-zinc-600 dark:text-zinc-400">{merchant.experienceYears} Yıl Deneyim</span>
             </div>
-          </div>
-
-          {/* Location Anchor */}
-          <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-            <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
-            <span className="truncate">{merchant.neighborhood}, {merchant.district}</span>
           </div>
 
           {/* Specialties Pills */}
