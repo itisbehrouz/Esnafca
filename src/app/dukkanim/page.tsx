@@ -25,6 +25,7 @@ import { Merchant, ServiceItem } from "@/types";
 import { QrWindowModal } from "@/components/merchant/QrWindowModal";
 import { EsnafcaLogo } from "@/components/brand/EsnafcaLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { formatPhoneNumber } from "@/lib/utils";
 
 const AUTH_MERCHANT_KEY = "esnafca_logged_in_merchant_id";
 
@@ -241,9 +242,11 @@ export default function MerchantPortalPage() {
                         data-form-type="other"
                         data-lpignore="true"
                         suppressHydrationWarning
+                        maxLength={14}
+                        inputMode="numeric"
                         placeholder="0532 123 45 67"
                         value={phoneInput}
-                        onChange={(e) => setPhoneInput(e.target.value)}
+                        onChange={(e) => setPhoneInput(formatPhoneNumber(e.target.value))}
                         className="w-full pl-10 pr-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-black/[0.04] dark:border-white/[0.08] text-sm font-bold text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20"
                       />
                     </div>

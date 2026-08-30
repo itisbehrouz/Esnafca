@@ -26,7 +26,7 @@ import { CATEGORIES } from "@/data/categories";
 import { CITIES } from "@/data/cities";
 import { PRICING_PLANS, SubscriptionTierId } from "@/data/pricing-plans";
 import { CategoryId } from "@/types";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, formatPhoneNumber } from "@/lib/utils";
 import { addPendingApplication } from "@/lib/merchant-store";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
@@ -159,8 +159,8 @@ function EsnafEkleWizard() {
       return false;
     }
     const cleanPhone = whatsapp.replace(/\D/g, "");
-    if (cleanPhone.length < 10) {
-      setFormError("Lütfen geçerli bir 10 haneli WhatsApp numarası giriniz.");
+    if (cleanPhone.length !== 11 || !cleanPhone.startsWith("05")) {
+      setFormError("Lütfen geçerli bir cep telefonu giriniz (Örn: 0532 123 45 67).");
       return false;
     }
     return true;
@@ -605,8 +605,10 @@ function EsnafEkleWizard() {
                         data-form-type="other"
                         data-lpignore="true"
                         suppressHydrationWarning
+                        maxLength={14}
+                        inputMode="numeric"
                         value={whatsapp}
-                        onChange={(e) => setWhatsapp(e.target.value)}
+                        onChange={(e) => setWhatsapp(formatPhoneNumber(e.target.value))}
                         placeholder="0532 123 45 67"
                         className="w-full text-xs font-medium text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none bg-transparent"
                       />
