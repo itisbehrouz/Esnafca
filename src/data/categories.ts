@@ -1,0 +1,58 @@
+import { Category } from "@/types";
+
+export const CATEGORIES: Category[] = [
+  {
+    id: "berber-kuafor",
+    name: "Berber, Kuaför & Kişisel Bakım",
+    shortName: "Berber & Kuaför",
+    icon: "Sparkles",
+    description: "Saç kesimi, sakal tıraşı, boya, fön, cilt bakımı ve manikür.",
+    count: 24,
+    color: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  {
+    id: "acil-ev",
+    name: "Çilingir, Elektrikçi & Tesisat",
+    shortName: "Acil Ev / Usta",
+    icon: "KeyRound",
+    description: "Acil kapı açma, kilit değişimi, elektrik arıza onarımı ve su tesisatı.",
+    count: 16,
+    color: "bg-rose-50 text-rose-700 border-rose-200",
+  },
+  {
+    id: "tamir-elektronik",
+    name: "Küçük Ev Aletleri, Bisiklet & Atölye",
+    shortName: "Tamir & Atölye",
+    icon: "Hammer",
+    description: "Ütü, süpürge, espresso makinesi, bisiklet ve scooter tamir & bakımı.",
+    count: 9,
+    color: "bg-cyan-50 text-cyan-700 border-cyan-200",
+  },
+  {
+    id: "oto-bakim",
+    name: "Oto Bakım, Yıkama & Lastik",
+    shortName: "Oto Bakım",
+    icon: "Car",
+    description: "Detaylı iç/dış oto yıkama, periyodik bakım, balans ve lastik değişimi.",
+    count: 14,
+    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  {
+    id: "terzi-lostra",
+    name: "Terzi, Lostra & Kuru Temizleme",
+    shortName: "Terzi & Lostra",
+    icon: "Scissors",
+    description: "Paça kısaltma, daraltma, takım elbise kuru temizleme, ayakkabı boya ve lostra bakımı.",
+    count: 18,
+    color: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  {
+    id: "pet-kuafor",
+    name: "Veteriner Kliniği & Pet Kuaför",
+    shortName: "Veteriner & Pet",
+    icon: "Dog",
+    description: "Aşı takvimi, muayene, tırnak bakımı, kedi & köpek makas tıraşı ve banyo.",
+    count: 16,
+    color: "bg-purple-50 text-purple-700 border-purple-200",
+  },
+];
