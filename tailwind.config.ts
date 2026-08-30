@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,20 +10,6 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ios: {
-          bg: "#F2F2F7", // Apple Grouped Background
-          card: "#FFFFFF",
-          secondaryBg: "#E5E5EA",
-          tertiaryBg: "#F2F2F7",
-          label: "#000000",
-          secondaryLabel: "#8E8E93",
-          tertiaryLabel: "#C7C7CC",
-          separator: "rgba(60, 60, 67, 0.12)",
-          blue: "#007AFF",
-          green: "#34C759",
-          orange: "#FF9500",
-          amber: "#FFCC00",
-        },
         brand: {
           DEFAULT: "#E05A36",
           hover: "#C94C2B",

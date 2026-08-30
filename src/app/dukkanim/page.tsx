@@ -24,6 +24,7 @@ import { getAllMerchants, updateMerchant } from "@/lib/merchant-store";
 import { Merchant, ServiceItem } from "@/types";
 import { QrWindowModal } from "@/components/merchant/QrWindowModal";
 import { EsnafcaLogo } from "@/components/brand/EsnafcaLogo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const AUTH_MERCHANT_KEY = "esnafca_logged_in_merchant_id";
 
@@ -182,15 +183,15 @@ export default function MerchantPortalPage() {
   };
 
   if (!mounted) {
-    return <div className="min-h-screen bg-[#F2F2F7]" />;
+    return <div className="min-h-screen bg-[#F2F2F7] dark:bg-black" />;
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-24" suppressHydrationWarning>
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -206,18 +207,18 @@ export default function MerchantPortalPage() {
               <div className="flex justify-center pb-1">
                 <EsnafcaLogo size={52} variant="icon" />
               </div>
-              <h1 className="text-xl font-extrabold text-black tracking-tight">
+              <h1 className="text-xl font-extrabold text-black dark:text-white tracking-tight">
                 Dükkanım Paneline Giriş
               </h1>
-              <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
                 Şifresiz, tek kullanımlık WhatsApp onay koduyla dükkanınızı yönetin.
               </p>
             </div>
 
             {/* Apple Style Login Card */}
-            <div className="p-6 rounded-3xl bg-white border border-black/[0.06] shadow-sm space-y-4" suppressHydrationWarning>
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-4" suppressHydrationWarning>
               {loginError && (
-                <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold text-center">
+                <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold text-center">
                   {loginError}
                 </div>
               )}
@@ -226,7 +227,7 @@ export default function MerchantPortalPage() {
                 /* Step 1: Phone Number */
                 <form onSubmit={handleSendOtp} className="space-y-3" suppressHydrationWarning>
                   <div suppressHydrationWarning>
-                    <label className="text-[11px] font-bold text-zinc-500 block pb-1">
+                    <label className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 block pb-1">
                       Kayıtlı WhatsApp / Cep Telefonu:
                     </label>
                     <div className="relative flex items-center" suppressHydrationWarning>
@@ -243,7 +244,7 @@ export default function MerchantPortalPage() {
                         placeholder="0532 123 45 67"
                         value={phoneInput}
                         onChange={(e) => setPhoneInput(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 rounded-2xl bg-zinc-100 border border-black/[0.04] text-sm font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/10"
+                        className="w-full pl-10 pr-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-black/[0.04] dark:border-white/[0.08] text-sm font-bold text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20"
                       />
                     </div>
                   </div>
@@ -262,7 +263,7 @@ export default function MerchantPortalPage() {
                 <form onSubmit={handleVerifyOtp} className="space-y-3" suppressHydrationWarning>
                   <div className="space-y-1" suppressHydrationWarning>
                     <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-zinc-500">
+                      <label className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
                         6 Haneli Onay Kodu:
                       </label>
                       <button
@@ -287,16 +288,16 @@ export default function MerchantPortalPage() {
                       value={otpInput}
                       onChange={(e) => setOtpInput(e.target.value)}
                       placeholder="123456"
-                      className="w-full py-3 rounded-2xl bg-zinc-100 border border-black/[0.04] text-center text-xl font-extrabold tracking-widest text-black focus:outline-none focus:ring-2 focus:ring-black/10"
+                      className="w-full py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-black/[0.04] dark:border-white/[0.08] text-center text-xl font-extrabold tracking-widest text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20"
                     />
-                    <span className="text-[10px] text-zinc-400 block text-center pt-0.5">
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block text-center pt-0.5">
                       Geliştirici Test Kodu: <strong>123456</strong>
                     </span>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-full bg-black hover:bg-zinc-800 active:scale-98 text-white text-xs font-extrabold shadow-sm flex items-center justify-center gap-2 ios-press transition-all"
+                    className="w-full py-3 rounded-full bg-black dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-98 text-white dark:text-black text-xs font-extrabold shadow-sm flex items-center justify-center gap-2 ios-press transition-all"
                   >
                     <Check className="w-4 h-4" />
                     <span>Panele Giriş Yap</span>
@@ -307,7 +308,7 @@ export default function MerchantPortalPage() {
 
             {/* Fast Demo Accounts */}
             <div className="space-y-2 pt-2 text-center" suppressHydrationWarning>
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
                 Hızlı Test Hesabı Seçin:
               </span>
               <div className="grid grid-cols-1 gap-1.5">
@@ -315,22 +316,23 @@ export default function MerchantPortalPage() {
                   <button
                     key={m.id}
                     onClick={() => handleFastDemoLogin(m)}
-                    className="p-2.5 rounded-2xl bg-white border border-black/[0.06] hover:bg-zinc-50 text-xs font-bold text-zinc-800 flex items-center justify-between ios-press shadow-2xs"
+                    className="p-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between ios-press shadow-2xs"
                   >
                     <div className="text-left">
-                      <span className="block text-black">{m.name}</span>
-                      <span className="text-[10px] text-zinc-400 font-normal">{m.masterName} · {m.district}</span>
+                      <span className="block text-black dark:text-white">{m.name}</span>
+                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-normal">{m.masterName} · {m.district}</span>
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />
+                    <ArrowRight className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="text-center pt-2">
-              <Link href="/" className="text-xs font-bold text-zinc-500 hover:text-black">
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <Link href="/" className="text-xs font-bold text-zinc-500 hover:text-black dark:hover:text-white">
                 ← Ana Sayfaya Dön
               </Link>
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -340,10 +342,10 @@ export default function MerchantPortalPage() {
         /* ======================================================== */
         <>
           {/* Header */}
-          <header className="sticky top-0 z-30 ios-blur border-b border-black/[0.06]">
+          <header className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors">
             <div className="max-w-3xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Link href="/" className="font-extrabold text-base tracking-tight text-black flex items-center gap-1.5">
+                <Link href="/" className="font-extrabold text-base tracking-tight text-black dark:text-white flex items-center gap-1.5">
                   <span>Esnafça</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600 text-white font-bold">
                     Dükkanım
@@ -351,16 +353,18 @@ export default function MerchantPortalPage() {
                 </Link>
               </div>
 
-              {/* Master / Shop Identity + Logout */}
+              {/* Master / Shop Identity + Theme Toggle + Logout */}
               <div className="flex items-center gap-2">
                 <div className="hidden sm:block text-right">
-                  <span className="text-xs font-extrabold text-black block leading-none">{activeMerchant.name}</span>
-                  <span className="text-[10px] text-zinc-400 font-medium">{activeMerchant.masterName}</span>
+                  <span className="text-xs font-extrabold text-black dark:text-white block leading-none">{activeMerchant.name}</span>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">{activeMerchant.masterName}</span>
                 </div>
+
+                <ThemeToggle />
 
                 <button
                   onClick={handleLogout}
-                  className="p-2 rounded-full bg-black/[0.05] hover:bg-rose-50 hover:text-rose-600 text-zinc-600 text-xs font-bold flex items-center gap-1 ios-press transition-colors"
+                  className="p-2 rounded-full bg-black/[0.05] dark:bg-white/[0.08] hover:bg-rose-50 dark:hover:bg-rose-950 hover:text-rose-600 dark:hover:text-rose-400 text-zinc-600 dark:text-zinc-300 text-xs font-bold flex items-center gap-1 ios-press transition-colors"
                   title="Oturumu Kapat"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -372,15 +376,15 @@ export default function MerchantPortalPage() {
 
           <main className="max-w-3xl mx-auto px-4 py-4 space-y-4">
             {/* 1. Dükkan Canlı Durum Kartı */}
-            <div className="p-4 rounded-3xl bg-white border border-black/[0.06] shadow-xs flex items-center justify-between gap-3">
+            <div className="p-4 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex items-center justify-between gap-3">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? "bg-emerald-500 animate-pulse" : "bg-zinc-400"}`} />
-                  <h2 className="text-sm font-extrabold text-black">
+                  <h2 className="text-sm font-extrabold text-black dark:text-white">
                     {isOpen ? "Dükkanınız Canlıda Açık" : "Dükkanınız İzinli / Kapalı"}
                   </h2>
                 </div>
-                <p className="text-xs text-zinc-500 font-medium">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
                   {isOpen ? "Müşteriler şu an arama sonuçlarında sizi 'Açık' olarak görüyor." : "Arama sonuçlarında 'Kapalı' olarak gösteriliyorsunuz."}
                 </p>
               </div>
@@ -390,7 +394,7 @@ export default function MerchantPortalPage() {
                 className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all ios-press shrink-0 flex items-center gap-1.5 ${
                   isOpen
                     ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                    : "bg-zinc-200 text-zinc-700 hover:bg-zinc-300"
+                    : "bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >
                 <Power className="w-3.5 h-3.5" />
@@ -400,43 +404,43 @@ export default function MerchantPortalPage() {
 
             {/* 2. Mini Performans Kartları (KPI) */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-between text-zinc-400 text-[11px] font-semibold">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
                   <span className="hidden sm:inline">WhatsApp Talebi</span>
-                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div className="text-xl font-extrabold text-black">28</div>
-                <span className="text-[10px] text-zinc-400 font-medium block">Bu Hafta</span>
+                <div className="text-xl font-extrabold text-black dark:text-white">28</div>
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium block">Bu Hafta</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-between text-zinc-400 text-[11px] font-semibold">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
                   <span className="hidden sm:inline">Vitrin Görüntüleme</span>
-                  <Store className="w-3.5 h-3.5 text-blue-600" />
+                  <Store className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="text-xl font-extrabold text-black">430</div>
-                <span className="text-[10px] text-zinc-400 font-medium block">Bu Ay</span>
+                <div className="text-xl font-extrabold text-black dark:text-white">430</div>
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium block">Bu Ay</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-between text-zinc-400 text-[11px] font-semibold">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
                   <span className="hidden sm:inline">Cam QR Okutma</span>
                   <QrCode className="w-3.5 h-3.5 text-brand" />
                 </div>
-                <div className="text-xl font-extrabold text-black">34</div>
-                <span className="text-[10px] text-zinc-400 font-medium block">Toplam Tarama</span>
+                <div className="text-xl font-extrabold text-black dark:text-white">34</div>
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium block">Toplam Tarama</span>
               </div>
             </div>
 
             {/* 3. Şeffaf Fiyat Menüsü Düzenleyici (Live In-Place Editor) */}
-            <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-black/[0.04] pb-3">
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
                 <div>
-                  <h3 className="font-extrabold text-base text-black flex items-center gap-1.5">
+                  <h3 className="font-extrabold text-base text-black dark:text-white flex items-center gap-1.5">
                     <Tag className="w-4 h-4 text-brand" />
                     <span>Şeffaf Fiyat Menüsü Düzenleyici</span>
                   </h3>
-                  <p className="text-xs text-zinc-500 font-medium pt-0.5">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium pt-0.5">
                     Fiyatlarınızı buradan güncellediğinizde müşteriler doğrudan yeni fiyatları görür.
                   </p>
                 </div>
@@ -456,49 +460,49 @@ export default function MerchantPortalPage() {
                 {services.map((srv, index) => (
                   <div
                     key={srv.id || index}
-                    className="p-3 rounded-2xl bg-zinc-50 border border-black/[0.04] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                    className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                   >
                     <div className="flex-1">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block pb-0.5">
+                      <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block pb-0.5">
                         Hizmet / İşlem Adı
                       </label>
                       <input
                         type="text"
                         value={srv.name}
                         onChange={(e) => handleServiceChange(index, "name", e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-xl bg-white border border-black/[0.08] text-xs font-bold text-black focus:outline-none"
+                        className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.1] text-xs font-bold text-black dark:text-white focus:outline-none"
                       />
                     </div>
 
                     <div className="flex items-center gap-2">
                       <div>
-                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block pb-0.5">
+                        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block pb-0.5">
                           Min (₺)
                         </label>
                         <input
                           type="number"
                           value={srv.minPrice}
                           onChange={(e) => handleServiceChange(index, "minPrice", Number(e.target.value))}
-                          className="w-20 px-2.5 py-1.5 rounded-xl bg-white border border-black/[0.08] text-xs font-bold text-black focus:outline-none"
+                          className="w-20 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.1] text-xs font-bold text-black dark:text-white focus:outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block pb-0.5">
+                        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block pb-0.5">
                           Maks (₺)
                         </label>
                         <input
                           type="number"
                           value={srv.maxPrice || srv.minPrice}
                           onChange={(e) => handleServiceChange(index, "maxPrice", Number(e.target.value))}
-                          className="w-20 px-2.5 py-1.5 rounded-xl bg-white border border-black/[0.08] text-xs font-bold text-black focus:outline-none"
+                          className="w-20 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.1] text-xs font-bold text-black dark:text-white focus:outline-none"
                         />
                       </div>
 
                       <button
                         type="button"
                         onClick={() => handleRemoveService(index)}
-                        className="p-2 text-zinc-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition-colors mt-3"
+                        className="p-2 text-zinc-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors mt-3"
                         title="Sil"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -508,11 +512,11 @@ export default function MerchantPortalPage() {
                 ))}
               </div>
 
-              <div className="pt-2 flex items-center justify-between gap-3 border-t border-black/[0.04]">
+              <div className="pt-2 flex items-center justify-between gap-3 border-t border-black/[0.04] dark:border-white/[0.06]">
                 <button
                   type="button"
                   onClick={handleAddService}
-                  className="px-4 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200 text-xs font-bold text-black flex items-center gap-1.5 ios-press"
+                  className="px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold text-black dark:text-white flex items-center gap-1.5 ios-press"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Yeni Hizmet Ekle</span>
@@ -530,20 +534,20 @@ export default function MerchantPortalPage() {
             </div>
 
             {/* 4. Vitrin Karekod Kiti & Çıktı Alma */}
-            <div className="p-5 rounded-3xl bg-white border border-black/[0.06] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <QrCode className="w-5 h-5 text-brand" />
-                  <h3 className="font-extrabold text-sm text-black">Dükkan Camı Karekod Kiti</h3>
+                  <h3 className="font-extrabold text-sm text-black dark:text-white">Dükkan Camı Karekod Kiti</h3>
                 </div>
-                <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-md">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed max-w-md">
                   Dükkanınızın vitrinine veya tezgahına asabileceğiniz, müşterilerin doğrudan fiyat menünüzü okutabileceği A4 baskı kiti.
                 </p>
               </div>
 
               <button
                 onClick={() => setIsQrModalOpen(true)}
-                className="px-4 py-2.5 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center gap-1.5 ios-press shadow-xs shrink-0"
+                className="px-4 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs font-bold flex items-center justify-center gap-1.5 ios-press shadow-xs shrink-0"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Karekod Kitini Aç & Yazdır</span>
@@ -551,19 +555,19 @@ export default function MerchantPortalPage() {
             </div>
 
             {/* 5. Abonelik & Paket Bilgisi */}
-            <div className="p-4 rounded-2xl bg-zinc-100 border border-black/[0.04] flex items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.08] flex items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
                   Mevcut Paketiniz
                 </span>
-                <span className="text-xs font-extrabold text-black uppercase">
-                  {activeMerchant.tier === "vip" ? "VIP Mahalle Lideri" : activeMerchant.tier === "pro" ? "Pro Mahalleli" : "Vitrin Paketi"}
+                <span className="text-xs font-extrabold text-black dark:text-white uppercase">
+                  {activeMerchant.tier === "plus" ? "Usta Plus" : activeMerchant.tier === "pro" ? "Esnafça Pro" : "Mahalleli (Ücretsiz)"}
                 </span>
               </div>
 
               <Link
                 href="/fiyatlandirma"
-                className="px-3.5 py-1.5 rounded-full bg-white border border-black/[0.08] text-black text-xs font-bold hover:bg-zinc-50 ios-press"
+                className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.1] text-black dark:text-white text-xs font-bold hover:bg-zinc-50 dark:hover:bg-zinc-800 ios-press"
               >
                 Paketi Yükselt →
               </Link>

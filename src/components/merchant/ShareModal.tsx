@@ -20,7 +20,6 @@ export function ShareModal({ isOpen, onClose, merchant }: ShareModalProps) {
   const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
 
   const handleCopyLink = () => {
-    // Modern & Fallback copy
     if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
       navigator.clipboard.writeText(url).then(() => {
         setCopied(true);
@@ -48,14 +47,14 @@ export function ShareModal({ isOpen, onClose, merchant }: ShareModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       {/* Backdrop click */}
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Apple Action Sheet */}
-      <div className="relative w-full max-w-sm bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 space-y-4 animate-in slide-in-from-bottom duration-250 z-10">
+      <div className="relative w-full max-w-sm bg-white dark:bg-[#1C1C1E] dark:border dark:border-white/[0.08] rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 space-y-4 animate-in slide-in-from-bottom duration-250 z-10">
         {/* Grabber on Mobile */}
-        <div className="w-10 h-1 rounded-full bg-zinc-300 mx-auto sm:hidden" />
+        <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto sm:hidden" />
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -64,14 +63,14 @@ export function ShareModal({ isOpen, onClose, merchant }: ShareModalProps) {
               <Share2 className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-black">Ustayı Paylaş</h3>
-              <p className="text-[11px] text-zinc-500 font-medium">{merchant.name}</p>
+              <h3 className="text-xs font-bold text-black dark:text-white">Ustayı Paylaş</h3>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">{merchant.name}</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full text-zinc-400 hover:text-black hover:bg-zinc-100 ios-press"
+            className="p-1.5 rounded-full text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 ios-press"
           >
             <X className="w-4 h-4" />
           </button>
@@ -94,16 +93,16 @@ export function ShareModal({ isOpen, onClose, merchant }: ShareModalProps) {
           {/* Copy Link Button */}
           <button
             onClick={handleCopyLink}
-            className="w-full p-3.5 rounded-2xl bg-zinc-100 hover:bg-zinc-200 text-black font-bold text-xs flex items-center justify-center gap-2 ios-press transition-all"
+            className="w-full p-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-black dark:text-white font-bold text-xs flex items-center justify-center gap-2 ios-press transition-all"
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                <span className="text-emerald-700">Bağlantı Panoya Kopyalandı!</span>
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
+                <span className="text-emerald-700 dark:text-emerald-300">Bağlantı Panoya Kopyalandı!</span>
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 text-zinc-600" />
+                <Copy className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
                 <span>Dükkan Bağlantısını Kopyala</span>
               </>
             )}
@@ -113,7 +112,7 @@ export function ShareModal({ isOpen, onClose, merchant }: ShareModalProps) {
         {/* Cancel Button */}
         <button
           onClick={onClose}
-          className="w-full py-2.5 text-center text-xs font-bold text-zinc-400 hover:text-black ios-press"
+          className="w-full py-2.5 text-center text-xs font-bold text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white ios-press"
         >
           Vazgeç
         </button>

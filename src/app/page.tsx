@@ -110,14 +110,14 @@ function HomeContent() {
     : "Tüm Türkiye";
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7]">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black transition-colors duration-200">
       {/* Apple Clean Navbar */}
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 py-3 sm:py-4 space-y-3">
         {/* Single Ultra-Sleek Apple Spotlight Search & Location Bar */}
-        <div className="relative flex items-center bg-white rounded-2xl border border-black/[0.06] apple-card-shadow p-1.5 pl-3.5 gap-2">
-          <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+        <div className="relative flex items-center bg-white dark:bg-[#1C1C1E] rounded-2xl border border-black/[0.06] dark:border-white/[0.08] apple-card-shadow p-1.5 pl-3.5 gap-2 transition-colors">
+          <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
           <input
             type="search"
             autoComplete="off"
@@ -129,14 +129,14 @@ function HomeContent() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Usta, işlem veya zanaat arayın..."
-            className="w-full bg-transparent border-none text-xs sm:text-sm font-medium text-black placeholder:text-zinc-400 focus:outline-none"
+            className="w-full bg-transparent border-none text-xs sm:text-sm font-medium text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
           />
 
           {searchQuery ? (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="p-1.5 text-zinc-400 hover:text-black ios-press shrink-0 mr-1"
+              className="p-1.5 text-zinc-400 hover:text-black dark:hover:text-white ios-press shrink-0 mr-1"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
             </button>
@@ -144,7 +144,7 @@ function HomeContent() {
             <button
               type="button"
               onClick={() => setIsLocationModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-xs font-bold text-black shrink-0 transition-colors ios-press"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold text-black dark:text-white shrink-0 transition-colors ios-press"
               title="Konumu Değiştir"
             >
               <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
@@ -163,8 +163,8 @@ function HomeContent() {
               onClick={() => setSelectedCategory("all")}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ios-press ${
                 selectedCategory === "all"
-                  ? "bg-black text-white shadow-xs"
-                  : "bg-white text-zinc-700 border border-black/[0.06] hover:bg-zinc-100"
+                  ? "bg-black dark:bg-white text-white dark:text-black shadow-xs"
+                  : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
               Tümü ({MERCHANTS.length})
@@ -182,12 +182,12 @@ function HomeContent() {
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ios-press ${
                     isCatActive
                       ? "bg-brand text-white shadow-xs"
-                      : "bg-white text-zinc-700 border border-black/[0.06] hover:bg-zinc-100"
+                      : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
                   <span>{cat.name}</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    isCatActive ? "bg-white/20 text-white" : "bg-black/[0.05] text-zinc-500"
+                    isCatActive ? "bg-white/20 text-white" : "bg-black/[0.05] dark:bg-white/[0.08] text-zinc-500 dark:text-zinc-400"
                   }`}>
                     {catCount}
                   </span>
@@ -204,14 +204,14 @@ function HomeContent() {
               className={`px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 transition-all ios-press shrink-0 shadow-2xs ${
                 onlyVerified
                   ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-zinc-700 border-black/[0.06] hover:bg-zinc-100"
+                  : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Doğrulanmış Esnaf</span>
             </button>
 
-            <span className="text-zinc-500 font-bold text-xs">
+            <span className="text-zinc-500 dark:text-zinc-400 font-bold text-xs">
               {filteredMerchants.length} Usta
             </span>
           </div>
@@ -225,14 +225,14 @@ function HomeContent() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-3xl border border-black/[0.06] p-8 text-center space-y-3 apple-card-shadow">
-            <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 mx-auto flex items-center justify-center">
+          <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-8 text-center space-y-3 apple-card-shadow">
+            <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 mx-auto flex items-center justify-center">
               <MapPin className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-black text-sm">
+            <h3 className="font-bold text-black dark:text-white text-sm">
               Aradığınız kriterde esnaf bulunamadı
             </h3>
-            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 max-w-sm mx-auto">
               Seçtiğiniz şehri veya filtreleri sıfırlayabilirsiniz.
             </p>
             <button
@@ -246,7 +246,7 @@ function HomeContent() {
                 setOnlyVerified(false);
                 router.push("/");
               }}
-              className="px-5 py-2.5 rounded-full bg-black text-white text-xs font-bold ios-press shadow-xs"
+              className="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs font-bold ios-press shadow-xs"
             >
               Filtreleri Sıfırla
             </button>
@@ -273,7 +273,7 @@ function HomeContent() {
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F2F2F7]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F2F2F7] dark:bg-black" />}>
       <HomeContent />
     </Suspense>
   );

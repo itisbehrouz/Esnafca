@@ -95,7 +95,7 @@ export function getPendingApplications(): MerchantApplication[] {
           address: "Caferağa Mah. Mühürdar Cad. No: 44, Kadıköy / İstanbul",
           phone: "0533 111 22 33",
           whatsapp: "905331112233",
-          plan: "vip",
+          plan: "plus",
           services: [
             { name: "Ayakkabı Boya & Lostra", minPrice: "100", maxPrice: "180" },
             { name: "Deri Taban & Ökçe Değişimi", minPrice: "300", maxPrice: "500" },

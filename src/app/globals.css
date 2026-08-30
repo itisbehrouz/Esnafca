@@ -9,19 +9,31 @@
   --ios-subtext: #8E8E93;
   --ios-border: rgba(0, 0, 0, 0.05);
   --ios-separator: rgba(60, 60, 67, 0.12);
-  --ios-blue: #007AFF;
-  --ios-green: #34C759;
-  --ios-amber: #FF9500;
+  --ios-blur-bg: rgba(255, 255, 255, 0.88);
+  --ios-glass-border: rgba(0, 0, 0, 0.06);
   --brand-terracotta: #C4512D;
 }
 
+.dark {
+  --ios-bg: #000000;
+  --ios-card: #1C1C1E;
+  --ios-text: #FFFFFF;
+  --ios-subtext: #98989D;
+  --ios-border: rgba(255, 255, 255, 0.08);
+  --ios-separator: rgba(84, 84, 88, 0.36);
+  --ios-blur-bg: rgba(28, 28, 30, 0.85);
+  --ios-glass-border: rgba(255, 255, 255, 0.08);
+  --brand-terracotta: #E05A36;
+}
+
 body {
-  background-color: #F2F2F7;
-  color: #000000;
+  background-color: var(--ios-bg);
+  color: var(--ios-text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.015em;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Apple Smooth Spring Transitions & Touch States */
@@ -36,16 +48,16 @@ body {
 
 /* iOS High-Legibility Frosted Blur Material */
 .ios-blur {
-  background-color: rgba(255, 255, 255, 0.94);
+  background-color: var(--ios-blur-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .apple-glass {
-  background-color: rgba(255, 255, 255, 0.94);
+  background-color: var(--ios-blur-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--ios-glass-border);
 }
 
 /* Apple Maps Card Elevation */
@@ -53,8 +65,35 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
+.dark .apple-card-shadow {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 .apple-card-hover:hover {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.dark .apple-card-hover:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Ensure clean dark mode card borders and shadows */
+.dark .shadow-ios-card {
+  --tw-shadow: 0 2px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --tw-shadow-colored: 0 2px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.dark .shadow-ios-floating {
+  --tw-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  --tw-shadow-colored: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.dark .shadow-ios-sheet {
+  --tw-shadow: 0 -4px 24px rgba(0, 0, 0, 0.6);
+  --tw-shadow-colored: 0 -4px 24px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
 /* Hide scrollbar */

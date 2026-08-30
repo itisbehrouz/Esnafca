@@ -20,17 +20,17 @@ function getOptimizedImageUrl(url: string, width = 500): string {
 
 export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCardProps) {
   const quickWhatsAppUrl = generateWhatsAppUrl(merchant);
-  const isVip = merchant.tier === "vip";
+  const isPlus = merchant.tier === "plus";
   const isPro = merchant.tier === "pro";
   const optimizedImg = getOptimizedImageUrl(merchant.heroImage, 500);
 
   return (
     <div
-      className={`group bg-white rounded-3xl border border-black/[0.06] overflow-hidden apple-card-shadow apple-card-hover transition-all duration-200 flex flex-col justify-between ${
-        isVip
-          ? "ring-2 ring-amber-400/90"
+      className={`group bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] overflow-hidden apple-card-shadow apple-card-hover transition-all duration-200 flex flex-col justify-between ${
+        isPlus
+          ? "ring-1 ring-amber-400/40 dark:ring-amber-400/30"
           : isPro
-          ? "ring-1 ring-black/[0.08]"
+          ? "ring-1 ring-black/[0.08] dark:ring-white/[0.12]"
           : ""
       }`}
     >
@@ -54,14 +54,14 @@ export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCar
 
           {/* Top Left: Tier / Verified Pill */}
           <div className="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none">
-            {isVip ? (
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-500 text-white shadow-sm">
-                <Crown className="w-3.5 h-3.5 fill-white" />
-                Mahalle Lideri
+            {isPlus ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500 text-white shadow-xs">
+                <Crown className="w-3 h-3 fill-white" />
+                Plus Usta
               </span>
             ) : merchant.verified ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white/95 text-black shadow-xs">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white/95 dark:bg-black/90 text-black dark:text-white shadow-xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 Doğrulanmış
               </span>
             ) : null}
@@ -98,21 +98,21 @@ export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCar
         <div className="p-4 pb-2.5 space-y-2">
           <div>
             <div className="flex items-center justify-between gap-2">
-              <h3 className="font-extrabold text-base text-black tracking-tight group-hover:text-brand transition-colors line-clamp-1">
+              <h3 className="font-extrabold text-base text-black dark:text-white tracking-tight group-hover:text-brand dark:group-hover:text-brand transition-colors line-clamp-1">
                 {merchant.name}
               </h3>
-              <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-black group-hover:translate-x-0.5 transition-all shrink-0" />
+              <ChevronRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-black dark:group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium pt-0.5">
-              <span className="text-zinc-800 font-bold">{merchant.masterName}</span>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium pt-0.5">
+              <span className="text-zinc-800 dark:text-zinc-200 font-bold">{merchant.masterName}</span>
               <span>·</span>
-              <span className="text-zinc-600">{merchant.experienceYears} Yıl Deneyim</span>
+              <span className="text-zinc-600 dark:text-zinc-400">{merchant.experienceYears} Yıl Deneyim</span>
             </div>
           </div>
 
           {/* Location Anchor */}
-          <div className="flex items-center gap-1 text-xs text-zinc-500">
+          <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
             <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
             <span className="truncate">{merchant.neighborhood}, {merchant.district}</span>
           </div>
@@ -122,7 +122,7 @@ export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCar
             {merchant.specialties.slice(0, 2).map((spec) => (
               <span
                 key={spec}
-                className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700 truncate"
+                className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 truncate"
               >
                 {spec}
               </span>
@@ -132,15 +132,15 @@ export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCar
       </Link>
 
       {/* Bottom Row: Transparent Price & WhatsApp Icon Action Button */}
-      <div className="px-4 pb-4 pt-2 border-t border-black/[0.04] flex items-center justify-between gap-3">
+      <div className="px-4 pb-4 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between gap-3">
         <Link
           href={`/esnaf/${merchant.slug}`}
           className="space-y-0.5 flex-1 ios-press active:opacity-75"
         >
-          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+          <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
             Şeffaf Fiyat
           </span>
-          <span className="text-sm sm:text-base font-extrabold text-black tracking-tight block">
+          <span className="text-sm sm:text-base font-extrabold text-black dark:text-white tracking-tight block">
             {merchant.minPrice} ₺ - {merchant.maxPrice} ₺
           </span>
         </Link>

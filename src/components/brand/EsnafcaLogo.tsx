@@ -20,10 +20,10 @@ export function EsnafcaLogo({ size = 32, className = "", variant = "icon" }: Esn
 
       {variant === "full" && (
         <div className="flex items-center gap-1.5">
-          <span className="font-extrabold text-base tracking-tight text-black leading-none">
+          <span className="font-extrabold text-base tracking-tight text-black dark:text-white leading-none">
             Esnaf<span className="text-brand">ça</span>
           </span>
-          <span className="text-[10px] font-bold bg-black/[0.05] text-zinc-700 px-2 py-0.5 rounded-full leading-none">
+          <span className="text-[10px] font-bold bg-black/[0.05] dark:bg-white/[0.1] text-zinc-700 dark:text-zinc-300 px-2 py-0.5 rounded-full leading-none">
             Şeffaf
           </span>
         </div>

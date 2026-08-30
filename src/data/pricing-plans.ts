@@ -1,4 +1,4 @@
-export type SubscriptionTierId = "free" | "vitrin" | "pro" | "vip";
+export type SubscriptionTierId = "free" | "pro" | "plus";
 
 export interface PricingPlan {
   id: SubscriptionTierId;
@@ -10,17 +10,14 @@ export interface PricingPlan {
   monthlyEquivalent: number;
   tagline: string;
   popular?: boolean;
-  vipExclusive?: boolean;
-  highlightColor: string;
   features: {
     listing: string;
     services: string;
     whatsapp: string;
     badge: string;
     physicalKit: string;
-    autoReply: string;
-    reporting: string;
-    quota: string;
+    commission: string;
+    support: string;
   };
 }
 
@@ -28,87 +25,59 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: "free",
     name: "Mahalleli",
-    badgeTitle: "Standart Dizin",
+    badgeTitle: "Standart",
     badgeType: "none",
     monthlyPrice: 0,
     annualPrice: 0,
     monthlyEquivalent: 0,
-    tagline: "Küçük esnafın dijitalde ilk adımı atması için tamamen ücretsiz.",
-    highlightColor: "border-stone-200 bg-white",
+    tagline: "Küçük esnafın dijitalde yer alması için tamamen ücretsiz.",
     features: {
-      listing: "Standart Dizin Listelemesi",
-      services: "5 Temel Hizmet & Fiyat",
-      whatsapp: "Doğrudan WhatsApp Linki",
-      badge: "Rozet Yok",
-      physicalKit: "Fiziki Kit Yok",
-      autoReply: "Yok",
-      reporting: "Raporlama Yok",
-      quota: "Sınırsız Katılım",
-    },
-  },
-  {
-    id: "vitrin",
-    name: "Esnafça Vitrin",
-    badgeTitle: "Mavi Doğrulanmış Rozet",
-    badgeType: "blue",
-    monthlyPrice: 349,
-    annualPrice: 2990,
-    monthlyEquivalent: 249,
-    tagline: "Şeffaf fiyatlarını öne çıkar, mahallede güven damgası kazan.",
-    highlightColor: "border-brand/30 bg-esnaf-50/40",
-    features: {
-      listing: "Öncelikli Arama Listelemesi",
-      services: "Sınırsız Hizmet & Fiyat Listesi",
-      whatsapp: "Şablonlu Önceden Doldurulmuş Mesaj",
-      badge: "Doğrulanmış Esnaf (Mavi Rozet)",
-      physicalKit: "Vitrin Çıkartması (Karekod Kit)",
-      autoReply: "Yok",
-      reporting: "Aylık Özet SMS Raporu",
-      quota: "Sınırsız",
+      listing: "Standart Arama & Dizin Listelemesi",
+      services: "5 Temel Hizmet & Fiyat Girişi",
+      whatsapp: "Doğrudan Müşteri WhatsApp Linki",
+      badge: "Standart Profil",
+      physicalKit: "Dijital Profil & QR Paylaşımı",
+      commission: "%0 Komisyon (Sıfır Kesinti)",
+      support: "Topluluk & Standart Destek",
     },
   },
   {
     id: "pro",
-    name: "Esnafça Usta (Pro)",
-    badgeTitle: "Pro Mavi Rozet",
+    name: "Esnafça Pro",
+    badgeTitle: "Doğrulanmış Esnaf",
     badgeType: "blue",
-    monthlyPrice: 799,
-    annualPrice: 6990,
-    monthlyEquivalent: 582,
+    monthlyPrice: 390,
+    annualPrice: 3480,
+    monthlyEquivalent: 290,
     popular: true,
-    tagline: "En çok tercih edilen: Üst sıralarda listelen, tezgâhına şık pleksi QR standı koy.",
-    highlightColor: "border-brand bg-white ring-2 ring-brand shadow-lg",
+    tagline: "Mahallede güven kazanın, öncelikli sıralanın ve dükkanınıza şık pleksi QR standı koyun.",
     features: {
-      listing: "Kategoride Üst Sıralarda Gösterim",
-      services: "Sınırsız Hizmet + Foto Galeri",
-      whatsapp: "Şablonlu Mesaj + Hızlı Yanıt",
+      listing: "Kategoride ve Mahallede Öncelikli Sıralama",
+      services: "Sınırsız Hizmet & Canlı Fiyat Menüsü",
+      whatsapp: "Doğrudan WhatsApp Hattı + Hızlı Yanıt",
       badge: "Doğrulanmış Esnaf (Mavi Rozet)",
-      physicalKit: "Vitrin Çıkartması + Tezgâh Pleksi QR Standı",
-      autoReply: "Mesai Dışı Otomatik WhatsApp Şablonu",
-      reporting: "Detaylı Haftalık WhatsApp Raporu",
-      quota: "Sınırsız",
+      physicalKit: "Adrese Ücretsiz Pleksi QR Standı + Cam Çıkartması",
+      commission: "%0 Komisyon Garantisi",
+      support: "Öncelikli WhatsApp Destek Hattı",
     },
   },
   {
-    id: "vip",
-    name: "Mahalle Lideri (VIP)",
-    badgeTitle: "Altın VIP Lider Rozeti",
+    id: "plus",
+    name: "Usta Plus",
+    badgeTitle: "Plus Usta",
     badgeType: "gold",
-    monthlyPrice: 1750,
-    annualPrice: 15900,
-    monthlyEquivalent: 1325,
-    vipExclusive: true,
-    tagline: "Mahallenin 1 numaralı lider ustası ol. Her mahallede sadece 1 esnaf!",
-    highlightColor: "border-amber-400 bg-gradient-to-b from-amber-50/60 to-white shadow-xl",
+    monthlyPrice: 890,
+    annualPrice: 8280,
+    monthlyEquivalent: 690,
+    tagline: "Yoğun çalışan atölyeler, klinikler ve çoklu personel çalıştıran salonlar için.",
     features: {
-      listing: "En Üstte Sabit Listeleme (Slot 1-2)",
-      services: "Sınırsız Hizmet + Video & Portföy Vitrini",
-      whatsapp: "Özel Şablonlu Mesaj Akışı",
-      badge: "Mahalle Lideri (Altın VIP Rozet)",
-      physicalKit: "Özel Metal / Işıklı Vitrin Kiti + Tezgâh Pleksi",
-      autoReply: "Özelleştirilebilir 7/24 Akıllı WhatsApp Botu",
-      reporting: "Detaylı Rapor + Mahalle Talep & Rakip Analizi",
-      quota: "Mahalle & Kategori Başına Sadece 1 Esnaf",
+      listing: "En Üst Sıralarda Vitrin Gösterimi",
+      services: "Sınırsız Hizmet + Foto & Portföy Galerisi Vitrini",
+      whatsapp: "Çoklu Usta / Koltuk WhatsApp Yönlendirmesi",
+      badge: "Plus Usta Rozeti & Güven Damgası",
+      physicalKit: "Özel Işıklı / Metal Pleksi QR Standı Kiti",
+      commission: "%0 Komisyon Garantisi",
+      support: "7/24 Birebir VIP Destek Hattı",
     },
   },
 ];

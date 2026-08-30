@@ -7,16 +7,12 @@ import {
   Store, 
   Clock, 
   TrendingUp, 
-  Users, 
   CheckCircle2, 
-  XCircle, 
   ExternalLink, 
   Search, 
-  ChevronRight, 
   Crown, 
-  Sparkles, 
+  Zap, 
   MessageCircle,
-  Filter,
   Send,
   Check
 } from "lucide-react";
@@ -31,6 +27,7 @@ import {
 import { Merchant, SubscriptionTier } from "@/types";
 import { CITIES } from "@/data/cities";
 import { CATEGORIES } from "@/data/categories";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"pending" | "merchants" | "finance" | "broadcast">("pending");
@@ -94,12 +91,12 @@ export default function AdminPage() {
     loadData();
   };
 
-  // Financial Metrics Calculation
-  const tierPrices: Record<string, number> = { free: 0, vitrin: 290, pro: 590, vip: 1290 };
+  // Financial Metrics Calculation (3-Tier Model: Free: 0, Pro: 390, Plus: 890)
+  const tierPrices: Record<string, number> = { free: 0, pro: 390, plus: 890 };
   const totalMRR = merchants.reduce((acc, m) => acc + (tierPrices[m.tier] || 0), 0);
-  const vipCount = merchants.filter((m) => m.tier === "vip").length;
+  const plusCount = merchants.filter((m) => m.tier === "plus").length;
   const proCount = merchants.filter((m) => m.tier === "pro").length;
-  const vitrinCount = merchants.filter((m) => m.tier === "vitrin").length;
+  const freeCount = merchants.filter((m) => m.tier === "free").length;
 
   const filteredMerchants = merchants.filter((m) => {
     if (selectedCity !== "all" && m.city !== selectedCity) return false;
@@ -116,31 +113,33 @@ export default function AdminPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-24">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24 text-black dark:text-white transition-colors duration-200">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Admin Header */}
-      <header className="sticky top-0 z-30 ios-blur border-b border-black/[0.06]">
+      <header className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors">
         <div className="max-w-5xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/" className="font-extrabold text-base tracking-tight text-black flex items-center gap-1.5">
+            <Link href="/" className="font-extrabold text-base tracking-tight text-black dark:text-white flex items-center gap-1.5">
               <span>Esnafça</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-black text-white font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-black dark:bg-white text-white dark:text-black font-bold">
                 Yönetici Kokpiti
               </span>
             </Link>
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
+
             <Link
               href="/"
-              className="text-xs font-bold text-zinc-600 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04] ios-press"
+              className="text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-black dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-black/[0.04] dark:hover:bg-white/[0.08] ios-press"
             >
               Siteye Dön ↗
             </Link>
@@ -151,53 +150,53 @@ export default function AdminPage() {
       <main className="max-w-5xl mx-auto px-4 py-4 space-y-4">
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-zinc-400 text-[11px] font-semibold">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
               <span>Aktif Esnaf</span>
-              <Store className="w-3.5 h-3.5 text-blue-600" />
+              <Store className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-black">{merchants.length}</div>
-            <span className="text-[10px] text-emerald-600 font-medium">6 Büyükşehirde</span>
+            <div className="text-xl sm:text-2xl font-extrabold text-black dark:text-white">{merchants.length}</div>
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">6 Büyükşehirde</span>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-zinc-400 text-[11px] font-semibold">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
               <span>Onay Bekleyen</span>
               <Clock className="w-3.5 h-3.5 text-amber-500" />
             </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-black">{pendingApps.length}</div>
-            <span className="text-[10px] text-amber-600 font-medium">Hızlı Triage Gerekli</span>
+            <div className="text-xl sm:text-2xl font-extrabold text-black dark:text-white">{pendingApps.length}</div>
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Hızlı Triage Gerekli</span>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-zinc-400 text-[11px] font-semibold">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
               <span>Tahmini MRR</span>
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-black">
+            <div className="text-xl sm:text-2xl font-extrabold text-black dark:text-white">
               {totalMRR.toLocaleString("tr-TR")} ₺
             </div>
-            <span className="text-[10px] text-zinc-400 font-medium">Aylık Tekrarlayan</span>
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Aylık Tekrarlayan</span>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-zinc-400 text-[11px] font-semibold">
-              <span>VIP Liderler</span>
-              <Crown className="w-3.5 h-3.5 text-amber-500" />
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
+              <span>Pro & Plus Esnaf</span>
+              <Zap className="w-3.5 h-3.5 text-brand" />
             </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-black">{vipCount} Dükkan</div>
-            <span className="text-[10px] text-zinc-400 font-medium">En Yüksek Görünürlük</span>
+            <div className="text-xl sm:text-2xl font-extrabold text-black dark:text-white">{proCount + plusCount} Dükkan</div>
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Ücretli Abone</span>
           </div>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/[0.04] border border-black/[0.04] overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.08] overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("pending")}
             className={`flex-1 py-2 px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "pending"
-                ? "bg-white text-black shadow-xs"
-                : "text-zinc-600 hover:text-black"
+                ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-xs"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
             }`}
           >
             <Clock className="w-3.5 h-3.5 text-amber-500" />
@@ -208,11 +207,11 @@ export default function AdminPage() {
             onClick={() => setActiveTab("merchants")}
             className={`flex-1 py-2 px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "merchants"
-                ? "bg-white text-black shadow-xs"
-                : "text-zinc-600 hover:text-black"
+                ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-xs"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
             }`}
           >
-            <Store className="w-3.5 h-3.5 text-blue-600" />
+            <Store className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Esnaf Listesi ({merchants.length})</span>
           </button>
 
@@ -220,11 +219,11 @@ export default function AdminPage() {
             onClick={() => setActiveTab("finance")}
             className={`flex-1 py-2 px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "finance"
-                ? "bg-white text-black shadow-xs"
-                : "text-zinc-600 hover:text-black"
+                ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-xs"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
             }`}
           >
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Gelir & Paketler</span>
           </button>
 
@@ -232,8 +231,8 @@ export default function AdminPage() {
             onClick={() => setActiveTab("broadcast")}
             className={`flex-1 py-2 px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "broadcast"
-                ? "bg-white text-black shadow-xs"
-                : "text-zinc-600 hover:text-black"
+                ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-xs"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
             }`}
           >
             <Send className="w-3.5 h-3.5 text-brand" />
@@ -241,14 +240,14 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* TAB 1: ONYA MASASI (Triage Queue) */}
+        {/* TAB 1: ONAY MASASI (Triage Queue) */}
         {activeTab === "pending" && (
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
-              <h2 className="text-sm font-extrabold text-black">
+              <h2 className="text-sm font-extrabold text-black dark:text-white">
                 Onay Bekleyen Esnaf Kayıtları
               </h2>
-              <span className="text-xs text-zinc-400 font-medium">
+              <span className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">
                 {pendingApps.length} Başvuru Bekliyor
               </span>
             </div>
@@ -258,64 +257,64 @@ export default function AdminPage() {
                 {pendingApps.map((app) => (
                   <div
                     key={app.id}
-                    className="p-4 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-3"
+                    className="p-4 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-3"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.04] pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-extrabold text-sm text-black">{app.name}</h3>
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 uppercase">
-                            {app.plan} Plan
+                          <h3 className="font-extrabold text-sm text-black dark:text-white">{app.name}</h3>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-brand/10 text-brand uppercase">
+                            {app.plan.toUpperCase()} Plan
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-500 font-medium pt-0.5">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium pt-0.5">
                           {app.masterName} · {app.city} / {app.district} - {app.neighborhood}
                         </p>
                       </div>
 
                       <div className="text-right sm:text-right">
-                        <span className="text-[11px] text-zinc-400 font-medium block">
+                        <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium block">
                           Başvuru Zamanı: {app.submittedAt}
                         </span>
-                        <span className="text-xs font-bold text-black">{app.phone}</span>
+                        <span className="text-xs font-bold text-black dark:text-white">{app.phone}</span>
                       </div>
                     </div>
 
                     {/* Services Summary */}
                     <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                         Girilen Fiyat Menüsü ({app.services.length} Hizmet):
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {app.services.map((s, idx) => (
                           <span
                             key={idx}
-                            className="text-xs px-2.5 py-1 rounded-lg bg-zinc-100 text-zinc-800 font-semibold"
+                            className="text-xs px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-semibold"
                           >
-                            {s.name}: <strong className="text-black">{s.minPrice} ₺ - {s.maxPrice} ₺</strong>
+                            {s.name}: <strong className="text-black dark:text-white">{s.minPrice} ₺ - {s.maxPrice} ₺</strong>
                           </span>
                         ))}
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.04]">
+                    <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.04] dark:border-white/[0.06]">
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                           `${app.name} ${app.address}`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-xs font-bold text-zinc-700 flex items-center gap-1.5 ios-press"
+                        className="px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 ios-press"
                       >
-                        <ExternalLink className="w-3 h-3 text-blue-600" />
+                        <ExternalLink className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                         <span>Google Haritalarda Doğrula ↗</span>
                       </a>
 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleReject(app.id)}
-                          className="px-3.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold ios-press"
+                          className="px-3.5 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold ios-press"
                         >
                           Reddet
                         </button>
@@ -332,10 +331,10 @@ export default function AdminPage() {
                 ))}
               </div>
             ) : (
-              <div className="p-8 rounded-2xl bg-white border border-black/[0.06] text-center space-y-2">
+              <div className="p-8 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] text-center space-y-2">
                 <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-                <h3 className="text-sm font-extrabold text-black">Tüm Başvurular İncelendi</h3>
-                <p className="text-xs text-zinc-400">Onay bekleyen yeni esnaf kaydı bulunmuyor.</p>
+                <h3 className="text-sm font-extrabold text-black dark:text-white">Tüm Başvurular İncelendi</h3>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Onay bekleyen yeni esnaf kaydı bulunmuyor.</p>
               </div>
             )}
           </div>
@@ -345,15 +344,15 @@ export default function AdminPage() {
         {activeTab === "merchants" && (
           <div className="space-y-3">
             {/* Search & Filters */}
-            <div className="p-3 rounded-2xl bg-white border border-black/[0.06] shadow-xs space-y-2">
+            <div className="p-3 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                 <input
                   type="text"
                   placeholder="Esnaf adı, usta veya ilçe ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-100 text-xs font-medium text-black focus:outline-none"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
                 />
               </div>
 
@@ -361,7 +360,7 @@ export default function AdminPage() {
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
-                  className="p-1.5 px-3 rounded-xl bg-zinc-100 text-xs font-semibold text-zinc-800"
+                  className="p-1.5 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border-none outline-none"
                 >
                   <option value="all">Tüm Şehirler</option>
                   {CITIES.map((c) => (
@@ -374,7 +373,7 @@ export default function AdminPage() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="p-1.5 px-3 rounded-xl bg-zinc-100 text-xs font-semibold text-zinc-800"
+                  className="p-1.5 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border-none outline-none"
                 >
                   <option value="all">Tüm Kategoriler</option>
                   {CATEGORIES.map((c) => (
@@ -391,54 +390,56 @@ export default function AdminPage() {
               {filteredMerchants.map((m) => (
                 <div
                   key={m.id}
-                  className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/esnaf/${m.slug}`}
                         target="_blank"
-                        className="font-extrabold text-sm text-black hover:text-brand flex items-center gap-1"
+                        className="font-extrabold text-sm text-black dark:text-white hover:text-brand flex items-center gap-1"
                       >
                         <span>{m.name}</span>
                         <ExternalLink className="w-3 h-3 text-zinc-400" />
                       </Link>
 
-                      {m.verified && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                      {m.tier === "plus" ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-0.5">
+                          <Crown className="w-2.5 h-2.5" /> Plus Usta
+                        </span>
+                      ) : m.verified ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                           Doğrulanmış
                         </span>
-                      )}
+                      ) : null}
                     </div>
 
-                    <p className="text-xs text-zinc-500 font-medium">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
                       {m.masterName} · {m.city} / {m.district} - {m.neighborhood}
                     </p>
-                    <span className="text-[11px] text-zinc-700 font-bold block">
+                    <span className="text-[11px] text-zinc-700 dark:text-zinc-300 font-bold block">
                       Fiyat Aralığı: {m.minPrice} ₺ - {m.maxPrice} ₺ ({m.services.length} Hizmet)
                     </span>
                   </div>
 
-                  {/* Tier Controls */}
-                  <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-black/[0.04]">
-                    <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-xl">
-                      {(["free", "vitrin", "pro", "vip"] as SubscriptionTier[]).map((tier) => (
+                  {/* Tier Controls (3-Tier: Free, Pro, Plus) */}
+                  <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-black/[0.04] dark:border-white/[0.06]">
+                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+                      {(["free", "pro", "plus"] as SubscriptionTier[]).map((tier) => (
                         <button
                           key={tier}
                           onClick={() => handleTierChange(m.id, tier)}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-extrabold uppercase transition-all ${
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase transition-all ${
                             m.tier === tier
-                              ? tier === "vip"
+                              ? tier === "plus"
                                 ? "bg-amber-500 text-white shadow-xs"
                                 : tier === "pro"
-                                ? "bg-blue-600 text-white shadow-xs"
-                                : tier === "vitrin"
-                                ? "bg-black text-white shadow-xs"
-                                : "bg-zinc-300 text-black"
-                              : "text-zinc-400 hover:text-black"
+                                ? "bg-brand text-white shadow-xs"
+                                : "bg-zinc-300 dark:bg-zinc-600 text-black dark:text-white"
+                              : "text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                           }`}
                         >
-                          {tier}
+                          {tier === "plus" ? "Plus" : tier === "pro" ? "Pro" : "Ücretsiz"}
                         </button>
                       ))}
                     </div>
@@ -446,7 +447,7 @@ export default function AdminPage() {
                     <button
                       onClick={() => handleToggleVerified(m.id, m.verified)}
                       className={`p-2 rounded-xl text-xs font-bold ios-press ${
-                        m.verified ? "bg-blue-50 text-blue-700" : "bg-zinc-100 text-zinc-400"
+                        m.verified ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500"
                       }`}
                       title="Doğrulama Rozetini Değiştir"
                     >
@@ -462,7 +463,7 @@ export default function AdminPage() {
         {/* TAB 3: FİNANS & PAKETLER */}
         {activeTab === "finance" && (
           <div className="space-y-4">
-            <div className="p-5 rounded-3xl bg-black text-white space-y-3">
+            <div className="p-5 rounded-3xl bg-black dark:bg-[#1C1C1E] text-white border border-white/[0.06] space-y-3">
               <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
                 Aylık Tekrarlayan Gelir Modeli (MRR)
               </span>
@@ -475,28 +476,28 @@ export default function AdminPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 rounded-2xl bg-white border border-black/[0.06] space-y-1">
-                <span className="text-xs font-extrabold text-amber-600 flex items-center gap-1">
-                  <Crown className="w-3.5 h-3.5" /> VIP Lider Paketi (1.290 ₺/ay)
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] space-y-1">
+                <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <Crown className="w-3.5 h-3.5" /> Usta Plus (890 ₺/ay)
                 </span>
-                <div className="text-2xl font-extrabold text-black">{vipCount} Esnaf</div>
-                <span className="text-xs text-zinc-400">Toplam: {(vipCount * 1290).toLocaleString("tr-TR")} ₺/ay</span>
+                <div className="text-2xl font-extrabold text-black dark:text-white">{plusCount} Esnaf</div>
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">Toplam: {(plusCount * 890).toLocaleString("tr-TR")} ₺/ay</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-black/[0.06] space-y-1">
-                <span className="text-xs font-extrabold text-blue-600 flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" /> Pro Mahalleli (590 ₺/ay)
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] space-y-1">
+                <span className="text-xs font-extrabold text-brand flex items-center gap-1">
+                  <Zap className="w-3.5 h-3.5" /> Esnafça Pro (390 ₺/ay)
                 </span>
-                <div className="text-2xl font-extrabold text-black">{proCount} Esnaf</div>
-                <span className="text-xs text-zinc-400">Toplam: {(proCount * 590).toLocaleString("tr-TR")} ₺/ay</span>
+                <div className="text-2xl font-extrabold text-black dark:text-white">{proCount} Esnaf</div>
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">Toplam: {(proCount * 390).toLocaleString("tr-TR")} ₺/ay</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-black/[0.06] space-y-1">
-                <span className="text-xs font-extrabold text-zinc-800 flex items-center gap-1">
-                  <Store className="w-3.5 h-3.5" /> Vitrin Paketi (290 ₺/ay)
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] space-y-1">
+                <span className="text-xs font-extrabold text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                  <Store className="w-3.5 h-3.5" /> Mahalleli (Ücretsiz)
                 </span>
-                <div className="text-2xl font-extrabold text-black">{vitrinCount} Esnaf</div>
-                <span className="text-xs text-zinc-400">Toplam: {(vitrinCount * 290).toLocaleString("tr-TR")} ₺/ay</span>
+                <div className="text-2xl font-extrabold text-black dark:text-white">{freeCount} Esnaf</div>
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">Standart Dizin</span>
               </div>
             </div>
           </div>
@@ -504,39 +505,39 @@ export default function AdminPage() {
 
         {/* TAB 4: TOPLU WHATSAPP DUYURUSU */}
         {activeTab === "broadcast" && (
-          <div className="p-5 rounded-3xl bg-white border border-black/[0.06] space-y-4">
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] space-y-4">
             <div className="space-y-1">
-              <h3 className="font-extrabold text-base text-black flex items-center gap-2">
+              <h3 className="font-extrabold text-base text-black dark:text-white flex items-center gap-2">
                 <Send className="w-4 h-4 text-brand" />
                 <span>Toplu WhatsApp Bildirim & Güncelleme Motoru</span>
               </h3>
-              <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
                 Seçilen ilçe veya kategorideki ustalara tek tıkla toplu fiyat güncelleme veya kampanya duyurusu hazırlayın.
               </p>
             </div>
 
             <div className="space-y-3 pt-1">
               <div>
-                <label className="text-xs font-bold text-black block pb-1">Hedef Kitle:</label>
+                <label className="text-xs font-bold text-black dark:text-white block pb-1">Hedef Kitle:</label>
                 <select
                   value={broadcastTarget}
                   onChange={(e) => setBroadcastTarget(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-zinc-100 text-xs font-semibold text-black"
+                  className="w-full p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-black dark:text-white border-none outline-none"
                 >
                   <option value="all">Tüm Aktif Esnaflar ({merchants.length} Usta)</option>
-                  <option value="vip">Sadece VIP Mahalle Liderleri ({vipCount} Usta)</option>
+                  <option value="pro">Sadece Pro & Plus Esnaflar ({proCount + plusCount} Usta)</option>
                   <option value="besiktas">Sadece Beşiktaş Bölgesi</option>
                   <option value="kadikoy">Sadece Kadıköy Bölgesi</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-black block pb-1">Duyuru Mesajı:</label>
+                <label className="text-xs font-bold text-black dark:text-white block pb-1">Duyuru Mesajı:</label>
                 <textarea
                   rows={4}
                   value={broadcastText}
                   onChange={(e) => setBroadcastText(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-zinc-100 text-xs text-black font-medium focus:outline-none"
+                  className="w-full p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs text-black dark:text-white font-medium focus:outline-none"
                 />
               </div>
 

@@ -6,7 +6,7 @@ export type CategoryId =
   | "pet-kuafor"
   | "tamir-elektronik";
 
-export type SubscriptionTier = "free" | "vitrin" | "pro" | "vip";
+export type SubscriptionTier = "free" | "pro" | "plus";
 
 export interface Category {
   id: CategoryId;
