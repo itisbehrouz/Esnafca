@@ -11,6 +11,7 @@ export interface MerchantApplication {
   name: string;
   masterName: string;
   category: string;
+  experienceYears?: number;
   city: string;
   district: string;
   neighborhood: string;
@@ -32,10 +33,37 @@ export function getAllMerchants(): Merchant[] {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_MERCHANTS));
       return INITIAL_MERCHANTS;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_MERCHANTS;
   } catch {
     return INITIAL_MERCHANTS;
   }
+}
+
+// Get merchant by slug (checking live storage first)
+export function getMerchantBySlug(slug: string): Merchant | null {
+  if (!slug) return null;
+  const decoded = decodeURIComponent(slug).toLowerCase().trim();
+  const all = getAllMerchants();
+  return (
+    all.find((m) => m.slug === slug || m.slug === decoded || decodeURIComponent(m.slug).toLowerCase() === decoded) ||
+    INITIAL_MERCHANTS.find((m) => m.slug === slug || m.slug === decoded || decodeURIComponent(m.slug).toLowerCase() === decoded) ||
+    null
+  );
+}
+
+// Find merchant by phone number
+export function findMerchantByPhone(phone: string): Merchant | null {
+  const clean = phone.replace(/\D/g, "");
+  if (!clean) return null;
+  const all = getAllMerchants();
+  return (
+    all.find((m) => {
+      const pClean = m.phone.replace(/\D/g, "");
+      const wClean = m.whatsapp.replace(/\D/g, "");
+      return pClean.includes(clean) || clean.includes(pClean) || wClean.includes(clean) || clean.includes(wClean);
+    }) || null
+  );
 }
 
 // Save all merchants
@@ -70,6 +98,7 @@ export function getPendingApplications(): MerchantApplication[] {
           name: "Usta Ahmet Erkek Kuaförü",
           masterName: "Ahmet Usta",
           category: "berber-kuafor",
+          experienceYears: 18,
           city: "İstanbul",
           district: "Beşiktaş",
           neighborhood: "Sinanpaşa (Çarşı)",
@@ -89,6 +118,7 @@ export function getPendingApplications(): MerchantApplication[] {
           name: "Kadıköy Hızlı Lostra & Deri Bakım",
           masterName: "Kemal Usta",
           category: "terzi-lostra",
+          experienceYears: 24,
           city: "İstanbul",
           district: "Kadıköy",
           neighborhood: "Moda (Caferağa)",
@@ -111,6 +141,20 @@ export function getPendingApplications(): MerchantApplication[] {
   } catch {
     return [];
   }
+}
+
+// Find pending application by phone
+export function findPendingApplicationByPhone(phone: string): MerchantApplication | null {
+  const clean = phone.replace(/\D/g, "");
+  if (!clean) return null;
+  const pending = getPendingApplications();
+  return (
+    pending.find((app) => {
+      const pClean = app.phone.replace(/\D/g, "");
+      const wClean = app.whatsapp.replace(/\D/g, "");
+      return pClean.includes(clean) || clean.includes(pClean) || wClean.includes(clean) || clean.includes(wClean);
+    }) || null
+  );
 }
 
 // Add a new application
@@ -143,6 +187,12 @@ export function approveApplication(appId: string): Merchant | null {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
+  const minPrices = target.services.map((s) => Number(s.minPrice) || 100);
+  const maxPrices = target.services.map((s) => Number(s.maxPrice) || Number(s.minPrice) || 200);
+
+  const calculatedMin = minPrices.length > 0 ? Math.min(...minPrices) : 100;
+  const calculatedMax = maxPrices.length > 0 ? Math.max(...maxPrices) : 500;
+
   const newMerchant: Merchant = {
     id: `mer-${Date.now()}`,
     slug: `${slug}-${Math.floor(Math.random() * 1000)}`,
@@ -161,9 +211,9 @@ export function approveApplication(appId: string): Merchant | null {
     verified: true,
     verifiedYear: new Date().getFullYear(),
     tier: (target.plan as any) || "pro",
-    experienceYears: 10,
-    minPrice: target.services.length > 0 ? Number(target.services[0].minPrice) || 100 : 100,
-    maxPrice: target.services.length > 0 ? Number(target.services[0].maxPrice) || 500 : 500,
+    experienceYears: target.experienceYears || 10,
+    minPrice: calculatedMin,
+    maxPrice: calculatedMax,
     workingHours: {
       weekdays: "09:00 - 19:30",
       saturday: "09:00 - 19:00",
@@ -178,7 +228,7 @@ export function approveApplication(appId: string): Merchant | null {
       id: `srv-${idx + 1}`,
       name: s.name,
       minPrice: Number(s.minPrice) || 100,
-      maxPrice: Number(s.maxPrice) || 200,
+      maxPrice: Number(s.maxPrice) || Number(s.minPrice) || 200,
       popular: idx === 0,
     })),
     reviews: [

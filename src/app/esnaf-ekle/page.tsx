@@ -191,6 +191,7 @@ function EsnafEkleWizard() {
       name,
       masterName,
       category,
+      experienceYears: Number(experienceYears) || 10,
       city,
       district,
       neighborhood,
@@ -322,24 +323,25 @@ function EsnafEkleWizard() {
               </div>
             </div>
 
-            {/* Activation Button */}
+            {/* Action Buttons */}
             <div className="pt-2 flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
+              <Link
+                href={`/dukkanim?phone=${encodeURIComponent(whatsapp)}`}
+                className="flex-1 py-3 px-5 rounded-full bg-brand hover:bg-brand-hover text-white text-xs font-extrabold transition-all shadow-sm flex items-center justify-center gap-1.5 ios-press"
+              >
+                <Store className="w-4 h-4" />
+                <span>Dükkanım Paneline Git</span>
+              </Link>
+
               <a
                 href={generateActivationWhatsAppUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-3 px-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-sm flex items-center justify-center gap-2 ios-press"
+                className="py-3 px-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 ios-press"
               >
                 <MessageCircle className="w-4 h-4 fill-white/20" />
-                <span>WhatsApp ile Vitrinimi Aktif Et</span>
+                <span>WhatsApp Onayı</span>
               </a>
-
-              <Link
-                href="/"
-                className="py-3 px-5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-black dark:text-white text-xs font-bold transition-all flex items-center justify-center ios-press"
-              >
-                <span>Ana Sayfa</span>
-              </Link>
             </div>
           </div>
         ) : (

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   ChevronLeft, 
@@ -12,8 +13,10 @@ import {
   ChevronRight 
 } from "lucide-react";
 import { CATEGORIES } from "@/data/categories";
-import { MERCHANTS } from "@/data/seed-merchants";
+import { getAllMerchants } from "@/lib/merchant-store";
+import { MERCHANTS as INITIAL_MERCHANTS } from "@/data/seed-merchants";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { Merchant } from "@/types";
 
 const ICON_MAP: Record<string, any> = {
   Scissors,
@@ -25,6 +28,15 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export default function CategoriesPage() {
+  const [merchants, setMerchants] = useState<Merchant[]>(INITIAL_MERCHANTS);
+
+  useEffect(() => {
+    setMerchants(getAllMerchants());
+    const handleUpdate = () => setMerchants(getAllMerchants());
+    window.addEventListener("merchants_updated", handleUpdate);
+    return () => window.removeEventListener("merchants_updated", handleUpdate);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24 text-black dark:text-white transition-colors duration-200">
       {/* Apple Translucent Header */}
@@ -57,7 +69,7 @@ export default function CategoriesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {CATEGORIES.map((cat) => {
             const Icon = ICON_MAP[cat.icon] || Sparkles;
-            const count = MERCHANTS.filter((m) => m.category === cat.id).length;
+            const count = merchants.filter((m) => m.category === cat.id).length;
 
             return (
               <Link

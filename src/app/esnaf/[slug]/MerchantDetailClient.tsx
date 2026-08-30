@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   ChevronLeft, 
@@ -11,13 +11,15 @@ import {
   Share2, 
   QrCode, 
   Star, 
-  Navigation,
-  Tag,
-  Crown,
-  AlertCircle,
-  MessageCircle,
-  ExternalLink,
-  PenLine
+  Navigation, 
+  Tag, 
+  Crown, 
+  AlertCircle, 
+  MessageCircle, 
+  ExternalLink, 
+  PenLine,
+  Store,
+  ArrowLeft
 } from "lucide-react";
 import { Merchant } from "@/types";
 import { PriceMenuList } from "@/components/merchant/PriceMenuList";
@@ -25,16 +27,80 @@ import { QrWindowModal } from "@/components/merchant/QrWindowModal";
 import { ShareModal } from "@/components/merchant/ShareModal";
 import { generateWhatsAppUrl } from "@/lib/whatsapp";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { getMerchantBySlug } from "@/lib/merchant-store";
 
 interface MerchantDetailClientProps {
-  merchant: Merchant;
+  merchant?: Merchant;
+  initialMerchant?: Merchant | null;
+  slug?: string;
 }
 
-export function MerchantDetailClient({ merchant }: MerchantDetailClientProps) {
+export function MerchantDetailClient(props: MerchantDetailClientProps) {
+  const [merchant, setMerchant] = useState<Merchant | null>(
+    props.merchant || props.initialMerchant || null
+  );
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (props.slug) {
+      const found = getMerchantBySlug(props.slug);
+      if (found) {
+        setMerchant(found);
+      }
+    }
+    const handleUpdate = () => {
+      if (props.slug) {
+        const found = getMerchantBySlug(props.slug);
+        if (found) setMerchant(found);
+      }
+    };
+    window.addEventListener("merchants_updated", handleUpdate);
+    return () => window.removeEventListener("merchants_updated", handleUpdate);
+  }, [props.slug]);
+
+  if (!merchant) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-black dark:text-white flex flex-col justify-between">
+        <div className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08]">
+          <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+            <Link
+              href="/"
+              className="flex items-center gap-0.5 text-xs font-bold text-brand ios-press p-1.5 -ml-2 rounded-full hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
+            >
+              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ThemeToggle />
+          </div>
+        </div>
+
+        <div className="max-w-md mx-auto px-4 py-16 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-400 mx-auto flex items-center justify-center">
+            <Store className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-xl font-extrabold tracking-tight">Dükkan Bulunamadı</h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Aradığınız esnaf profili henüz onay sürecinde olabilir veya taşınmış olabilir.
+            </p>
+          </div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-brand text-white text-xs font-bold shadow-sm ios-press"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Mahalle Esnaflarına Dön</span>
+          </Link>
+        </div>
+
+        <div className="p-4 text-center text-xs text-zinc-400">Esnafça Platformu</div>
+      </div>
+    );
+  }
+
   const defaultWhatsAppUrl = generateWhatsAppUrl(merchant);
+  const isPlus = merchant.tier === "plus";
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${merchant.name} ${merchant.address}`
@@ -58,42 +124,34 @@ export function MerchantDetailClient({ merchant }: MerchantDetailClientProps) {
           </Link>
 
           <div className="flex items-center gap-1.5">
-            <ThemeToggle />
-
-            <button
-              onClick={() => setIsQrModalOpen(true)}
-              className="p-2 rounded-full bg-black/[0.05] dark:bg-white/[0.08] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-black dark:text-white text-xs font-bold flex items-center gap-1.5 ios-press"
-              title="Dükkan Karekodu"
-            >
-              <QrCode className="w-4 h-4 text-brand" />
-              <span className="hidden sm:inline">Cam Karekodu</span>
-            </button>
-
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="p-2 rounded-full bg-black/[0.05] dark:bg-white/[0.08] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-black dark:text-white ios-press flex items-center gap-1"
-              title="Paylaş"
+              className="p-2 rounded-full bg-black/[0.04] dark:bg-white/[0.08] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-black dark:text-white text-xs font-semibold flex items-center gap-1 ios-press transition-colors"
+              title="Dükkanı Paylaş"
             >
               <Share2 className="w-4 h-4" />
             </button>
+            <ThemeToggle />
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
-        {/* Apple Maps Place Hero Container */}
-        <div className="bg-white dark:bg-[#1C1C1E] rounded-ios-card border border-black/[0.04] dark:border-white/[0.08] shadow-ios-card overflow-hidden">
-          <div className="relative h-48 sm:h-64 w-full bg-zinc-900">
+        {/* Apple Maps Hero Media Card */}
+        <div className="rounded-3xl overflow-hidden bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
+          {/* Hero Image Window */}
+          <div className="relative h-64 sm:h-80 w-full bg-zinc-900">
             <img
               src={merchant.heroImage}
               alt={merchant.name}
-              className="w-full h-full object-cover opacity-90"
+              className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
 
-            <div className="absolute top-3 left-3 flex gap-2">
-              {merchant.tier === "plus" ? (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-md">
+            {/* Top Badges */}
+            <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+              {isPlus ? (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-amber-500 text-white shadow-md">
                   <Crown className="w-3.5 h-3.5 fill-white" />
                   Plus Usta
                 </span>
@@ -102,234 +160,132 @@ export function MerchantDetailClient({ merchant }: MerchantDetailClientProps) {
                   <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   Doğrulanmış Esnaf
                 </span>
-              ) : null}
+              ) : <div />}
+
+              <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-xs font-bold shadow-sm">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span>{merchant.rating}</span>
+                <span className="text-white/70 font-normal text-[11px]">({merchant.reviewCount} Değerlendirme)</span>
+              </div>
             </div>
 
+            {/* Bottom Title on Hero */}
             <div className="absolute bottom-4 left-4 right-4 text-white space-y-1">
-              <span className="text-xs font-medium text-white/80">
-                {merchant.masterName} · {merchant.experienceYears} Yıl Deneyim
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand block drop-shadow-xs">
+                {merchant.craftTitle}
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight drop-shadow-md">
                 {merchant.name}
               </h1>
+              <p className="text-xs text-white/90 font-medium flex items-center gap-1.5 drop-shadow-xs">
+                <span>Usta: <strong>{merchant.masterName}</strong></span>
+                <span>·</span>
+                <span>{merchant.experienceYears} Yıl Deneyim</span>
+              </p>
             </div>
           </div>
 
-          {/* Quick Apple Place Action Circles */}
-          <div className="p-4 border-b border-black/[0.04] dark:border-white/[0.06] grid grid-cols-3 gap-2">
-            <a
-              href={`tel:${merchant.phone}`}
-              className="p-3 rounded-ios bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex flex-col items-center justify-center gap-1 text-center ios-press transition-colors"
-            >
-              <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span className="text-[11px] font-bold text-black dark:text-white">Ara</span>
-            </a>
-
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3 rounded-ios bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex flex-col items-center justify-center gap-1 text-center ios-press transition-colors"
-            >
-              <Navigation className="w-5 h-5 text-brand" />
-              <span className="text-[11px] font-bold text-black dark:text-white">Yol Tarifi</span>
-            </a>
-
-            <button
-              onClick={() => setIsQrModalOpen(true)}
-              className="p-3 rounded-ios bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex flex-col items-center justify-center gap-1 text-center ios-press transition-colors"
-            >
-              <QrCode className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-[11px] font-bold text-black dark:text-white">Vitrin QR</span>
-            </button>
-          </div>
-
-          {/* Place Information Inset */}
-          <div className="p-4 sm:p-5 space-y-4">
-            {/* Address */}
-            <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-              <MapPin className="w-4 h-4 text-brand shrink-0" />
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">{merchant.address}</span>
-            </div>
-
-            {/* Transparent Price Callout */}
-            <div className="p-3.5 rounded-ios bg-zinc-100/80 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-black dark:text-white">
-                  <Tag className="w-3.5 h-3.5 text-brand" />
-                  <span>Şeffaf Fiyat Aralığı</span>
-                </div>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Standart işlemler için geçerlidir.</span>
+          {/* Quick Info & Action Bar */}
+          <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.04] dark:border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${merchant.isOpenNow ? "bg-emerald-500 animate-pulse" : "bg-zinc-400"}`} />
+                <span className="text-xs font-bold text-black dark:text-white">
+                  {merchant.isOpenNow ? "Şu An Açık" : "Şu An Kapalı"}
+                </span>
               </div>
-              <span className="text-lg font-extrabold text-black dark:text-white tracking-tight">
-                {merchant.minPrice} ₺ - {merchant.maxPrice} ₺
+              <span className="text-zinc-300 dark:text-zinc-700">|</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                {merchant.workingHours.weekdays}
               </span>
             </div>
 
-            {/* Bio & Specialties */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Hakkında</span>
-              <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">{merchant.bio}</p>
-              
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {merchant.specialties.map((spec) => (
-                  <span
-                    key={spec}
-                    className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                  >
-                    {spec}
-                  </span>
-                ))}
-              </div>
+            {/* Action Buttons (Directions + QR Kit) */}
+            <div className="flex items-center gap-2">
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-black dark:text-white text-xs font-bold flex items-center gap-1.5 ios-press transition-colors"
+              >
+                <Navigation className="w-3.5 h-3.5 text-brand" />
+                <span>Yol Tarifi</span>
+              </a>
+
+              <button
+                onClick={() => setIsQrModalOpen(true)}
+                className="px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-black dark:text-white text-xs font-bold flex items-center gap-1.5 ios-press transition-colors"
+              >
+                <QrCode className="w-3.5 h-3.5 text-black dark:text-white" />
+                <span>Vitrin Karekodu</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Location & Bio Bar */}
+          <div className="p-4 sm:p-5 space-y-3">
+            <div className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+              <MapPin className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+              <span>{merchant.address} ({merchant.neighborhood}, {merchant.district} / {merchant.city})</span>
             </div>
 
-            {/* Working Hours */}
-            <div className="p-3 rounded-ios bg-zinc-50 dark:bg-[#18181a] border border-black/[0.04] dark:border-white/[0.06] flex items-start gap-2.5 text-xs">
-              <Clock className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full text-zinc-700 dark:text-zinc-300">
-                <div>
-                  <span className="font-bold block text-black dark:text-white">Hafta İçi:</span>
-                  <span>{merchant.workingHours.weekdays}</span>
-                </div>
-                <div>
-                  <span className="font-bold block text-black dark:text-white">Cumartesi:</span>
-                  <span>{merchant.workingHours.saturday}</span>
-                </div>
-                <div>
-                  <span className="font-bold block text-black dark:text-white">Pazar:</span>
-                  <span>{merchant.workingHours.sunday}</span>
-                </div>
-              </div>
+            {merchant.bio && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-normal pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                {merchant.bio}
+              </p>
+            )}
+
+            {/* Specialties Badges */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {merchant.specialties.map((spec) => (
+                <span
+                  key={spec}
+                  className="text-xs font-medium px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
+                >
+                  {spec}
+                </span>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Section: Transparent Price Menu */}
-        <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-extrabold text-black dark:text-white">
-              Şeffaf Hizmet & Fiyat Menüsü
-            </h2>
-            <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium">
-              {merchant.services.length} Hizmet
+        {/* 2. Transparent Price Menu Component */}
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-bold text-brand uppercase tracking-wider block">
+                Şeffaf Fiyat Listesi
+              </span>
+              <h2 className="text-base font-extrabold text-black dark:text-white">
+                İşlem ve Hizmet Tarifesi
+              </h2>
+            </div>
+            <span className="text-xs font-extrabold text-zinc-700 dark:text-zinc-300">
+              {merchant.minPrice} ₺ - {merchant.maxPrice} ₺
             </span>
           </div>
 
-          <PriceMenuList merchant={merchant} />
+          <PriceMenuList
+            services={merchant.services}
+            merchant={merchant}
+          />
+        </div>
 
-          {/* Legal Price Disclaimer Callout */}
-          <div className="p-3 rounded-ios bg-zinc-200/50 dark:bg-zinc-800/50 border border-black/[0.04] dark:border-white/[0.06] flex items-start gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
-            <AlertCircle className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
-            <p className="leading-relaxed">
-              Fiyatlar esnaf tarafından bildirilen tahmini gösterge aralıklarıdır. Malzeme ve işçilik durumuna göre kesin fiyat ustanızla görüşülerek belirlenir.
+        {/* 3. Usta Claim / Portal Link Callout */}
+        <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="space-y-0.5">
+            <span className="font-bold text-black dark:text-white">Bu dükkan sizin mi?</span>
+            <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+              Fiyatlarınızı güncellemek ve vitrin kitinizi yönetmek için dükkan paneline bağlanın.
             </p>
           </div>
-        </div>
 
-        {/* Section: Google Maps Verified Reviews */}
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between px-1">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5">
-                <h2 className="text-sm font-extrabold text-black dark:text-white">
-                  Müşteri Değerlendirmeleri
-                </h2>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200 dark:border-blue-800">
-                  Google Doğrulamalı
-                </span>
-              </div>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
-                Doğrulanmış mahalle sakinlerinin Google Haritalar yorumları.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-1 text-xs font-extrabold text-black dark:text-white bg-white dark:bg-[#1C1C1E] px-2.5 py-1 rounded-full border border-black/[0.06] dark:border-white/[0.08] shadow-xs">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span>{merchant.rating}</span>
-              <span className="text-zinc-400 dark:text-zinc-500 font-normal text-[11px]">({merchant.reviewCount})</span>
-            </div>
-          </div>
-
-          {/* Review Cards */}
-          <div className="space-y-2">
-            {merchant.reviews.map((rev) => (
-              <div
-                key={rev.id}
-                className="p-4 rounded-ios bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.08] shadow-sm space-y-1.5"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-xs text-black dark:text-white">{rev.author}</span>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500">· {rev.date}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
-                  "{rev.comment}"
-                </p>
-                {rev.tags && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {rev.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* 100% Free Google Maps Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] shadow-xs text-black dark:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all ios-press text-center"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-              <span>Google'daki Tüm Yorumları Oku ({merchant.reviewCount})</span>
-            </a>
-
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/50 text-blue-900 dark:text-blue-200 text-xs font-bold flex items-center justify-center gap-2 transition-all ios-press text-center"
-            >
-              <PenLine className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-              <span>Google'da Ustayla İlgili Yorum Yaz</span>
-            </a>
-          </div>
-        </div>
-
-        {/* Legal Notice & Takedown Footer */}
-        <div className="pt-4 pb-2 text-center space-y-2">
-          <div className="flex items-center justify-center gap-3 text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
-            <a
-              href={claimShopUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-black dark:hover:text-white underline underline-offset-2"
-            >
-              Bu Dükkan Benim (Sahiplen / Güncelle)
-            </a>
-            <span>·</span>
-            <Link
-              href="/gizlilik-ve-kosullar"
-              className="hover:text-black dark:hover:text-white underline underline-offset-2"
-            >
-              KVKK & Kullanım Şartları
-            </Link>
-          </div>
+          <Link
+            href={`/dukkanim?phone=${encodeURIComponent(merchant.phone)}`}
+            className="px-4 py-2 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs font-bold shrink-0 text-center ios-press"
+          >
+            Dükkanımı Yönet →
+          </Link>
         </div>
       </div>
 

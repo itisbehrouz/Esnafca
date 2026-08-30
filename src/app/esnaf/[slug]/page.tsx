@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { MERCHANTS } from "@/data/seed-merchants";
 import { MerchantDetailClient } from "./MerchantDetailClient";
 
@@ -13,7 +12,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!merchant) {
     return {
-      title: "Esnaf Bulunamadı - Esnafça",
+      title: "Esnaf Profili - Esnafça",
+      description: "Doğrulanmış mahalle esnafı ve şeffaf fiyat tarifesi.",
     };
   }
 
@@ -50,61 +50,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MerchantDetailPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const merchant = MERCHANTS.find((m) => m.slug === resolvedParams.slug);
-
-  if (!merchant) {
-    notFound();
-  }
-
-  // Schema.org JSON-LD Structured Data for Google Rich Snippets
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    name: merchant.name,
-    image: merchant.heroImage,
-    telephone: merchant.phone,
-    priceRange: `${merchant.minPrice} TRY - ${merchant.maxPrice} TRY`,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: merchant.address,
-      addressLocality: merchant.district,
-      addressRegion: merchant.city,
-      addressCountry: "TR",
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: "41.0082",
-      longitude: "28.9784",
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: merchant.rating.toString(),
-      reviewCount: merchant.reviewCount.toString(),
-    },
-    hasOfferCatalog: {
-      "@type": "OfferCatalog",
-      name: "Şeffaf Hizmet & Fiyat Menüsü",
-      itemListElement: merchant.services.map((s, idx) => ({
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: s.name,
-          description: s.description,
-        },
-        price: s.minPrice,
-        priceCurrency: "TRY",
-        position: idx + 1,
-      })),
-    },
-  };
+  const initialMerchant = MERCHANTS.find((m) => m.slug === resolvedParams.slug) || null;
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <MerchantDetailClient merchant={merchant} />
-    </>
+    <MerchantDetailClient
+      slug={resolvedParams.slug}
+      initialMerchant={initialMerchant}
+    />
   );
 }

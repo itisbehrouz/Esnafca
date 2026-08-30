@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, MapPin, Building2, ShieldCheck, ChevronRight } from "lucide-react";
 import { CITIES } from "@/data/cities";
-import { MERCHANTS } from "@/data/seed-merchants";
+import { getAllMerchants } from "@/lib/merchant-store";
+import { MERCHANTS as INITIAL_MERCHANTS } from "@/data/seed-merchants";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { Merchant } from "@/types";
 
 export default function NeighborhoodPage() {
+  const [merchants, setMerchants] = useState<Merchant[]>(INITIAL_MERCHANTS);
   const [selectedCity, setSelectedCity] = useState<string>("İstanbul");
+
+  useEffect(() => {
+    setMerchants(getAllMerchants());
+    const handleUpdate = () => setMerchants(getAllMerchants());
+    window.addEventListener("merchants_updated", handleUpdate);
+    return () => window.removeEventListener("merchants_updated", handleUpdate);
+  }, []);
 
   const currentCityObj = CITIES.find((c) => c.name === selectedCity) || CITIES[0];
 
@@ -61,7 +71,7 @@ export default function NeighborhoodPage() {
                   ? "bg-white/20 dark:bg-black/20 text-white dark:text-black" 
                   : "bg-black/[0.06] dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-400"
               }`}>
-                {MERCHANTS.filter((m) => m.city === c.name).length}
+                {merchants.filter((m) => m.city === c.name).length}
               </span>
             </button>
           ))}
@@ -81,7 +91,7 @@ export default function NeighborhoodPage() {
 
           <div className="space-y-3">
             {currentCityObj.districts.map((dist) => {
-              const districtMerchants = MERCHANTS.filter(
+              const districtMerchants = merchants.filter(
                 (m) => m.city === selectedCity && m.district === dist.name
               );
 
@@ -101,7 +111,7 @@ export default function NeighborhoodPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-0.5">
                     {dist.neighborhoods.map((nh) => {
-                      const nhMerchants = MERCHANTS.filter(
+                      const nhMerchants = merchants.filter(
                         (m) =>
                           m.city === selectedCity &&
                           m.district === dist.name &&

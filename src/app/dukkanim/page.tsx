@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
   Store, 
@@ -18,9 +19,19 @@ import {
   ArrowRight,
   LogOut,
   ShieldCheck,
-  Check
+  Check,
+  AlertCircle,
+  Clock
 } from "lucide-react";
-import { getAllMerchants, updateMerchant } from "@/lib/merchant-store";
+import { 
+  getAllMerchants, 
+  updateMerchant, 
+  findMerchantByPhone, 
+  findPendingApplicationByPhone,
+  approveApplication,
+  getPendingApplications,
+  MerchantApplication 
+} from "@/lib/merchant-store";
 import { Merchant, ServiceItem } from "@/types";
 import { QrWindowModal } from "@/components/merchant/QrWindowModal";
 import { EsnafcaLogo } from "@/components/brand/EsnafcaLogo";
@@ -29,7 +40,8 @@ import { formatPhoneNumber } from "@/lib/utils";
 
 const AUTH_MERCHANT_KEY = "esnafca_logged_in_merchant_id";
 
-export default function MerchantPortalPage() {
+function MerchantPortalContent() {
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [activeMerchant, setActiveMerchant] = useState<Merchant | null>(null);
@@ -40,6 +52,7 @@ export default function MerchantPortalPage() {
   const [otpInput, setOtpInput] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [pendingNotice, setPendingNotice] = useState<MerchantApplication | null>(null);
 
   // Editable Dashboard Form State
   const [isOpen, setIsOpen] = useState(true);
@@ -66,9 +79,16 @@ export default function MerchantPortalPage() {
   useEffect(() => {
     setMounted(true);
     loadData();
+
+    // Check URL phone parameter
+    const phoneFromUrl = searchParams.get("phone");
+    if (phoneFromUrl) {
+      setPhoneInput(formatPhoneNumber(phoneFromUrl));
+    }
+
     window.addEventListener("merchants_updated", loadData);
     return () => window.removeEventListener("merchants_updated", loadData);
-  }, []);
+  }, [searchParams]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -79,19 +99,40 @@ export default function MerchantPortalPage() {
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
+    setPendingNotice(null);
 
     const cleanPhone = phoneInput.replace(/\D/g, "");
     if (cleanPhone.length < 10) {
-      setLoginError("Lütfen geçerli bir 10 haneli telefon numarası girin.");
+      setLoginError("Lütfen geçerli bir telefon numarası giriniz (Örn: 0532 123 45 67).");
       return;
     }
 
-    setIsSendingOtp(true);
-    setTimeout(() => {
-      setIsSendingOtp(false);
-      setLoginStep("otp");
-      setOtpInput("123456"); // Pre-filled test code for convenience
-    }, 600);
+    // Check if merchant exists in live directory
+    const liveMerchant = findMerchantByPhone(cleanPhone);
+    if (liveMerchant) {
+      setIsSendingOtp(true);
+      setTimeout(() => {
+        setIsSendingOtp(false);
+        setLoginStep("otp");
+        setOtpInput("123456");
+      }, 500);
+      return;
+    }
+
+    // Check if merchant is in pending applications
+    const pending = findPendingApplicationByPhone(cleanPhone);
+    if (pending) {
+      setPendingNotice(pending);
+      setIsSendingOtp(true);
+      setTimeout(() => {
+        setIsSendingOtp(false);
+        setLoginStep("otp");
+        setOtpInput("123456");
+      }, 500);
+      return;
+    }
+
+    setLoginError("Bu telefon numarasına ait bir dükkan kaydı bulunamadı. Lütfen önce 'Esnaf Ol' sayfasından dükkanınızı ekleyin.");
   };
 
   // 2. OTP Verification -> Login
@@ -104,21 +145,34 @@ export default function MerchantPortalPage() {
       return;
     }
 
-    // Match merchant by phone or pick the first matching / fallback
     const cleanPhone = phoneInput.replace(/\D/g, "");
-    const matched = merchants.find(
-      (m) =>
-        m.phone.replace(/\D/g, "").includes(cleanPhone) ||
-        m.whatsapp.includes(cleanPhone)
-    ) || merchants[0]; // Fallback for testing
 
-    if (matched) {
-      localStorage.setItem(AUTH_MERCHANT_KEY, matched.id);
-      setActiveMerchant(matched);
-      setIsOpen(matched.isOpenNow);
-      setServices([...matched.services]);
-      showToast(`Hoş geldiniz, ${matched.masterName}!`);
+    // 1. Check live merchants
+    const liveMerchant = findMerchantByPhone(cleanPhone);
+    if (liveMerchant) {
+      localStorage.setItem(AUTH_MERCHANT_KEY, liveMerchant.id);
+      setActiveMerchant(liveMerchant);
+      setIsOpen(liveMerchant.isOpenNow);
+      setServices([...liveMerchant.services]);
+      showToast(`Hoş geldiniz, ${liveMerchant.masterName}!`);
+      return;
     }
+
+    // 2. Check pending applications & approve into live
+    const pending = findPendingApplicationByPhone(cleanPhone);
+    if (pending) {
+      const newlyApproved = approveApplication(pending.id);
+      if (newlyApproved) {
+        localStorage.setItem(AUTH_MERCHANT_KEY, newlyApproved.id);
+        setActiveMerchant(newlyApproved);
+        setIsOpen(newlyApproved.isOpenNow);
+        setServices([...newlyApproved.services]);
+        showToast(`Tebrikler! ${newlyApproved.name} canlıya alındı ve giriş yapıldı.`);
+        return;
+      }
+    }
+
+    setLoginError("Dükkan kaydına erişilemedi.");
   };
 
   // 1-Tap Fast Demo Login Selector
@@ -137,6 +191,7 @@ export default function MerchantPortalPage() {
     setLoginStep("phone");
     setPhoneInput("");
     setOtpInput("");
+    setPendingNotice(null);
     showToast("Oturum kapatıldı.");
   };
 
@@ -148,39 +203,53 @@ export default function MerchantPortalPage() {
     showToast(newStatus ? "Dükkanınız AÇIK olarak güncellendi." : "Dükkanınız İZİNLİ/KAPALI olarak güncellendi.");
   };
 
+  const handlePriceChange = (serviceId: string, field: "minPrice" | "maxPrice", value: string) => {
+    const num = Number(value) || 0;
+    const updated = services.map((s) => (s.id === serviceId ? { ...s, [field]: num } : s));
+    setServices(updated);
+  };
+
+  const handleServiceNameChange = (serviceId: string, value: string) => {
+    const updated = services.map((s) => (s.id === serviceId ? { ...s, name: value } : s));
+    setServices(updated);
+  };
+
   const handleAddService = () => {
-    const newSrv: ServiceItem = {
+    const newService: ServiceItem = {
       id: `srv-${Date.now()}`,
       name: "Yeni Hizmet",
-      minPrice: 150,
-      maxPrice: 250,
-      popular: false,
+      minPrice: 100,
+      maxPrice: 200,
     };
-    setServices([...services, newSrv]);
+    setServices([...services, newService]);
   };
 
-  const handleRemoveService = (index: number) => {
-    const updated = services.filter((_, i) => i !== index);
-    setServices(updated);
+  const handleDeleteService = (serviceId: string) => {
+    if (services.length <= 1) {
+      showToast("Dükkanınızda en az 1 hizmet listelenmelidir.");
+      return;
+    }
+    setServices(services.filter((s) => s.id !== serviceId));
   };
 
-  const handleServiceChange = (index: number, field: keyof ServiceItem, value: any) => {
-    const updated = [...services];
-    updated[index] = { ...updated[index], [field]: value };
-    setServices(updated);
-  };
-
-  const handleSavePriceMenu = () => {
+  const handleSaveServices = () => {
     if (!activeMerchant) return;
-    const minP = Math.min(...services.map((s) => Number(s.minPrice) || 0));
-    const maxP = Math.max(...services.map((s) => Number(s.maxPrice) || Number(s.minPrice) || 0));
+    const minPrices = services.map((s) => s.minPrice);
+    const maxPrices = services.map((s) => s.maxPrice || s.minPrice);
 
-    updateMerchant(activeMerchant.id, {
-      services,
-      minPrice: minP > 0 ? minP : activeMerchant.minPrice,
-      maxPrice: maxP > 0 ? maxP : activeMerchant.maxPrice,
+    const minPrice = minPrices.length > 0 ? Math.min(...minPrices) : 100;
+    const maxPrice = maxPrices.length > 0 ? Math.max(...maxPrices) : 500;
+
+    const updated = updateMerchant(activeMerchant.id, {
+      services: services,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
     });
-    showToast("Şeffaf fiyat menünüz başarıyla kaydedildi!");
+
+    if (updated) {
+      setActiveMerchant(updated);
+      showToast("Fiyat menünüz anında güncellendi ve canlıya alındı!");
+    }
   };
 
   if (!mounted) {
@@ -188,7 +257,7 @@ export default function MerchantPortalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-28 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
@@ -198,47 +267,64 @@ export default function MerchantPortalPage() {
       )}
 
       {/* ======================================================== */}
-      {/* 1. LOGIN SCREEN (When Not Authenticated)                 */}
+      {/* 1. UNAUTHENTICATED: LOGIN / ACTIVATION GATEWAY           */}
       {/* ======================================================== */}
       {!activeMerchant ? (
-        <div className="min-h-screen flex flex-col justify-center items-center px-4 py-8" suppressHydrationWarning>
-          <div className="max-w-sm w-full space-y-4" suppressHydrationWarning>
-            {/* Brand Logo & Intro */}
+        <div className="min-h-screen flex flex-col justify-between" suppressHydrationWarning>
+          <div className="max-w-md w-full mx-auto px-4 py-8 space-y-6" suppressHydrationWarning>
+            {/* Header / Brand */}
             <div className="text-center space-y-2">
               <div className="flex justify-center pb-1">
-                <EsnafcaLogo size={52} variant="icon" />
+                <EsnafcaLogo size="md" />
               </div>
-              <h1 className="text-xl font-extrabold text-black dark:text-white tracking-tight">
-                Dükkanım Paneline Giriş
+              <h1 className="text-xl sm:text-2xl font-extrabold text-black dark:text-white tracking-tight">
+                Esnaf Yönetim Portalı
               </h1>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
-                Şifresiz, tek kullanımlık WhatsApp onay koduyla dükkanınızı yönetin.
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                Dükkanınızın canlı fiyat menüsünü düzenleyin, açık/kapalı durumunuzu değiştirin, vitrin karekodunuzu yazdırın.
               </p>
             </div>
 
-            {/* Apple Style Login Card */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-4" suppressHydrationWarning>
+            {/* Login Card */}
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-sm space-y-4" suppressHydrationWarning>
               {loginError && (
-                <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold text-center">
-                  {loginError}
+                <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span>{loginError}</span>
+                    <div className="pt-1">
+                      <Link href="/esnaf-ekle" className="text-brand underline font-bold block">
+                        Dükkanınızı Eklemek İçin Tıklayın →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {pendingNotice && (
+                <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-medium space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Başvurunuz Onay Sürecinde</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed">
+                    <strong>{pendingNotice.name}</strong> başvurunuz alındı. Giriş kodunu (123456) girerek hemen panele bağlanabilirsiniz.
+                  </p>
                 </div>
               )}
 
               {loginStep === "phone" ? (
                 /* Step 1: Phone Number */
                 <form onSubmit={handleSendOtp} className="space-y-3" suppressHydrationWarning>
-                  <div suppressHydrationWarning>
-                    <label className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 block pb-1">
-                      Kayıtlı WhatsApp / Cep Telefonu:
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                      Dükkan / WhatsApp Telefon Numaranız:
                     </label>
-                    <div className="relative flex items-center" suppressHydrationWarning>
+                    <div className="relative flex items-center">
                       <Phone className="absolute left-3.5 w-4 h-4 text-zinc-400 pointer-events-none" />
                       <input
                         type="tel"
                         autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck="false"
                         data-form-type="other"
                         data-lpignore="true"
                         suppressHydrationWarning
@@ -282,9 +368,6 @@ export default function MerchantPortalPage() {
                       type="text"
                       maxLength={6}
                       autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
                       data-form-type="other"
                       data-lpignore="true"
                       suppressHydrationWarning
@@ -309,33 +392,38 @@ export default function MerchantPortalPage() {
               )}
             </div>
 
-            {/* Fast Demo Accounts */}
+            {/* Fast Demo Accounts Selector */}
             <div className="space-y-2 pt-2 text-center" suppressHydrationWarning>
               <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
                 Hızlı Test Hesabı Seçin:
               </span>
               <div className="grid grid-cols-1 gap-1.5">
-                {merchants.slice(0, 3).map((m) => (
+                {merchants.slice(0, 4).map((m) => (
                   <button
                     key={m.id}
                     onClick={() => handleFastDemoLogin(m)}
-                    className="p-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between ios-press shadow-2xs"
+                    className="p-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] hover:border-black/20 dark:hover:border-white/20 flex items-center justify-between text-left ios-press shadow-xs"
                   >
-                    <div className="text-left">
-                      <span className="block text-black dark:text-white">{m.name}</span>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-normal">{m.masterName} · {m.district}</span>
+                    <div>
+                      <span className="text-xs font-bold text-black dark:text-white block">{m.name}</span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                        {m.masterName} · {m.district} / {m.city}
+                      </span>
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                    <span className="text-[10px] font-extrabold text-brand">Hemen Gir →</span>
                   </button>
                 ))}
               </div>
-            </div>
 
-            <div className="flex items-center justify-center gap-4 pt-2">
-              <Link href="/" className="text-xs font-bold text-zinc-500 hover:text-black dark:hover:text-white">
-                ← Ana Sayfaya Dön
-              </Link>
-              <ThemeToggle />
+              <div className="pt-3">
+                <Link
+                  href="/esnaf-ekle"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-brand hover:underline"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Yeni Bir Dükkan Kaydetmek İstiyorum</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -356,12 +444,16 @@ export default function MerchantPortalPage() {
                 </Link>
               </div>
 
-              {/* Master / Shop Identity + Theme Toggle + Logout */}
+              {/* Master / Shop Identity + Theme Toggle + View Live + Logout */}
               <div className="flex items-center gap-2">
-                <div className="hidden sm:block text-right">
-                  <span className="text-xs font-extrabold text-black dark:text-white block leading-none">{activeMerchant.name}</span>
-                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">{activeMerchant.masterName}</span>
-                </div>
+                <Link
+                  href={`/esnaf/${activeMerchant.slug}`}
+                  target="_blank"
+                  className="text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-black dark:hover:text-white px-2.5 py-1.5 rounded-full hover:bg-black/[0.04] dark:hover:bg-white/[0.08] ios-press flex items-center gap-1"
+                >
+                  <span className="hidden sm:inline">Vitrini Gör</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Link>
 
                 <ThemeToggle />
 
@@ -405,108 +497,95 @@ export default function MerchantPortalPage() {
               </button>
             </div>
 
-            {/* 2. Mini Performans Kartları (KPI) */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
-                  <span className="hidden sm:inline">WhatsApp Talebi</span>
-                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            {/* 2. Dükkan Künyesi & Konum Özeti */}
+            <div className="p-4 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-extrabold text-black dark:text-white">{activeMerchant.name}</h3>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                    {activeMerchant.masterName} · {activeMerchant.experienceYears} Yıl Deneyim
+                  </span>
                 </div>
-                <div className="text-xl font-extrabold text-black dark:text-white">28</div>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium block">Bu Hafta</span>
+
+                {activeMerchant.tier === "plus" ? (
+                  <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                    Plus Usta
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    Doğrulanmış Esnaf
+                  </span>
+                )}
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
-                  <span className="hidden sm:inline">Vitrin Görüntüleme</span>
-                  <Store className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="text-xl font-extrabold text-black dark:text-white">430</div>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium block">Bu Ay</span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-between text-zinc-400 dark:text-zinc-500 text-[11px] font-semibold">
-                  <span className="hidden sm:inline">Cam QR Okutma</span>
-                  <QrCode className="w-3.5 h-3.5 text-brand" />
-                </div>
-                <div className="text-xl font-extrabold text-black dark:text-white">34</div>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium block">Toplam Tarama</span>
+              <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                📍 {activeMerchant.neighborhood}, {activeMerchant.district} / {activeMerchant.city} — {activeMerchant.address}
               </div>
             </div>
 
-            {/* 3. Şeffaf Fiyat Menüsü Düzenleyici (Live In-Place Editor) */}
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
-                <div>
-                  <h3 className="font-extrabold text-base text-black dark:text-white flex items-center gap-1.5">
+            {/* 3. Fiyat Menüsü Düzenleyici */}
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-5 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-extrabold text-black dark:text-white flex items-center gap-1.5">
                     <Tag className="w-4 h-4 text-brand" />
-                    <span>Şeffaf Fiyat Menüsü Düzenleyici</span>
+                    <span>Şeffaf Fiyat Menüsü Düzenle</span>
                   </h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium pt-0.5">
-                    Fiyatlarınızı buradan güncellediğinizde müşteriler doğrudan yeni fiyatları görür.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                    Enflasyon ve maliyet değişikliklerinde fiyatlarınızı dilediğiniz an güncelleyin.
                   </p>
                 </div>
 
-                <Link
-                  href={`/esnaf/${activeMerchant.slug}`}
-                  target="_blank"
-                  className="text-xs font-bold text-brand hover:underline flex items-center gap-1 shrink-0"
+                <button
+                  onClick={handleAddService}
+                  className="px-3 py-1.5 rounded-full bg-brand/10 text-brand hover:bg-brand/20 text-xs font-bold flex items-center gap-1 ios-press shrink-0"
                 >
-                  <span>Profili Gör</span>
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Hizmet Ekle</span>
+                </button>
               </div>
 
-              {/* Service Items Rows */}
-              <div className="space-y-2.5">
-                {services.map((srv, index) => (
-                  <div
-                    key={srv.id || index}
-                    className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
-                  >
+              {/* Service Rows */}
+              <div className="space-y-2 divide-y divide-black/[0.04] dark:divide-white/[0.06]">
+                {services.map((s, idx) => (
+                  <div key={s.id} className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex-1">
-                      <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block pb-0.5">
-                        Hizmet / İşlem Adı
-                      </label>
                       <input
                         type="text"
-                        value={srv.name}
-                        onChange={(e) => handleServiceChange(index, "name", e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.1] text-xs font-bold text-black dark:text-white focus:outline-none"
+                        value={s.name}
+                        onChange={(e) => handleServiceNameChange(s.id, e.target.value)}
+                        placeholder="Hizmet Adı"
+                        className="w-full text-xs font-bold text-black dark:text-white bg-transparent focus:outline-none p-1 border-b border-transparent focus:border-brand"
                       />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block pb-0.5">
-                          Min (₺)
-                        </label>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-xl">
+                        <span className="text-[11px] text-zinc-400 font-medium">Min:</span>
                         <input
                           type="number"
-                          value={srv.minPrice}
-                          onChange={(e) => handleServiceChange(index, "minPrice", Number(e.target.value))}
-                          className="w-20 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.1] text-xs font-bold text-black dark:text-white focus:outline-none"
+                          value={s.minPrice || ""}
+                          onChange={(e) => handlePriceChange(s.id, "minPrice", e.target.value)}
+                          className="w-16 text-xs font-extrabold text-black dark:text-white bg-transparent text-right focus:outline-none"
                         />
+                        <span className="text-xs font-bold text-zinc-500">₺</span>
                       </div>
 
-                      <div>
-                        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block pb-0.5">
-                          Maks (₺)
-                        </label>
+                      <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-xl">
+                        <span className="text-[11px] text-zinc-400 font-medium">Max:</span>
                         <input
                           type="number"
-                          value={srv.maxPrice || srv.minPrice}
-                          onChange={(e) => handleServiceChange(index, "maxPrice", Number(e.target.value))}
-                          className="w-20 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.1] text-xs font-bold text-black dark:text-white focus:outline-none"
+                          value={s.maxPrice || ""}
+                          onChange={(e) => handlePriceChange(s.id, "maxPrice", e.target.value)}
+                          className="w-16 text-xs font-extrabold text-black dark:text-white bg-transparent text-right focus:outline-none"
                         />
+                        <span className="text-xs font-bold text-zinc-500">₺</span>
                       </div>
 
                       <button
-                        type="button"
-                        onClick={() => handleRemoveService(index)}
-                        className="p-2 text-zinc-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors mt-3"
-                        title="Sil"
+                        onClick={() => handleDeleteService(s.id)}
+                        className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                        title="Hizmeti Sil"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -515,42 +594,34 @@ export default function MerchantPortalPage() {
                 ))}
               </div>
 
-              <div className="pt-2 flex items-center justify-between gap-3 border-t border-black/[0.04] dark:border-white/[0.06]">
+              <div className="pt-2">
                 <button
-                  type="button"
-                  onClick={handleAddService}
-                  className="px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold text-black dark:text-white flex items-center gap-1.5 ios-press"
+                  onClick={handleSaveServices}
+                  className="w-full py-3 rounded-full bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm ios-press"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Yeni Hizmet Ekle</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSavePriceMenu}
-                  className="px-5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm ios-press flex items-center gap-1.5"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Fiyatları Canlıya Al</span>
+                  <Check className="w-4 h-4" />
+                  <span>Fiyat Değişikliklerini Canlıya Al</span>
                 </button>
               </div>
             </div>
 
-            {/* 4. Vitrin Karekod Kiti & Çıktı Alma */}
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* 4. Fiziki Karekod Standı & Çıktı */}
+            <div className="p-5 rounded-3xl bg-zinc-900 text-white space-y-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <QrCode className="w-5 h-5 text-brand" />
-                  <h3 className="font-extrabold text-sm text-black dark:text-white">Dükkan Camı Karekod Kiti</h3>
-                </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed max-w-md">
-                  Dükkanınızın vitrinine veya tezgahına asabileceğiniz, müşterilerin doğrudan fiyat menünüzü okutabileceği A4 baskı kiti.
+                <span className="text-[10px] font-bold text-brand uppercase tracking-wider block">
+                  Fiziki Vitrin & Masa Standı
+                </span>
+                <h3 className="text-sm font-extrabold text-white">
+                  Dükkanınıza Özel Karekod Kiti
+                </h3>
+                <p className="text-xs text-zinc-400 font-medium leading-relaxed max-w-md">
+                  Müşterilerinizin tezgahınızda veya camınızda okutabileceği şık Apple formatında şeffaf fiyat karekod kitini görüntüleyin.
                 </p>
               </div>
 
               <button
                 onClick={() => setIsQrModalOpen(true)}
-                className="px-4 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs font-bold flex items-center justify-center gap-1.5 ios-press shadow-xs shrink-0"
+                className="px-4 py-2.5 rounded-full bg-white text-black text-xs font-bold flex items-center justify-center gap-1.5 ios-press shadow-xs shrink-0"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Karekod Kitini Aç & Yazdır</span>
@@ -577,7 +648,7 @@ export default function MerchantPortalPage() {
             </div>
           </main>
 
-          {/* QR Window Modal */}
+          {/* QR Modal Sheet */}
           <QrWindowModal
             isOpen={isQrModalOpen}
             onClose={() => setIsQrModalOpen(false)}
@@ -586,5 +657,13 @@ export default function MerchantPortalPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function MerchantPortalPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F2F2F7] dark:bg-black" />}>
+      <MerchantPortalContent />
+    </Suspense>
   );
 }

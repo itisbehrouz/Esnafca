@@ -9,17 +9,17 @@ import {
   MapPin, 
   ChevronDown
 } from "lucide-react";
-import { MERCHANTS } from "@/data/seed-merchants";
+import { getAllMerchants } from "@/lib/merchant-store";
+import { MERCHANTS as INITIAL_MERCHANTS } from "@/data/seed-merchants";
 import { CATEGORIES } from "@/data/categories";
 import { MerchantCard } from "@/components/merchant/MerchantCard";
 import { Navbar } from "@/components/layout/Navbar";
 import { DistrictSelectorModal } from "@/components/discovery/DistrictSelectorModal";
-import { CategoryId } from "@/types";
+import { CategoryId, Merchant } from "@/types";
 
 const TIER_WEIGHT: Record<string, number> = {
-  vip: 4,
-  pro: 3,
-  vitrin: 2,
+  plus: 3,
+  pro: 2,
   free: 1,
 };
 
@@ -27,6 +27,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const [merchants, setMerchants] = useState<Merchant[]>(INITIAL_MERCHANTS);
   const [selectedCity, setSelectedCity] = useState("Tüm Şehirler");
   const [selectedDistrict, setSelectedDistrict] = useState("Tüm Bölgeler");
   const [selectedNeighborhood, setSelectedNeighborhood] = useState("");
@@ -34,6 +35,16 @@ function HomeContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
+  const loadMerchants = () => {
+    setMerchants(getAllMerchants());
+  };
+
+  useEffect(() => {
+    loadMerchants();
+    window.addEventListener("merchants_updated", loadMerchants);
+    return () => window.removeEventListener("merchants_updated", loadMerchants);
+  }, []);
 
   // Sync with URL query parameters safely on client
   useEffect(() => {
@@ -51,7 +62,7 @@ function HomeContent() {
   }, [searchParams]);
 
   const filteredMerchants = useMemo(() => {
-    const list = MERCHANTS.filter((m) => {
+    const list = merchants.filter((m) => {
       // 1. City Filter
       if (selectedCity !== "Tüm Şehirler" && m.city !== selectedCity) {
         return false;
@@ -93,70 +104,86 @@ function HomeContent() {
       return true;
     });
 
-    // Tier-aware & Alphabetical sort
-    return list.slice().sort((a, b) => {
-      const weightDiff = (TIER_WEIGHT[b.tier] || 1) - (TIER_WEIGHT[a.tier] || 1);
-      if (weightDiff !== 0) return weightDiff;
-      return a.name.localeCompare(b.name, "tr");
+    // Sort: Priority by Tier (Plus -> Pro -> Free) -> Rating -> ReviewCount
+    return [...list].sort((a, b) => {
+      const weightA = TIER_WEIGHT[a.tier] || 0;
+      const weightB = TIER_WEIGHT[b.tier] || 0;
+      if (weightB !== weightA) return weightB - weightA;
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      return b.reviewCount - a.reviewCount;
     });
-  }, [selectedCity, selectedDistrict, selectedNeighborhood, selectedCategory, searchQuery, onlyVerified]);
+  }, [
+    merchants,
+    selectedCity,
+    selectedDistrict,
+    selectedNeighborhood,
+    selectedCategory,
+    onlyVerified,
+    searchQuery,
+  ]);
 
-  const activeLocationLabel = selectedNeighborhood 
-    ? `${selectedCity} · ${selectedNeighborhood}`
-    : selectedDistrict !== "Tüm Bölgeler"
-    ? `${selectedCity} · ${selectedDistrict}`
-    : selectedCity !== "Tüm Şehirler"
-    ? `Tüm ${selectedCity}`
-    : "Tüm Türkiye";
+  const activeLocationLabel = useMemo(() => {
+    if (selectedNeighborhood && selectedDistrict !== "Tüm Bölgeler") {
+      return `${selectedNeighborhood}, ${selectedDistrict}`;
+    }
+    if (selectedDistrict !== "Tüm Bölgeler") {
+      return `${selectedDistrict}, ${selectedCity}`;
+    }
+    if (selectedCity !== "Tüm Şehirler") {
+      return selectedCity;
+    }
+    return "Tüm Türkiye";
+  }, [selectedCity, selectedDistrict, selectedNeighborhood]);
+
+  const clearLocationFilter = () => {
+    setSelectedCity("Tüm Şehirler");
+    setSelectedDistrict("Tüm Bölgeler");
+    setSelectedNeighborhood("");
+  };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black transition-colors duration-200">
-      {/* Apple Clean Navbar */}
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-28 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
       <Navbar />
 
-      <main className="max-w-4xl mx-auto px-4 py-3 sm:py-4 space-y-3">
-        {/* Single Ultra-Sleek Apple Spotlight Search & Location Bar */}
-        <div className="relative flex items-center bg-white dark:bg-[#1C1C1E] rounded-2xl border border-black/[0.06] dark:border-white/[0.08] apple-card-shadow p-1.5 pl-3.5 gap-2 transition-colors">
-          <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
-          <input
-            type="search"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck="false"
-            data-form-type="other"
-            data-lpignore="true"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Usta, işlem veya zanaat arayın..."
-            className="w-full bg-transparent border-none text-xs sm:text-sm font-medium text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
-          />
+      <main className="max-w-6xl mx-auto px-4 pt-3 space-y-3">
+        {/* Apple Spotlight Search + Dynamic Location Trigger */}
+        <div className="flex items-center gap-2">
+          {/* Search Input Bar */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+            <input
+              type="text"
+              autoComplete="off"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Usta, işlem veya zanaat arayın..."
+              className="w-full pl-10 pr-9 py-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] text-sm text-black dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 transition-all shadow-2xs"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-          {searchQuery ? (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="p-1.5 text-zinc-400 hover:text-black dark:hover:text-white ios-press shrink-0 mr-1"
-            >
-              <X className="w-4 h-4 stroke-[2.5]" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsLocationModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold text-black dark:text-white shrink-0 transition-colors ios-press"
-              title="Konumu Değiştir"
-            >
-              <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
-              <span className="max-w-[110px] sm:max-w-[160px] truncate">{activeLocationLabel}</span>
-              <ChevronDown className="w-3 h-3 text-zinc-400 shrink-0" />
-            </button>
-          )}
+          {/* Location Trigger Pill Button */}
+          <button
+            type="button"
+            onClick={() => setIsLocationModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all shadow-2xs shrink-0 text-xs font-bold text-black dark:text-white ios-press"
+          >
+            <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
+            <span className="max-w-[130px] sm:max-w-[200px] truncate">{activeLocationLabel}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+          </button>
         </div>
 
-        {/* Category Strip & Verified Filter */}
+        {/* Categories Horizontal Carousel */}
         <div className="space-y-2">
-          {/* Horizontal Category Carousel */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
             <button
               type="button"
@@ -167,12 +194,12 @@ function HomeContent() {
                   : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
-              Tümü ({MERCHANTS.length})
+              Tümü ({merchants.length})
             </button>
 
             {CATEGORIES.map((cat) => {
               const isCatActive = selectedCategory === cat.id;
-              const catCount = MERCHANTS.filter(m => m.category === cat.id).length;
+              const catCount = merchants.filter(m => m.category === cat.id).length;
 
               return (
                 <button
@@ -211,7 +238,7 @@ function HomeContent() {
               <span>Doğrulanmış Esnaf</span>
             </button>
 
-            <span className="text-zinc-500 dark:text-zinc-400 font-bold text-xs">
+            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500">
               {filteredMerchants.length} Usta
             </span>
           </div>
@@ -219,32 +246,31 @@ function HomeContent() {
 
         {/* Merchant Cards Grid */}
         {filteredMerchants.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
             {filteredMerchants.map((merchant) => (
               <MerchantCard key={merchant.id} merchant={merchant} />
             ))}
           </div>
         ) : (
-          <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-8 text-center space-y-3 apple-card-shadow">
-            <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 mx-auto flex items-center justify-center">
-              <MapPin className="w-6 h-6" />
+          <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-10 text-center space-y-4 shadow-xs mt-4">
+            <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 mx-auto flex items-center justify-center">
+              <Search className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-black dark:text-white text-sm">
-              Aradığınız kriterde esnaf bulunamadı
-            </h3>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 max-w-sm mx-auto">
-              Seçtiğiniz şehri veya filtreleri sıfırlayabilirsiniz.
-            </p>
+            <div className="space-y-1">
+              <h3 className="text-base font-extrabold text-black dark:text-white">
+                Bu kriterlere uygun esnaf bulunamadı
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
+                Konum filtrenizi genişletebilir veya arama teriminizi değiştirebilirsiniz.
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => {
-                setSelectedCity("Tüm Şehirler");
-                setSelectedDistrict("Tüm Bölgeler");
-                setSelectedNeighborhood("");
+                clearLocationFilter();
                 setSelectedCategory("all");
                 setSearchQuery("");
                 setOnlyVerified(false);
-                router.push("/");
               }}
               className="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs font-bold ios-press shadow-xs"
             >
@@ -254,17 +280,17 @@ function HomeContent() {
         )}
       </main>
 
-      {/* District Selector Modal */}
+      {/* District & City Selector Modal */}
       <DistrictSelectorModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         selectedCity={selectedCity}
         selectedDistrict={selectedDistrict}
         selectedNeighborhood={selectedNeighborhood}
-        onSelect={(city, dist, nh) => {
+        onSelectLocation={(city, district, neighborhood) => {
           setSelectedCity(city);
-          setSelectedDistrict(dist);
-          setSelectedNeighborhood(nh);
+          setSelectedDistrict(district);
+          setSelectedNeighborhood(neighborhood || "");
         }}
       />
     </div>
