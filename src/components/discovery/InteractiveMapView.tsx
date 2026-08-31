@@ -515,7 +515,7 @@ export default function InteractiveMapView({
   };
 
   return (
-    <div className="relative w-full h-[calc(100dvh-8.5rem)] sm:h-[calc(100dvh-4rem)] overflow-hidden bg-zinc-100 dark:bg-black flex flex-col">
+    <div className="relative w-full h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] overflow-hidden bg-zinc-100 dark:bg-black flex flex-col">
       {/* 1. Leaflet Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
@@ -766,7 +766,7 @@ export default function InteractiveMapView({
         </div>
 
         {/* Scrollable Nearest Merchants List with Momentum Touch Scrolling */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-20 divide-y divide-black/[0.04] dark:divide-white/[0.06] touch-pan-y">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-32 divide-y divide-black/[0.04] dark:divide-white/[0.06] touch-pan-y">
           {filteredMerchantsWithDistance.length > 0 ? (
             filteredMerchantsWithDistance.map((m) => {
               const isSelected = activeMerchant?.id === m.id;
