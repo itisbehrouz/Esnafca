@@ -5,10 +5,10 @@ import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
-  title: "Esnafça - Şeffaf Fiyat, Dürüst Usta, Mahallenin Esnafı",
+  title: "Esnafça",
   applicationName: "Esnafça",
   description: "Türkiye'nin küçük esnaf ve yerel zanaatkârlarını beyaz yakalılarla buluşturan komisyonsuz, şeffaf fiyat menülü mobil platform.",
-  manifest: "/manifest.json",
+  manifest: "/manifest.json?v=3",
   icons: {
     icon: "/apple-touch-icon.png",
     shortcut: "/apple-touch-icon.png",
