@@ -33,64 +33,13 @@ import { Merchant, CategoryId } from "@/types";
 import { useTheme } from "@/context/ThemeContext";
 import { CATEGORIES } from "@/data/categories";
 import { generateWhatsAppUrl } from "@/lib/whatsapp";
+import { 
+  LOCATION_COORDINATES, 
+  getMerchantCoordinates, 
+  getCoordinatesForLocation, 
+  getDistanceInMeters 
+} from "@/data/coordinates";
 
-export const DISTRICT_COORDINATES: Record<string, [number, number]> = {
-  // İstanbul - Kağıthane & Eyüp & Şişli & Beşiktaş & Kadıköy
-  "Nurtepe": [41.0775, 28.9665],
-  "Güzeltepe": [41.0720, 28.9550],
-  "Kağıthane": [41.0820, 28.9730],
-  "Gültepe": [41.0780, 28.9950],
-  "Ortabayır": [41.0780, 28.9950],
-  "Çeliktepe": [41.0850, 29.0020],
-  "Sanayi": [41.0920, 28.9910],
-  "Seyrantepe": [41.1000, 28.9950],
-  "Hamidiye": [41.0960, 28.9680],
-  "Emniyetevleri": [41.0880, 29.0050],
-  "Alibeyköy": [41.0680, 28.9520],
-  "Eyüpsultan": [41.0480, 28.9340],
-  "Şişli": [41.0585, 28.9810],
-  "Bomonti": [41.0585, 28.9810],
-  "Mecidiyeköy": [41.0660, 28.9930],
-  "Nişantaşı": [41.0520, 28.9920],
-  "Levent": [41.0820, 29.0140],
-  "Beşiktaş": [41.0425, 29.0065],
-  "Akaretler": [41.0410, 28.9995],
-  "Sinanpaşa": [41.0425, 29.0065],
-  "Gayrettepe": [41.0665, 29.0125],
-  "Kadıköy": [40.9910, 29.0295],
-  "Moda": [40.9855, 29.0270],
-  "Caferağa": [40.9855, 29.0270],
-  "Osmanağa": [40.9910, 29.0295],
-  "Rasimpaşa": [40.9950, 29.0300],
-  "Üsküdar": [41.0260, 29.0150],
-  "Kuzguncuk": [41.0360, 29.0280],
-  "Bakırköy": [40.9780, 28.8730],
-  "Beyoğlu": [41.0370, 28.9770],
-  "Cihangir": [41.0330, 28.9830],
-  "Sarıyer": [41.1667, 29.0500],
-  "Maslak": [41.1100, 29.0200],
-  "İstanbul": [41.0775, 28.9665],
-
-  // Ankara
-  "Çankaya": [39.9050, 32.8600],
-  "Tunalı": [39.9050, 32.8600],
-  "Kızılay": [39.9208, 32.8541],
-  "Ankara": [39.9208, 32.8541],
-
-  // İzmir
-  "Konak": [38.4350, 27.1420],
-  "Alsancak": [38.4350, 27.1420],
-  "Karşıyaka": [38.4570, 27.1120],
-  "Bostanlı": [38.4570, 27.1050],
-  "İzmir": [38.4237, 27.1428],
-
-  // Bursa & Antalya & Eskişehir
-  "Bursa": [40.1885, 29.0610],
-  "Nilüfer": [40.2150, 28.9850],
-  "Antalya": [36.8969, 30.7133],
-  "Muratpaşa": [36.8850, 30.7080],
-  "Eskişehir": [39.7767, 30.5206],
-};
 
 const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   "berber": Scissors,
@@ -131,22 +80,6 @@ function getCategoryPinSvg(category: string): string {
 
 const CROWN_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>`;
 
-// Precise Haversine distance calculator
-function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371e3;
-  const phi1 = (lat1 * Math.PI) / 180;
-  const phi2 = (lat2 * Math.PI) / 180;
-  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
-  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c;
-}
-
 function formatDistance(meters: number): { distance: string; walkTime: string } {
   const distance = meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`;
   const walkMins = Math.max(1, Math.round(meters / 80));
@@ -167,17 +100,6 @@ interface InteractiveMapViewProps {
   onSwitchToListMode?: () => void;
 }
 
-function getMerchantCoordinates(m: Merchant): [number, number] {
-  if (m.coordinates) return [m.coordinates.lat, m.coordinates.lng];
-  const text = `${m.neighborhood} ${m.district} ${m.city} ${m.address}`.toLowerCase();
-  
-  for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
-    if (text.includes(key.toLowerCase())) return coords;
-  }
-
-  return [41.0775, 28.9665];
-}
-
 export default function InteractiveMapView({
   merchants,
   selectedCity = "Tüm Şehirler",
@@ -194,7 +116,6 @@ export default function InteractiveMapView({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersGroupRef = useRef<L.FeatureGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
@@ -208,15 +129,6 @@ export default function InteractiveMapView({
   const [activeMerchant, setActiveMerchant] = useState<Merchant | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "info" | "warning" } | null>(null);
-
-  const showToast = useCallback((text: string, type: "success" | "info" | "warning" = "info") => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToastMessage({ text, type });
-    toastTimeoutRef.current = setTimeout(() => {
-      setToastMessage(null);
-    }, 4000);
-  }, []);
 
   // Filtered & Sorted merchants with distance
   const filteredMerchantsWithDistance = useMemo(() => {
@@ -287,6 +199,8 @@ export default function InteractiveMapView({
     sortBy,
   ]);
 
+  const isGpsLocatingRef = useRef(false);
+
   // 1. Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
@@ -325,41 +239,11 @@ export default function InteractiveMapView({
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
+    if (isGpsLocatingRef.current) return;
 
-    let targetCoords: [number, number] | null = null;
-    let zoomLevel = 14;
-
-    if (selectedNeighborhood) {
-      for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
-        if (selectedNeighborhood.toLowerCase().includes(key.toLowerCase())) {
-          targetCoords = coords;
-          zoomLevel = 15;
-          break;
-        }
-      }
-    }
-
-    if (!targetCoords && selectedDistrict !== "Tüm Bölgeler") {
-      for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
-        if (selectedDistrict.toLowerCase().includes(key.toLowerCase())) {
-          targetCoords = coords;
-          zoomLevel = 14;
-          break;
-        }
-      }
-    }
-
-    if (!targetCoords && selectedCity !== "Tüm Şehirler") {
-      for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
-        if (selectedCity.toLowerCase().includes(key.toLowerCase())) {
-          targetCoords = coords;
-          zoomLevel = 12;
-          break;
-        }
-      }
-    }
-
+    const targetCoords = getCoordinatesForLocation(selectedCity, selectedDistrict, selectedNeighborhood);
     if (targetCoords) {
+      const zoomLevel = selectedNeighborhood ? 15 : (selectedDistrict !== "Tüm Bölgeler" ? 14 : 12);
       map.flyTo(targetCoords, zoomLevel, { duration: 1.2 });
     }
   }, [selectedCity, selectedDistrict, selectedNeighborhood]);
@@ -419,6 +303,7 @@ export default function InteractiveMapView({
 
   // 4. Process real coordinates
   const processLocationCoordinates = useCallback(async (latitude: number, longitude: number) => {
+    isGpsLocatingRef.current = true;
     setUserLocation([latitude, longitude]);
 
     const map = mapInstanceRef.current;
@@ -449,32 +334,30 @@ export default function InteractiveMapView({
       setIsLocating(false);
 
       if (data && data.success && data.city) {
+        // If the neighborhood has merchants, filter by it; otherwise keep district scope so nearby pins stay visible
+        const hasMerchantsInNh = data.neighborhood ? merchants.some(
+          m => m.city === data.city && m.district === data.district && m.neighborhood === data.neighborhood
+        ) : false;
+
         if (onSelectLocation) {
-          onSelectLocation(data.city, data.district || "Tüm Bölgeler", data.neighborhood || "");
+          onSelectLocation(data.city, data.district || "Tüm Bölgeler", hasMerchantsInNh ? data.neighborhood : "");
         }
-        const locLabel = [data.neighborhood, data.district, data.city].filter(Boolean).join(", ");
-        showToast(`Konumunuz tespit edildi: ${locLabel}`, "success");
-      } else {
-        showToast("Konumunuz haritada işaretlendi.", "success");
       }
     } catch {
       setIsLocating(false);
-      showToast("Konumunuz haritada işaretlendi.", "success");
+    } finally {
+      setTimeout(() => {
+        isGpsLocatingRef.current = false;
+      }, 2000);
     }
-  }, [onSelectLocation, showToast]);
+  }, [merchants, onSelectLocation]);
 
-  // 5. GPS Trigger
+  // 5. GPS Trigger (Attempts real hardware GPS)
   const handleLocateMe = useCallback(() => {
     setIsLocating(true);
-    showToast("Mevcut konumunuz alınıyor...", "info");
 
     if (typeof window === "undefined" || !navigator.geolocation) {
-      fetch("/api/locate?auto=1")
-        .then(r => r.json())
-        .then(data => {
-          if (data?.lat && data?.lon) processLocationCoordinates(data.lat, data.lon);
-        })
-        .finally(() => setIsLocating(false));
+      setIsLocating(false);
       return;
     }
 
@@ -483,28 +366,13 @@ export default function InteractiveMapView({
         const { latitude, longitude } = pos.coords;
         processLocationCoordinates(latitude, longitude);
       },
-      async (err) => {
-        try {
-          const res = await fetch("/api/locate?auto=1");
-          const ipData = await res.json();
-          if (ipData && ipData.lat && ipData.lon) {
-            processLocationCoordinates(ipData.lat, ipData.lon);
-            return;
-          }
-        } catch {
-          // ignore
-        }
-
+      (err) => {
+        console.warn("Geolocation unavailable:", err);
         setIsLocating(false);
-        if (err.code === 1) {
-          showToast("Konum izni verilmedi. Tarayıcı izinlerinden aktif edebilir veya listeden seçebilirsiniz.", "warning");
-        } else {
-          showToast("Konum bilgisi alınamadı. Lütfen konum butonundan il/ilçe seçin.", "warning");
-        }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
-  }, [processLocationCoordinates, showToast]);
+  }, [processLocationCoordinates]);
 
   const handleSelectMerchantCard = (m: any) => {
     setActiveMerchant(m);
@@ -527,26 +395,8 @@ export default function InteractiveMapView({
       {/* 1. Leaflet Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* 2. Floating Toast Notification */}
-      {toastMessage && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 pointer-events-none animate-in fade-in slide-in-from-top-2 duration-200">
-          <div
-            className={`px-4 py-2 rounded-full backdrop-blur-md shadow-xl border text-xs font-extrabold flex items-center gap-2 ${
-              toastMessage.type === "success"
-                ? "bg-emerald-600/95 text-white border-emerald-400/40 shadow-emerald-950/20"
-                : toastMessage.type === "warning"
-                ? "bg-amber-600/95 text-white border-amber-300/40 shadow-amber-950/20"
-                : "bg-black/90 dark:bg-white/95 text-white dark:text-black border-white/10 dark:border-black/10"
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{toastMessage.text}</span>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Floating Top Search & Quick Filters Card */}
-      <div className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-[520px] z-30 space-y-2 pointer-events-auto">
+      {/* 2. Floating Top Search & Quick Filters Card */}
+      <div className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-[520px] z-[9999] space-y-2 pointer-events-auto">
         <div className="bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl rounded-3xl border border-black/[0.08] dark:border-white/[0.12] p-3 sm:p-3.5 shadow-2xl space-y-2.5 transition-all">
           {/* Search Bar */}
           <div className="flex items-center gap-2">
@@ -672,7 +522,7 @@ export default function InteractiveMapView({
       </div>
 
       {/* 4. Floating Zoom Controls */}
-      <div className="absolute right-4 top-20 z-20 hidden sm:flex flex-col gap-1.5 pointer-events-auto">
+      <div className="absolute right-4 top-20 z-[9999] hidden sm:flex flex-col gap-1.5 pointer-events-auto">
         <div className="bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-md rounded-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-lg p-1 flex flex-col">
           <button
             type="button"
@@ -698,8 +548,8 @@ export default function InteractiveMapView({
       {/* 5. EXPANDABLE BOTTOM SHEET & NEAREST LIST                */}
       {/* ======================================================== */}
       <div
-        className={`absolute bottom-0 left-0 right-0 z-30 transition-all duration-300 pointer-events-auto flex flex-col bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl border-t border-black/[0.08] dark:border-white/[0.1] shadow-2xl rounded-t-3xl ${
-          isDrawerExpanded ? "h-[45vh]" : "h-[165px]"
+        className={`absolute bottom-0 left-0 right-0 z-[9999] transition-all duration-300 pointer-events-auto flex flex-col bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl border-t border-black/[0.08] dark:border-white/[0.1] shadow-2xl rounded-t-3xl ${
+          isDrawerExpanded ? "h-[55vh] sm:h-[45vh]" : "h-[220px] sm:h-[165px]"
         }`}
       >
         {/* Pull Grabber Header */}

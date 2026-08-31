@@ -28,6 +28,15 @@ bun.lock*
 .env*.local
 .env
 
+# database
+*.db
+*.db-journal
+/prisma/*.db
+/prisma/*.db-journal
+
+# certificates
+/certificates
+
 # vercel
 .vercel
 

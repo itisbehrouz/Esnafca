@@ -5,6 +5,7 @@ import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://esnafca.com"),
   title: "Esnafça",
   applicationName: "Esnafça",
   description: "Türkiye'nin küçük esnaf ve yerel zanaatkârlarını beyaz yakalılarla buluşturan komisyonsuz, şeffaf fiyat menülü mobil platform.",
@@ -18,6 +19,28 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "Esnafça",
+  },
+  openGraph: {
+    type: "website",
+    locale: "tr_TR",
+    url: "https://esnafca.com",
+    title: "Esnafça | Doğrulanmış Mahalle Esnafı",
+    description: "Türkiye'nin küçük esnaf ve yerel zanaatkârlarını beyaz yakalılarla buluşturan komisyonsuz, şeffaf fiyat menülü mobil platform.",
+    siteName: "Esnafça",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Esnafça - Doğrulanmış Mahalle Esnafı",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Esnafça | Doğrulanmış Mahalle Esnafı",
+    description: "Türkiye'nin küçük esnaf ve yerel zanaatkârlarını beyaz yakalılarla buluşturan platform.",
+    images: ["/og-image.png"],
   },
 };
 

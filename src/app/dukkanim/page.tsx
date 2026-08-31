@@ -26,14 +26,13 @@ import {
   User
 } from "lucide-react";
 import { 
-  getAllMerchants, 
-  updateMerchant, 
-  findMerchantByPhone, 
-  findPendingApplicationByPhone,
+  loginMerchantByPhone,
+  updateMerchantProfile,
+  checkPendingByPhone,
   approveApplication,
-  getPendingApplications,
-  MerchantApplication 
-} from "@/lib/merchant-store";
+  getMerchantById
+} from "@/app/actions/merchant";
+import type { MerchantApplication } from "@prisma/client";
 import { Merchant, ServiceItem, CategoryId } from "@/types";
 import { CATEGORIES } from "@/data/categories";
 import { QrWindowModal } from "@/components/merchant/QrWindowModal";
@@ -63,34 +62,32 @@ function MerchantPortalContent() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const loadData = () => {
-    const all = getAllMerchants();
-    setMerchants(all);
-
+  useEffect(() => {
+    setMounted(true);
+    
     // Check if session exists
     const savedMerchantId = localStorage.getItem(AUTH_MERCHANT_KEY);
     if (savedMerchantId) {
-      const found = all.find((m) => m.id === savedMerchantId);
-      if (found) {
-        setActiveMerchant(found);
-        setIsOpen(found.isOpenNow);
-        setServices([...found.services]);
-      }
+      getMerchantById(savedMerchantId).then(merchant => {
+        if (merchant) {
+          setActiveMerchant(merchant as Merchant);
+          setIsOpen(merchant.isOpenNow);
+          setServices(merchant.services as any);
+        } else {
+          const pendingRaw = localStorage.getItem("esnafca_pending_application_data");
+          if (pendingRaw) setPendingNotice(JSON.parse(pendingRaw));
+        }
+      });
+    } else {
+      const pendingRaw = localStorage.getItem("esnafca_pending_application_data");
+      if (pendingRaw) setPendingNotice(JSON.parse(pendingRaw));
     }
-  };
-
-  useEffect(() => {
-    setMounted(true);
-    loadData();
 
     // Check URL phone parameter
     const phoneFromUrl = searchParams.get("phone");
     if (phoneFromUrl) {
       setPhoneInput(formatPhoneNumber(phoneFromUrl));
     }
-
-    window.addEventListener("merchants_updated", loadData);
-    return () => window.removeEventListener("merchants_updated", loadData);
   }, [searchParams]);
 
   const showToast = (msg: string) => {
@@ -99,7 +96,7 @@ function MerchantPortalContent() {
   };
 
   // 1. Phone submission -> Send WhatsApp OTP
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
     setPendingNotice(null);
@@ -111,7 +108,8 @@ function MerchantPortalContent() {
     }
 
     // Check if merchant exists in live directory
-    const liveMerchant = findMerchantByPhone(cleanPhone);
+    const liveRes = await loginMerchantByPhone(cleanPhone);
+    const liveMerchant = liveRes.success ? liveRes.merchant : null;
     if (liveMerchant) {
       setIsSendingOtp(true);
       setTimeout(() => {
@@ -123,7 +121,8 @@ function MerchantPortalContent() {
     }
 
     // Check if merchant is in pending applications
-    const pending = findPendingApplicationByPhone(cleanPhone);
+    const pendingRes = await checkPendingByPhone(cleanPhone);
+    const pending = pendingRes.success ? pendingRes.application : null;
     if (pending) {
       setPendingNotice(pending);
       setIsSendingOtp(true);
@@ -139,7 +138,7 @@ function MerchantPortalContent() {
   };
 
   // 2. OTP Verification -> Login
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
 
@@ -151,28 +150,23 @@ function MerchantPortalContent() {
     const cleanPhone = phoneInput.replace(/\D/g, "");
 
     // 1. Check live merchants
-    const liveMerchant = findMerchantByPhone(cleanPhone);
+    const liveRes = await loginMerchantByPhone(cleanPhone);
+    const liveMerchant = liveRes.success ? liveRes.merchant : null;
     if (liveMerchant) {
       localStorage.setItem(AUTH_MERCHANT_KEY, liveMerchant.id);
-      setActiveMerchant(liveMerchant);
+      setActiveMerchant(liveMerchant as any);
       setIsOpen(liveMerchant.isOpenNow);
-      setServices([...liveMerchant.services]);
+      setServices(liveMerchant.services as any);
       showToast(`Hoş geldiniz, ${liveMerchant.masterName}!`);
       return;
     }
 
     // 2. Check pending applications & approve into live
-    const pending = findPendingApplicationByPhone(cleanPhone);
+    const pendingRes = await checkPendingByPhone(cleanPhone);
+    const pending = pendingRes.success ? pendingRes.application : null;
     if (pending) {
-      const newlyApproved = approveApplication(pending.id);
-      if (newlyApproved) {
-        localStorage.setItem(AUTH_MERCHANT_KEY, newlyApproved.id);
-        setActiveMerchant(newlyApproved);
-        setIsOpen(newlyApproved.isOpenNow);
-        setServices([...newlyApproved.services]);
-        showToast(`Tebrikler! ${newlyApproved.name} canlıya alındı ve giriş yapıldı.`);
-        return;
-      }
+      alert("Başvurunuz henüz onaylanmamış. Lütfen yönetici onayını bekleyiniz.");
+      return;
     }
 
     setLoginError("Dükkan kaydına erişilemedi.");
@@ -183,7 +177,7 @@ function MerchantPortalContent() {
     localStorage.setItem(AUTH_MERCHANT_KEY, merchant.id);
     setActiveMerchant(merchant);
     setIsOpen(merchant.isOpenNow);
-    setServices([...merchant.services]);
+    setServices(merchant.services as any);
     showToast(`Giriş yapıldı: ${merchant.name}`);
   };
 
@@ -198,26 +192,25 @@ function MerchantPortalContent() {
     showToast("Oturum kapatıldı.");
   };
 
-  const handleToggleOpenStatus = () => {
+  const handleToggleOpenStatus = async () => {
     if (!activeMerchant) return;
     const newStatus = !isOpen;
     setIsOpen(newStatus);
-    updateMerchant(activeMerchant.id, { isOpenNow: newStatus });
+    setActiveMerchant({ ...activeMerchant, isOpenNow: newStatus });
+    await updateMerchantProfile(activeMerchant.id, { isOpenNow: newStatus });
     showToast(newStatus ? "Dükkanınız AÇIK olarak güncellendi." : "Dükkanınız İZİNLİ/KAPALI olarak güncellendi.");
   };
-  const handleUpdateProfile = (field: keyof Merchant, value: any) => {
+  const handleUpdateProfile = async (field: keyof Merchant, value: any) => {
     if (!activeMerchant) return;
-    const updated = { ...activeMerchant, [field]: value };
-    setActiveMerchant(updated);
-    updateMerchant(activeMerchant.id, { [field]: value });
+    setActiveMerchant({ ...activeMerchant, [field]: value });
+    await updateMerchantProfile(activeMerchant.id, { [field]: value });
   };
 
-  const handleUpdateWorkingHours = (day: "weekdays" | "saturday" | "sunday", value: string) => {
+  const handleUpdateWorkingHours = async (day: "weekdays" | "saturday" | "sunday", value: string) => {
     if (!activeMerchant) return;
     const newHours = { ...activeMerchant.workingHours, [day]: value };
-    const updated = { ...activeMerchant, workingHours: newHours };
-    setActiveMerchant(updated);
-    updateMerchant(activeMerchant.id, { workingHours: newHours });
+    setActiveMerchant({ ...activeMerchant, workingHours: newHours });
+    await updateMerchantProfile(activeMerchant.id, { workingHours: newHours });
   };
 
   const handlePriceChange = (serviceId: string, field: "minPrice" | "maxPrice", value: string) => {
@@ -249,7 +242,7 @@ function MerchantPortalContent() {
     setServices(services.filter((s) => s.id !== serviceId));
   };
 
-  const handleSaveServices = () => {
+  const handleSaveServices = async () => {
     if (!activeMerchant) return;
     const minPrices = services.map((s) => s.minPrice);
     const maxPrices = services.map((s) => s.maxPrice || s.minPrice);
@@ -257,16 +250,9 @@ function MerchantPortalContent() {
     const minPrice = minPrices.length > 0 ? Math.min(...minPrices) : 100;
     const maxPrice = maxPrices.length > 0 ? Math.max(...maxPrices) : 500;
 
-    const updated = updateMerchant(activeMerchant.id, {
-      services: services,
-      minPrice: minPrice,
-      maxPrice: maxPrice,
-    });
+    const res = await updateMerchantProfile(activeMerchant.id, { services: services });
 
-    if (updated) {
-      setActiveMerchant(updated);
-      showToast("Fiyat menünüz anında güncellendi ve canlıya alındı!");
-    }
+    if (res && res.success) { setActiveMerchant({ ...activeMerchant, services: services }); }
   };
 
   if (!mounted) {

@@ -1,0 +1,13 @@
+# Esnafça
+
+> Türkiye'nin küçük esnaf ve yerel zanaatkârlarını beyaz yakalılarla buluşturan komisyonsuz, şeffaf fiyat menülü platform.
+
+## Core Documentation & Resources
+- [Ana Sayfa](https://esnafca.com): Doğrulanmış mahalle esnafı listesi ve haritası.
+- [Kategoriler](https://esnafca.com/kategoriler): Hizmet verilen tüm esnaf kategorileri.
+- [Fiyatlandırma](https://esnafca.com/fiyatlandirma): Esnafça şeffaf fiyatlandırma ve komisyonsuz iş modeli.
+
+## Features & Capabilities
+- **Doğrulanmış Esnaf**: Sadece referanslı, gerçek müşteri değerlendirmesi olan ustalar.
+- **Şeffaf Fiyat Menüsü**: Sürpriz fiyat yok, her hizmetin minimum ve maksimum fiyatı açıkça belirtilir.
+- **Komisyonsuz Model**: Müşteri esnafa doğrudan öder, platform aracı komisyonu almaz.

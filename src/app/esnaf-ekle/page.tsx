@@ -28,6 +28,7 @@ import { PRICING_PLANS, SubscriptionTierId } from "@/data/pricing-plans";
 import { CategoryId } from "@/types";
 import { formatNumber, formatPhoneNumber } from "@/lib/utils";
 import { addPendingApplication } from "@/lib/merchant-store";
+import { submitApplication } from "@/app/actions/merchant";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface ServiceDraft {
@@ -38,12 +39,16 @@ interface ServiceDraft {
 
 function EsnafEkleWizard() {
   const searchParams = useSearchParams();
+
+  // Current Step
+  const [step, setStep] = useState(1);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
   const initialPlan = (searchParams.get("plan") as SubscriptionTierId) || "pro";
   const initialCycle = searchParams.get("cycle") === "monthly" ? false : true;
 
   const [mounted, setMounted] = useState(false);
-  const [step, setStep] = useState<number>(1);
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Form Step 1: Dükkan & Konum - STRICTLY EMPTY BY DEFAULT
@@ -60,6 +65,7 @@ function EsnafEkleWizard() {
   // GPS Auto-Fill State
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [locateSuccess, setLocateSuccess] = useState<string | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // Form Step 2: Fiyat Menüsü - Clean defaults
   const [services, setServices] = useState<ServiceDraft[]>([
@@ -79,21 +85,45 @@ function EsnafEkleWizard() {
     }
   }, [searchParams]);
 
-  // Real GPS Location Detection via Browser Geolocation
-  const handleGetLiveLocation = () => {
-    if (typeof window === "undefined" || !navigator.geolocation) {
-      alert("Tarayıcınız konum servisini desteklemiyor. Lütfen listeden seçiniz.");
-      return;
-    }
-
+  // Real GPS Location Detection via Browser Geolocation (with IP Fallback)
+  const handleGetLiveLocation = async () => {
     setIsLocating(true);
     setLocateSuccess(null);
     setFormError(null);
+
+    const fallbackIp = async () => {
+      try {
+        const res = await fetch("/api/locate?auto=1");
+        const data = await res.json();
+        if (data.success && data.city && data.district) {
+          setCity(data.city);
+          setDistrict(data.district);
+          if (data.neighborhood) setNeighborhood(data.neighborhood);
+          if (data.address) setAddress(data.address);
+          if (data.lat && data.lon) setCoords({ lat: data.lat, lng: data.lon });
+          setLocateSuccess("Konum belirlendi: " + data.city + " / " + data.district + " - " + (data.neighborhood || ""));
+          return true;
+        }
+      } catch {
+        // ignore
+      }
+      return false;
+    };
+
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      const ok = await fallbackIp();
+      setIsLocating(false);
+      if (!ok) {
+        setFormError("Konum belirlenemedi. Lütfen şehir ve ilçenizi listeden seçiniz.");
+      }
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
+          setCoords({ lat: latitude, lng: longitude });
           const res = await fetch("/api/locate?lat=" + latitude + "&lon=" + longitude);
           const data = await res.json();
 
@@ -106,23 +136,20 @@ function EsnafEkleWizard() {
           } else {
             setFormError("Konumunuz tam eşleştirilemedi. Lütfen listeden seçiniz.");
           }
-        } catch (err) {
+        } catch {
           setFormError("Konum servisiyle bağlantı kurulamadı. Lütfen listeden seçiniz.");
         } finally {
           setIsLocating(false);
         }
       },
-      (error) => {
+      async () => {
+        const ok = await fallbackIp();
         setIsLocating(false);
-        if (error.code === error.PERMISSION_DENIED) {
-          setFormError("Cihazınızda/Tarayıcınızda konum izni verilmedi. Lütfen şehir ve ilçenizi listeden seçiniz.");
-        } else if (error.code === error.TIMEOUT) {
-          setFormError("Konum alma zaman aşımına uğradı. Lütfen listeden seçiniz.");
-        } else {
-          setFormError("Konum bilgisi alınamadı. Lütfen listeden seçiniz.");
+        if (!ok) {
+          setFormError("Konum bilgisi alınamadı. Lütfen şehir ve ilçenizi listeden seçiniz.");
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
     );
   };
 
@@ -166,7 +193,7 @@ function EsnafEkleWizard() {
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep1()) {
       setStep(1);
@@ -186,8 +213,8 @@ function EsnafEkleWizard() {
       return;
     }
 
-    // Save pending application
-    addPendingApplication({
+    setIsSubmitting(true);
+    const result = await submitApplication({
       name,
       masterName,
       category,
@@ -196,6 +223,8 @@ function EsnafEkleWizard() {
       district,
       neighborhood,
       address: address.trim() ? address : `${neighborhood}, ${district} / ${city}`,
+      latitude: coords?.lat,
+      longitude: coords?.lng,
       phone: whatsapp,
       whatsapp: whatsapp.replace(/\D/g, "").startsWith("90")
         ? whatsapp.replace(/\D/g, "")
@@ -207,8 +236,13 @@ function EsnafEkleWizard() {
         maxPrice: s.maxPrice || s.minPrice || "200",
       })),
     });
+    setIsSubmitting(false);
 
-    setIsSubmitted(true);
+    if (result.success) {
+      setIsSubmitted(true);
+    } else {
+      alert("Kayıt sırasında bir hata oluştu.");
+    }
   };
 
   const currentCityObj = CITIES.find((c) => c.name === city);
@@ -844,10 +878,11 @@ function EsnafEkleWizard() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm ios-press"
+                    disabled={isSubmitting}
+                    className="flex-1 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm ios-press"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Başvuruyu Tamamla & WhatsApp ile Gönder</span>
+                    <span>{isSubmitting ? "Gönderiliyor..." : "Başvuruyu Tamamla & WhatsApp ile Gönder"}</span>
                   </button>
                 </div>
               </div>

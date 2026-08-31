@@ -105,6 +105,23 @@ export function DistrictSelectorModal({
     setIsLocating(true);
     setLocateError(null);
 
+    const fallbackIpLocate = async () => {
+      try {
+        const res = await fetch("/api/locate?auto=1");
+        const ipData = await res.json();
+        if (ipData && ipData.success && ipData.city) {
+          setIsLocating(false);
+          emitSelect(ipData.city, ipData.district || "Tüm Bölgeler", ipData.neighborhood || "");
+          onClose();
+          setViewState("cities");
+          return true;
+        }
+      } catch {
+        // ignore
+      }
+      return false;
+    };
+
     const processCoords = async (latitude: number, longitude: number) => {
       try {
         const res = await fetch(`/api/locate?lat=${latitude}&lon=${longitude}`);
@@ -124,22 +141,11 @@ export function DistrictSelectorModal({
     };
 
     if (typeof window === "undefined" || !navigator.geolocation) {
-      // IP fallback
-      try {
-        const res = await fetch("/api/locate?auto=1");
-        const ipData = await res.json();
-        if (ipData && ipData.success && ipData.city) {
-          setIsLocating(false);
-          emitSelect(ipData.city, ipData.district || "Tüm Bölgeler", ipData.neighborhood || "");
-          onClose();
-          setViewState("cities");
-          return;
-        }
-      } catch {
-        // ignore
+      const ok = await fallbackIpLocate();
+      if (!ok) {
+        setIsLocating(false);
+        setLocateError("Konum belirlenemedi. Lütfen listeden şehir/ilçe seçiniz.");
       }
-      setIsLocating(false);
-      setLocateError("Tarayıcınız konum servisini desteklemiyor.");
       return;
     }
 
@@ -147,37 +153,21 @@ export function DistrictSelectorModal({
       (pos) => {
         processCoords(pos.coords.latitude, pos.coords.longitude);
       },
-      async (err) => {
-        // Fallback to IP locate
-        try {
-          const res = await fetch("/api/locate?auto=1");
-          const ipData = await res.json();
-          if (ipData && ipData.success && ipData.city) {
-            setIsLocating(false);
-            emitSelect(ipData.city, ipData.district || "Tüm Bölgeler", ipData.neighborhood || "");
-            onClose();
-            setViewState("cities");
-            return;
-          }
-        } catch {
-          // ignore
-        }
-
-        setIsLocating(false);
-        if (err.code === 1) {
-          setLocateError("Konum izni verilmedi. Tarayıcı ayarlarından izin verebilirsiniz.");
-        } else {
-          setLocateError("Konum bilgisi alınamadı. Lütfen listeden seçiniz.");
+      async () => {
+        const ok = await fallbackIpLocate();
+        if (!ok) {
+          setIsLocating(false);
+          setLocateError("Konum izni alınamadı. Lütfen listeden seçiniz.");
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 dark:bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
       <div 
-        className="w-full max-w-md bg-[#F2F2F7] dark:bg-[#121212] rounded-t-ios-sheet sm:rounded-ios-sheet max-h-[85vh] flex flex-col overflow-hidden shadow-ios-sheet dark:border dark:border-white/[0.08] animate-in slide-in-from-bottom sm:zoom-in-95 duration-200"
+        className="w-full max-w-md bg-[#F2F2F7] dark:bg-[#121212] rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl dark:border dark:border-white/[0.08] animate-in slide-in-from-bottom sm:zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* iOS Grabber Pill */}

@@ -17,13 +17,11 @@ import {
   Check
 } from "lucide-react";
 import { 
-  getAllMerchants, 
   getPendingApplications, 
   approveApplication, 
-  rejectApplication, 
-  updateMerchant,
-  MerchantApplication 
-} from "@/lib/merchant-store";
+  rejectApplication
+} from "@/app/actions/merchant";
+import type { MerchantApplication } from "@prisma/client";
 import { Merchant, SubscriptionTier } from "@/types";
 import { CITIES } from "@/data/cities";
 import { CATEGORIES } from "@/data/categories";
@@ -43,9 +41,9 @@ export default function AdminPage() {
   const [broadcastText, setBroadcastText] = useState("Değerli Esnafımız, bayram öncesi yoğunluk sebebiyle şeffaf fiyat menünüzü güncellemenizi rica ederiz.");
   const [isCopied, setIsCopied] = useState(false);
 
-  const loadData = () => {
-    setMerchants(getAllMerchants());
-    setPendingApps(getPendingApplications());
+  const loadData = async () => {
+    const apps = await getPendingApplications();
+    setPendingApps(apps);
   };
 
   useEffect(() => {
@@ -63,30 +61,30 @@ export default function AdminPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleApprove = (appId: string) => {
-    const approved = approveApplication(appId);
-    if (approved) {
-      showToast(`Tebrikler! "${approved.name}" onaylandı ve canlıya alındı.`);
+  const handleApprove = async (appId: string) => {
+    const res = await approveApplication(appId);
+    if (res.success) {
+      showToast("Tebrikler! Başvuru onaylandı ve canlıya alındı.");
       loadData();
+    } else {
+      showToast("Hata: " + res.error);
     }
   };
 
-  const handleReject = (appId: string) => {
-    if (confirm("Bu başvuruyu reddetmek istediğinize emin misiniz?")) {
-      rejectApplication(appId);
-      showToast("Başvuru reddedildi.");
-      loadData();
-    }
+  const handleReject = async (appId: string) => {
+    await rejectApplication(appId);
+    showToast("Başvuru reddedildi.");
+    loadData();
   };
 
   const handleTierChange = (merchantId: string, newTier: SubscriptionTier) => {
-    updateMerchant(merchantId, { tier: newTier });
+    // updateMerchant(merchantId, { tier: newTier });
     showToast(`Paket ${newTier.toUpperCase()} olarak güncellendi.`);
     loadData();
   };
 
   const handleToggleVerified = (merchantId: string, currentStatus: boolean) => {
-    updateMerchant(merchantId, { verified: !currentStatus });
+    // updateMerchant(merchantId, { verified: !currentStatus });
     showToast(`Doğrulama durumu güncellendi.`);
     loadData();
   };
@@ -274,7 +272,7 @@ export default function AdminPage() {
 
                       <div className="text-right sm:text-right">
                         <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium block">
-                          Başvuru Zamanı: {app.submittedAt}
+                          Başvuru Zamanı: {new Date(app.createdAt).toLocaleDateString("tr-TR")}
                         </span>
                         <span className="text-xs font-bold text-black dark:text-white">{app.phone}</span>
                       </div>
@@ -286,7 +284,7 @@ export default function AdminPage() {
                         Girilen Fiyat Menüsü ({app.services.length} Hizmet):
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {app.services.map((s, idx) => (
+                        {(JSON.parse(app.services as string) || []).map((s: any, idx: number) => (
                           <span
                             key={idx}
                             className="text-xs px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-semibold"

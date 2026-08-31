@@ -1,0 +1,97 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Merchant {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  craftTitle      String
+  masterName      String
+  category        String
+  city            String
+  district        String
+  neighborhood    String
+  address         String
+  latitude        Float?
+  longitude       Float?
+  phone           String
+  whatsapp        String
+  rating          Float    @default(0)
+  reviewCount     Int      @default(0)
+  verified        Boolean  @default(false)
+  verifiedYear    Int?
+  tier            String   @default("free") // "free", "pro", "plus"
+  experienceYears Int      @default(0)
+  minPrice        Float    @default(0)
+  maxPrice        Float    @default(0)
+  priceNote       String?
+  
+  // Storing JSON for simplicity in SQLite
+  workingHours    String   // JSON string
+  heroImage       String
+  galleryImages   String   // JSON string array
+  bio             String
+  specialties     String   // JSON string array
+  features        String   // JSON string object
+  
+  isOpenNow       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  services        ServiceItem[]
+  reviews         Review[]
+}
+
+model ServiceItem {
+  id                String   @id @default(cuid())
+  merchantId        String
+  name              String
+  description       String?
+  minPrice          Float
+  maxPrice          Float?
+  isStartingPrice   Boolean  @default(false)
+  estimatedDuration String?
+  popular           Boolean  @default(false)
+
+  merchant          Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  merchantId       String
+  author           String
+  profession       String?
+  rating           Int
+  date             String
+  comment          String
+  tags             String   // JSON string array
+  verifiedCustomer Boolean  @default(false)
+
+  merchant         Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+}
+
+model MerchantApplication {
+  id              String   @id @default(cuid())
+  name            String
+  masterName      String
+  category        String
+  experienceYears Int?
+  city            String
+  district        String
+  neighborhood    String
+  address         String
+  latitude        Float?
+  longitude       Float?
+  phone           String
+  whatsapp        String
+  plan            String
+  services        String   // JSON string
+  status          String   @default("pending") // pending, approved, rejected
+  createdAt       DateTime @default(now())
+}

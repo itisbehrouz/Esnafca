@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { CITIES } from "@/data/cities";
+import { findNearestDistrictAndCity, getDistanceInMeters, LOCATION_COORDINATES } from "@/data/coordinates";
 
 // Turkish normalization helper for accurate district/neighborhood matching
 function normalizeTr(text: string): string {
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
 
       const ipRes = await fetch(
         `http://ip-api.com/json/${ipQuery}?fields=status,country,regionName,city,lat,lon`,
-        { signal: AbortSignal.timeout(2500) }
+        { signal: AbortSignal.timeout(3000) }
       );
       const ipData = await ipRes.json();
       if (ipData && ipData.status === "success" && ipData.lat && ipData.lon) {
@@ -57,20 +58,20 @@ export async function GET(request: Request) {
       }
     } catch {
       // IP lookup fallback default
-      if (!lat) lat = "41.0350";
-      if (!lon) lon = "29.0050";
+      if (!lat) lat = "41.0775";
+      if (!lon) lon = "28.9665";
     }
   }
 
   if (!lat || !lon) {
-    lat = "41.0350";
-    lon = "29.0050";
+    lat = "41.0775";
+    lon = "28.9665";
   }
 
   const parsedLat = parseFloat(lat);
   const parsedLon = parseFloat(lon);
 
-  // If we only have IP location or if Nominatim is slow, try reverse geocode with fast timeout
+  // 1. Try Reverse Geocoding with OSM Nominatim
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=tr`,
@@ -78,7 +79,7 @@ export async function GET(request: Request) {
         headers: {
           "User-Agent": "EsnafcaApp/1.0 (info@esnafca.com)",
         },
-        signal: AbortSignal.timeout(2500),
+        signal: AbortSignal.timeout(3500),
       }
     );
     const data = await res.json();
@@ -100,7 +101,7 @@ export async function GET(request: Request) {
       let matchedDistrictName = "";
       let matchedNeighborhoodName = "";
 
-      // 1. Find matching city in CITIES
+      // Find matching city in CITIES
       let cityObj = CITIES.find((c) => {
         const cNorm = normalizeTr(c.name);
         return normCity.includes(cNorm) || cNorm.includes(normCity) || normDisplay.includes(cNorm);
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
 
       matchedCityName = cityObj.name;
 
-      // 2. Find matching district in City's districts
+      // Find matching district in City's districts
       const distObj = cityObj.districts.find((d) => {
         const dNorm = normalizeTr(d.name);
         return (
@@ -173,23 +174,50 @@ export async function GET(request: Request) {
       });
     }
   } catch {
-    // Nominatim timed out or failed, fall back to fast heuristics
+    // Nominatim timed out or failed, fall back to high-accuracy nearest coordinate lookup
   }
 
-  // Fast Fallback matching with IP city/region or coordinates
-  const searchCity = normalizeTr(detectedCityFromIp || detectedRegionFromIp || "İstanbul");
-  const fallbackCity = CITIES.find(c => searchCity.includes(normalizeTr(c.name)) || normalizeTr(c.name).includes(searchCity)) || CITIES[0];
-  const fallbackDist = fallbackCity.districts[0]?.name || "Kadıköy";
-  const fallbackNh = fallbackCity.districts[0]?.neighborhoods[0] || "Moda";
+  // 2. High-Accuracy Mathematical Distance Matching Fallback
+  const nearest = findNearestDistrictAndCity(parsedLat, parsedLon);
+  const normalizedKey = normalizeTr(nearest.key);
+
+  let fallbackCityName = "İstanbul";
+  let fallbackDistrictName = "Kağıthane";
+  let fallbackNhName = "Nurtepe";
+
+  for (const c of CITIES) {
+    const cNorm = normalizeTr(c.name);
+    if (normalizedKey.includes(cNorm) || cNorm.includes(normalizedKey)) {
+      fallbackCityName = c.name;
+    }
+    for (const d of c.districts) {
+      const dNorm = normalizeTr(d.name);
+      if (normalizedKey.includes(dNorm) || dNorm.includes(normalizedKey)) {
+        fallbackCityName = c.name;
+        fallbackDistrictName = d.name;
+        fallbackNhName = d.neighborhoods[0] || "";
+        break;
+      }
+      for (const nh of d.neighborhoods) {
+        const nhNorm = normalizeTr(nh);
+        if (normalizedKey.includes(nhNorm) || nhNorm.includes(normalizedKey)) {
+          fallbackCityName = c.name;
+          fallbackDistrictName = d.name;
+          fallbackNhName = nh;
+          break;
+        }
+      }
+    }
+  }
 
   return NextResponse.json({
     success: true,
-    city: fallbackCity.name,
-    district: fallbackDist,
-    neighborhood: fallbackNh,
-    address: `${fallbackNh}, ${fallbackDist} / ${fallbackCity.name}`,
+    city: fallbackCityName,
+    district: fallbackDistrictName,
+    neighborhood: fallbackNhName,
+    address: `${fallbackNhName}, ${fallbackDistrictName} / ${fallbackCityName}`,
     lat: parsedLat,
     lon: parsedLon,
-    source: "ip_fallback",
+    source: "geo_nearest",
   });
 }
