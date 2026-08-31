@@ -26,7 +26,7 @@ const InteractiveMapView = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] bg-zinc-100 dark:bg-black flex flex-col items-center justify-center gap-2 text-zinc-400">
+      <div className="w-full h-[calc(100dvh-8.5rem)] sm:h-[calc(100dvh-4rem)] bg-zinc-100 dark:bg-black flex flex-col items-center justify-center gap-2 text-zinc-400">
         <div className="w-8 h-8 rounded-full border-2 border-brand border-t-transparent animate-spin" />
         <span className="text-xs font-bold">Harita Yükleniyor...</span>
       </div>
@@ -162,7 +162,7 @@ function HomeContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-20 sm:pb-0 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
+    <div className="min-h-[100dvh] bg-[#F2F2F7] dark:bg-black pb-20 sm:pb-0 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
       <Navbar viewMode={viewMode} onViewModeChange={setViewMode} />
 
       {/* ======================================================== */}
@@ -354,7 +354,7 @@ function HomeContent() {
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F2F2F7] dark:bg-black" />}>
+    <Suspense fallback={<div className="min-h-[100dvh] bg-[#F2F2F7] dark:bg-black" />}>
       <HomeContent />
     </Suspense>
   );

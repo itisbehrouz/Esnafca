@@ -515,7 +515,7 @@ export default function InteractiveMapView({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] overflow-hidden bg-zinc-100 dark:bg-black flex flex-col">
+    <div className="relative w-full h-[calc(100dvh-8.5rem)] sm:h-[calc(100dvh-4rem)] overflow-hidden bg-zinc-100 dark:bg-black flex flex-col">
       {/* 1. Leaflet Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
