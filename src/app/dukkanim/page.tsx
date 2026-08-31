@@ -486,15 +486,18 @@ function MerchantPortalContent() {
               </div>
 
               <button
+                role="switch"
+                aria-checked={isOpen}
                 onClick={handleToggleOpenStatus}
-                className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all ios-press shrink-0 flex items-center gap-1.5 ${
-                  isOpen
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                    : "bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700"
+                className={`relative inline-flex h-[31px] w-[51px] shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ios-press ${
+                  isOpen ? "bg-emerald-500" : "bg-zinc-200 dark:bg-zinc-700"
                 }`}
               >
-                <Power className="w-3.5 h-3.5" />
-                <span>{isOpen ? "Açık" : "Kapalı"}</span>
+                <span
+                  className={`pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    isOpen ? "translate-x-[20px]" : "translate-x-0"
+                  }`}
+                />
               </button>
             </div>
 

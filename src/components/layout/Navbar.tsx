@@ -12,7 +12,7 @@ interface NavbarProps {
 
 export function Navbar({ viewMode, onViewModeChange }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-40 apple-glass dark:bg-black/80 dark:border-white/[0.08] transition-colors duration-200">
+    <header className="sticky top-0 z-40 bg-white/75 dark:bg-black/75 backdrop-blur-2xl border-b-[0.5px] border-black/10 dark:border-white/10 transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         {/* Brand Monogram */}
         <Link href="/" className="flex items-center gap-2.5 ios-press">

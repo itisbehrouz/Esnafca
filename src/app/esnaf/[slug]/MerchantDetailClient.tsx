@@ -185,41 +185,64 @@ export function MerchantDetailClient(props: MerchantDetailClientProps) {
             </div>
           </div>
 
-          {/* Quick Info & Action Bar */}
-          <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.04] dark:border-white/[0.06]">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className={`w-2.5 h-2.5 rounded-full ${merchant.isOpenNow ? "bg-emerald-500 animate-pulse" : "bg-zinc-400"}`} />
-                <span className="text-xs font-bold text-black dark:text-white">
-                  {merchant.isOpenNow ? "Şu An Açık" : "Şu An Kapalı"}
-                </span>
+          {/* Apple Maps Style Action Row */}
+          <div className="p-4 flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#1C1C1E]">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-1.5 flex-1 ios-press"
+            >
+              <div className="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                <Navigation className="w-5 h-5 fill-current" />
               </div>
-              <span className="text-zinc-300 dark:text-zinc-700">|</span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-                {merchant.workingHours.weekdays}
+              <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-500">Yol Tarifi</span>
+            </a>
+
+            <a
+              href={defaultWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-1.5 flex-1 ios-press"
+            >
+              <div className="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center shadow-sm">
+                <MessageCircle className="w-5 h-5 fill-current" />
+              </div>
+              <span className="text-[10px] font-semibold text-green-600 dark:text-green-500">Mesaj</span>
+            </a>
+
+            <button
+              onClick={() => setIsQrModalOpen(true)}
+              className="flex flex-col items-center gap-1.5 flex-1 ios-press"
+            >
+              <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-brand flex items-center justify-center">
+                <QrCode className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-400">Karekod</span>
+            </button>
+
+            <button
+              onClick={() => setIsShareModalOpen(true)}
+              className="flex flex-col items-center gap-1.5 flex-1 ios-press"
+            >
+              <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-brand flex items-center justify-center">
+                <Share2 className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-400">Paylaş</span>
+            </button>
+          </div>
+
+          {/* Quick Info Bar */}
+          <div className="px-4 py-3 flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#1C1C1E]">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${merchant.isOpenNow ? "bg-emerald-500 animate-pulse" : "bg-zinc-400"}`} />
+              <span className="text-xs font-bold text-black dark:text-white">
+                {merchant.isOpenNow ? "Şu An Açık" : "Kapalı"}
               </span>
             </div>
-
-            {/* Action Buttons (Directions + QR Kit) */}
-            <div className="flex items-center gap-2">
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-black dark:text-white text-xs font-bold flex items-center gap-1.5 ios-press transition-colors"
-              >
-                <Navigation className="w-3.5 h-3.5 text-brand" />
-                <span>Yol Tarifi</span>
-              </a>
-
-              <button
-                onClick={() => setIsQrModalOpen(true)}
-                className="px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-black dark:text-white text-xs font-bold flex items-center gap-1.5 ios-press transition-colors"
-              >
-                <QrCode className="w-3.5 h-3.5 text-black dark:text-white" />
-                <span>Vitrin Karekodu</span>
-              </button>
-            </div>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+              {merchant.workingHours.weekdays}
+            </span>
           </div>
 
           {/* Location & Bio Bar */}

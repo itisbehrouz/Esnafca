@@ -132,32 +132,29 @@ export const MerchantCard = memo(function MerchantCard({ merchant }: MerchantCar
         </div>
       </Link>
 
-      {/* Bottom Row: Transparent Price & WhatsApp Icon Action Button */}
-      <div className="px-4 pb-4 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between gap-3">
+      {/* Apple App Store Style Bottom Row */}
+      <div className="px-4 pb-4 pt-3 flex items-center justify-between gap-3">
         <Link
           href={`/esnaf/${merchant.slug}`}
-          className="space-y-0.5 flex-1 ios-press active:opacity-75"
+          className="space-y-0.5 flex-1 ios-press active:opacity-75 min-w-0"
         >
           <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
             Şeffaf Fiyat
           </span>
-          <span className="text-sm sm:text-base font-extrabold text-black dark:text-white tracking-tight block">
+          <span className="text-sm font-bold text-black dark:text-white tracking-tight block truncate">
             {merchant.minPrice} ₺ - {merchant.maxPrice} ₺
           </span>
         </Link>
 
-        {/* 1-Tap Circular Apple Action Button with Pure WhatsApp Vector Icon */}
+        {/* Apple Store Style GET Button */}
         <a
           href={quickWhatsAppUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-full bg-[#25D366] hover:bg-[#20bd5a] active:scale-90 text-white flex items-center justify-center shadow-xs transition-all ios-press shrink-0"
+          className="px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-[#2C2C2E] dark:hover:bg-zinc-700 text-blue-600 dark:text-blue-500 text-xs font-extrabold transition-all ios-press shrink-0 flex items-center justify-center"
           title="WhatsApp'tan Ustayla Görüş"
-          aria-label="WhatsApp"
         >
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.79 14.07c-.24.68-1.4 1.29-1.93 1.37-.51.08-1.18.11-1.9-.12-.44-.14-1.01-.33-1.74-.65-3.07-1.33-5.07-4.43-5.22-4.64-.15-.2-1.24-1.65-1.24-3.15 0-1.5.78-2.24 1.06-2.54.28-.3.61-.37.81-.37.2 0 .41 0 .59.01.19.01.44-.07.69.52.25.6.86 2.1.94 2.25.08.15.13.33.03.53-.1.2-.15.33-.3.51-.15.18-.32.4-.46.54-.15.15-.31.31-.13.62.18.31.8 1.32 1.72 2.14 1.18 1.05 2.17 1.38 2.48 1.53.31.15.49.13.67-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.83.86 2.14 1.01.31.15.52.23.6.36.08.13.08.76-.16 1.44z" />
-          </svg>
+          MESAJ
         </a>
       </div>
     </div>
