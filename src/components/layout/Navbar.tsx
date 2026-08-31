@@ -1,18 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Store, ShieldCheck } from "lucide-react";
+import { Plus, Store, ShieldCheck, Map as MapIcon, LayoutGrid } from "lucide-react";
 import { EsnafcaLogo } from "@/components/brand/EsnafcaLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
-export function Navbar() {
+interface NavbarProps {
+  viewMode?: "map" | "list";
+  onViewModeChange?: (mode: "map" | "list") => void;
+}
+
+export function Navbar({ viewMode, onViewModeChange }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 apple-glass dark:bg-black/80 dark:border-white/[0.08] transition-colors duration-200">
-      <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         {/* Brand Monogram */}
         <Link href="/" className="flex items-center gap-2.5 ios-press">
           <EsnafcaLogo size={32} variant="full" />
         </Link>
+
+        {/* Center: View Switcher Segmented Control (if supported on page) */}
+        {viewMode && onViewModeChange && (
+          <div className="flex items-center p-1 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08]">
+            <button
+              type="button"
+              onClick={() => onViewModeChange("map")}
+              className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ios-press ${
+                viewMode === "map"
+                  ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              <span>Harita</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange("list")}
+              className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ios-press ${
+                viewMode === "list"
+                  ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Liste</span>
+            </button>
+          </div>
+        )}
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">

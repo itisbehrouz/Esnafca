@@ -6,9 +6,12 @@ import { generateWhatsAppUrl } from "@/lib/whatsapp";
 
 interface PriceMenuListProps {
   merchant: Merchant;
+  services?: ServiceItem[];
 }
 
-export function PriceMenuList({ merchant }: PriceMenuListProps) {
+export function PriceMenuList({ merchant, services }: PriceMenuListProps) {
+  const displayServices = services || merchant.services || [];
+
   const handleBookingClick = (service: ServiceItem) => {
     const url = generateWhatsAppUrl(merchant, service);
     window.open(url, "_blank", "noopener,noreferrer");
@@ -31,7 +34,7 @@ export function PriceMenuList({ merchant }: PriceMenuListProps) {
 
       {/* iOS Grouped Inset Menu List */}
       <div className="bg-white dark:bg-[#1C1C1E] rounded-ios-card border border-black/[0.04] dark:border-white/[0.08] shadow-ios-card divide-y divide-black/[0.04] dark:divide-white/[0.06] overflow-hidden">
-        {merchant.services.map((service) => {
+        {displayServices.map((service) => {
           return (
             <div
               key={service.id}

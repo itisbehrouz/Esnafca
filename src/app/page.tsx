@@ -163,49 +163,7 @@ function HomeContent() {
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-20 sm:pb-0 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
-      <Navbar />
-
-      {/* View Mode Toggle Header Bar */}
-      <div className="sticky top-14 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.04] dark:border-white/[0.06] py-2 px-4 transition-colors">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-extrabold text-black dark:text-white">
-              {viewMode === "map" ? "🗺️ Canlı Mahalle Haritası" : "📋 Mahalle Esnafları"}
-            </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand/10 text-brand">
-              {filteredMerchants.length} Usta
-            </span>
-          </div>
-
-          {/* Mode Switcher Segmented Control */}
-          <div className="flex items-center p-1 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08]">
-            <button
-              type="button"
-              onClick={() => setViewMode("map")}
-              className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ios-press ${
-                viewMode === "map"
-                  ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-xs"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              <MapIcon className="w-3.5 h-3.5" />
-              <span>Harita</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ios-press ${
-                viewMode === "list"
-                  ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-xs"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Liste</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <Navbar viewMode={viewMode} onViewModeChange={setViewMode} />
 
       {/* ======================================================== */}
       {/* 1. INTERACTIVE MAP VIEW (User Inquired Inspiration Mode) */}
@@ -219,6 +177,11 @@ function HomeContent() {
           activeLocationLabel={activeLocationLabel}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
           onClearLocation={clearLocationFilter}
+          onSelectLocation={(city, district, neighborhood) => {
+            setSelectedCity(city);
+            setSelectedDistrict(district || "Tüm Bölgeler");
+            setSelectedNeighborhood(neighborhood || "");
+          }}
           onSwitchToListMode={() => setViewMode("list")}
         />
       ) : (

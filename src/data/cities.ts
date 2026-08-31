@@ -313,8 +313,11 @@ export const CITIES: City[] = [
       {
         "name": "Kağıthane",
         "neighborhoods": [
-          "Çeliktepe",
+          "Nurtepe",
+          "Güzeltepe",
           "Gültepe (Ortabayır)",
+          "Çeliktepe",
+          "Emniyetevleri",
           "Hamidiye",
           "Merkez",
           "Sanayi",

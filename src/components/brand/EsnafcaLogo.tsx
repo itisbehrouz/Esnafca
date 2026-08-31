@@ -1,32 +1,39 @@
 import React from "react";
 
 interface EsnafcaLogoProps {
-  size?: number;
+  size?: number | "sm" | "md" | "lg" | "xl";
   className?: string;
   variant?: "icon" | "full";
 }
 
 export function EsnafcaLogo({ size = 32, className = "", variant = "icon" }: EsnafcaLogoProps) {
+  const pixelSize = typeof size === "number"
+    ? size
+    : size === "sm"
+    ? 24
+    : size === "md"
+    ? 48
+    : size === "lg"
+    ? 64
+    : size === "xl"
+    ? 80
+    : 32;
+
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
+    <div className={`flex items-center gap-2 ${className}`}>
       <img
         src="/apple-touch-icon.png"
         alt="Esnafça Logo"
-        width={size}
-        height={size}
-        style={{ width: size, height: size }}
+        width={pixelSize}
+        height={pixelSize}
+        style={{ width: pixelSize, height: pixelSize }}
         className="rounded-[22%] object-cover shadow-xs shrink-0"
       />
 
       {variant === "full" && (
-        <div className="flex items-center gap-1.5">
-          <span className="font-extrabold text-base tracking-tight text-black dark:text-white leading-none">
-            Esnaf<span className="text-brand">ça</span>
-          </span>
-          <span className="text-[10px] font-bold bg-black/[0.05] dark:bg-white/[0.1] text-zinc-700 dark:text-zinc-300 px-2 py-0.5 rounded-full leading-none">
-            Şeffaf
-          </span>
-        </div>
+        <span className="font-extrabold text-base tracking-tight text-black dark:text-white leading-none">
+          Esnaf<span className="text-brand">ça</span>
+        </span>
       )}
     </div>
   );

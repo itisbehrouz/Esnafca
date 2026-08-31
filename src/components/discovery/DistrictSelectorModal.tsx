@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { X, Search, ChevronRight, ChevronLeft, MapPin, Check, Building2, Sparkles } from "lucide-react";
+import { X, Search, ChevronRight, ChevronLeft, MapPin, Check, Crosshair, Loader2, AlertCircle } from "lucide-react";
 import { CITIES } from "@/data/cities";
 import { City, District } from "@/types";
 
@@ -29,6 +29,8 @@ export function DistrictSelectorModal({
   const [activeCity, setActiveCity] = useState<City>(CITIES[0]);
   const [activeDistrict, setActiveDistrict] = useState<District | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLocating, setIsLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
 
   const emitSelect = (cityName: string, districtName: string, nhName: string = "") => {
     if (onSelect) onSelect(cityName, districtName, nhName);
@@ -68,30 +70,108 @@ export function DistrictSelectorModal({
     setActiveCity(city);
     setActiveDistrict(null);
     setViewState("districts");
+    setLocateError(null);
   };
 
   const handleAllTurkey = () => {
     emitSelect("Tüm Şehirler", "Tüm Bölgeler", "");
     onClose();
     setViewState("cities");
+    setLocateError(null);
   };
 
   const handleAllCity = (cityName: string) => {
     emitSelect(cityName, "Tüm Bölgeler", "");
     onClose();
     setViewState("cities");
+    setLocateError(null);
   };
 
   const handleDistrictSelect = (cityName: string, districtName: string) => {
     emitSelect(cityName, districtName, "");
     onClose();
     setViewState("cities");
+    setLocateError(null);
   };
 
   const handleNeighborhoodSelect = (cityName: string, districtName: string, nhName: string) => {
     emitSelect(cityName, districtName, nhName);
     onClose();
     setViewState("cities");
+    setLocateError(null);
+  };
+
+  const handleModalLocateMe = async () => {
+    setIsLocating(true);
+    setLocateError(null);
+
+    const processCoords = async (latitude: number, longitude: number) => {
+      try {
+        const res = await fetch(`/api/locate?lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        setIsLocating(false);
+        if (data && data.success && data.city) {
+          emitSelect(data.city, data.district || "Tüm Bölgeler", data.neighborhood || "");
+          onClose();
+          setViewState("cities");
+        } else {
+          setLocateError("Konumunuz tespit edilemedi. Lütfen listeden seçiniz.");
+        }
+      } catch {
+        setIsLocating(false);
+        setLocateError("Konum servisine ulaşılamadı. Lütfen listeden seçiniz.");
+      }
+    };
+
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      // IP fallback
+      try {
+        const res = await fetch("/api/locate?auto=1");
+        const ipData = await res.json();
+        if (ipData && ipData.success && ipData.city) {
+          setIsLocating(false);
+          emitSelect(ipData.city, ipData.district || "Tüm Bölgeler", ipData.neighborhood || "");
+          onClose();
+          setViewState("cities");
+          return;
+        }
+      } catch {
+        // ignore
+      }
+      setIsLocating(false);
+      setLocateError("Tarayıcınız konum servisini desteklemiyor.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        processCoords(pos.coords.latitude, pos.coords.longitude);
+      },
+      async (err) => {
+        // Fallback to IP locate
+        try {
+          const res = await fetch("/api/locate?auto=1");
+          const ipData = await res.json();
+          if (ipData && ipData.success && ipData.city) {
+            setIsLocating(false);
+            emitSelect(ipData.city, ipData.district || "Tüm Bölgeler", ipData.neighborhood || "");
+            onClose();
+            setViewState("cities");
+            return;
+          }
+        } catch {
+          // ignore
+        }
+
+        setIsLocating(false);
+        if (err.code === 1) {
+          setLocateError("Konum izni verilmedi. Tarayıcı ayarlarından izin verebilirsiniz.");
+        } else {
+          setLocateError("Konum bilgisi alınamadı. Lütfen listeden seçiniz.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
   };
 
   return (
@@ -109,7 +189,10 @@ export function DistrictSelectorModal({
         <div className="px-4 py-3 flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] bg-white/80 dark:bg-[#1C1C1E]/90 backdrop-blur-md">
           {viewState === "districts" ? (
             <button
-              onClick={() => setViewState("cities")}
+              onClick={() => {
+                setViewState("cities");
+                setLocateError(null);
+              }}
               className="flex items-center gap-1 text-xs font-bold text-brand ios-press py-1 -ml-1 pr-2 rounded-full hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
             >
               <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
@@ -130,6 +213,7 @@ export function DistrictSelectorModal({
             onClick={() => {
               onClose();
               setViewState("cities");
+              setLocateError(null);
             }}
             className="w-7 h-7 rounded-full bg-zinc-200/80 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 ios-press"
           >
@@ -137,8 +221,30 @@ export function DistrictSelectorModal({
           </button>
         </div>
 
-        {/* Apple Universal Live Search Input */}
-        <div className="p-3 bg-white dark:bg-[#1C1C1E] border-b border-black/[0.06] dark:border-white/[0.08]">
+        {/* GPS Quick Locate Action Bar inside Modal */}
+        <div className="p-3 bg-white dark:bg-[#1C1C1E] border-b border-black/[0.06] dark:border-white/[0.08] space-y-2">
+          <button
+            type="button"
+            onClick={handleModalLocateMe}
+            disabled={isLocating}
+            className="w-full py-2.5 px-3.5 rounded-2xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 text-xs font-extrabold flex items-center justify-center gap-2 transition-all ios-press"
+          >
+            {isLocating ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Crosshair className="w-3.5 h-3.5" />
+            )}
+            <span>{isLocating ? "Mevcut Konumunuz Belirleniyor..." : "Bulunduğum Konumu Otomatik Getir (GPS)"}</span>
+          </button>
+
+          {locateError && (
+            <div className="flex items-center gap-1.5 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[11px] font-semibold border border-amber-200 dark:border-amber-800/40">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{locateError}</span>
+            </div>
+          )}
+
+          {/* Search Input */}
           <div className="relative flex items-center">
             <Search className="absolute left-3.5 w-4 h-4 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
             <input
@@ -148,7 +254,7 @@ export function DistrictSelectorModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Mahalle veya ilçe ara (Örn: Moda, Alsancak...)"
-              className="w-full pl-9 pr-8 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800/80 border border-transparent focus:border-black/[0.08] dark:focus:border-white/[0.15] focus:bg-white dark:focus:bg-zinc-800 text-xs font-medium text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none transition-all"
+              className="w-full pl-9 pr-8 py-2 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-transparent focus:border-black/[0.08] dark:focus:border-white/[0.15] focus:bg-white dark:focus:bg-zinc-800 text-xs font-medium text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none transition-all"
             />
             {searchQuery && (
               <button
@@ -268,7 +374,7 @@ export function DistrictSelectorModal({
                   {activeCity.name} İlçeleri & Popüler Mahalleler
                 </span>
 
-                {/* Clean Accordion-like Grouped District Lists */}
+                {/* Grouped District Lists */}
                 <div className="space-y-2">
                   {activeCity.districts.map((dist) => {
                     const isExpanded = activeDistrict?.name === dist.name;

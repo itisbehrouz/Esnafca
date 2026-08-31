@@ -21,7 +21,8 @@ import {
   ShieldCheck,
   Check,
   AlertCircle,
-  Clock
+  Clock,
+  MapPin
 } from "lucide-react";
 import { 
   getAllMerchants, 
@@ -518,8 +519,9 @@ function MerchantPortalContent() {
                 )}
               </div>
 
-              <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
-                📍 {activeMerchant.neighborhood}, {activeMerchant.district} / {activeMerchant.city} — {activeMerchant.address}
+              <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium pt-1 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
+                <span className="truncate">{activeMerchant.neighborhood}, {activeMerchant.district} / {activeMerchant.city} — {activeMerchant.address}</span>
               </div>
             </div>
 
