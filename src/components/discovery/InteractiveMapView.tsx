@@ -93,14 +93,22 @@ export const DISTRICT_COORDINATES: Record<string, [number, number]> = {
 };
 
 const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
-  "berber-kuafor": Scissors,
-  "terzi-lostra": Scissors,
-  "oto-bakim": Car,
-  "acil-ev": KeyRound,
+  "berber": Scissors,
+  "kuafor": Sparkles,
+  "guzellik": Sparkles,
+  "cilingir": KeyRound,
+  "elektrikci": KeyRound,
+  "tesisat": Hammer,
+  "kucuk-ev-aletleri": Hammer,
+  "bisiklet-tamir": KeyRound,
+  "oto-tamir": Car,
+  "oto-yikama": Sparkles,
+  "oto-lastik": Car,
+  "terzi": Scissors,
+  "lostra": Footprints,
+  "kuru-temizleme": Sparkles,
   "veteriner": Dog,
   "pet-kuafor": Dog,
-  "tamir-elektronik": Hammer,
-  "atolye-tamir": Hammer,
 };
 
 // SVG strings for Leaflet divIcon markers

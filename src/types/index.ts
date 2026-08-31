@@ -1,10 +1,20 @@
 export type CategoryId = 
-  | "terzi-lostra"
-  | "berber-kuafor"
-  | "oto-bakim"
-  | "acil-ev"
-  | "pet-kuafor"
-  | "tamir-elektronik";
+  | "berber"
+  | "kuafor"
+  | "guzellik"
+  | "cilingir"
+  | "elektrikci"
+  | "tesisat"
+  | "kucuk-ev-aletleri"
+  | "bisiklet-tamir"
+  | "oto-tamir"
+  | "oto-yikama"
+  | "oto-lastik"
+  | "terzi"
+  | "lostra"
+  | "kuru-temizleme"
+  | "veteriner"
+  | "pet-kuafor";
 
 export type SubscriptionTier = "free" | "pro" | "plus";
 
