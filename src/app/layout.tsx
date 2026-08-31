@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Esnafça - Şeffaf Fiyat, Dürüst Usta, Mahallenin Esnafı",
+  applicationName: "Esnafça",
   description: "Türkiye'nin küçük esnaf ve yerel zanaatkârlarını beyaz yakalılarla buluşturan komisyonsuz, şeffaf fiyat menülü mobil platform.",
   manifest: "/manifest.json",
   icons: {
