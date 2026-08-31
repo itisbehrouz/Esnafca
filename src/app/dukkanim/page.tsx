@@ -34,7 +34,8 @@ import {
   getPendingApplications,
   MerchantApplication 
 } from "@/lib/merchant-store";
-import { Merchant, ServiceItem } from "@/types";
+import { Merchant, ServiceItem, CategoryId } from "@/types";
+import { CATEGORIES } from "@/data/categories";
 import { QrWindowModal } from "@/components/merchant/QrWindowModal";
 import { EsnafcaLogo } from "@/components/brand/EsnafcaLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -567,7 +568,22 @@ function MerchantPortalContent() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Kısa Slogan (Zanaat)</label>
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Kategori / Zanaat</label>
+                  <select
+                    value={activeMerchant.category}
+                    onChange={(e) => handleUpdateProfile("category", e.target.value as CategoryId)}
+                    className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors cursor-pointer appearance-none"
+                  >
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Kısa Slogan (Alt Başlık)</label>
                   <input
                     type="text"
                     value={activeMerchant.craftTitle}
