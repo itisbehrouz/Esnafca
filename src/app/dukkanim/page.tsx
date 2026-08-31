@@ -22,7 +22,8 @@ import {
   Check,
   AlertCircle,
   Clock,
-  MapPin
+  MapPin,
+  User
 } from "lucide-react";
 import { 
   getAllMerchants, 
@@ -202,6 +203,20 @@ function MerchantPortalContent() {
     setIsOpen(newStatus);
     updateMerchant(activeMerchant.id, { isOpenNow: newStatus });
     showToast(newStatus ? "Dükkanınız AÇIK olarak güncellendi." : "Dükkanınız İZİNLİ/KAPALI olarak güncellendi.");
+  };
+  const handleUpdateProfile = (field: keyof Merchant, value: any) => {
+    if (!activeMerchant) return;
+    const updated = { ...activeMerchant, [field]: value };
+    setActiveMerchant(updated);
+    updateMerchant(activeMerchant.id, { [field]: value });
+  };
+
+  const handleUpdateWorkingHours = (day: "weekdays" | "saturday" | "sunday", value: string) => {
+    if (!activeMerchant) return;
+    const newHours = { ...activeMerchant.workingHours, [day]: value };
+    const updated = { ...activeMerchant, workingHours: newHours };
+    setActiveMerchant(updated);
+    updateMerchant(activeMerchant.id, { workingHours: newHours });
   };
 
   const handlePriceChange = (serviceId: string, field: "minPrice" | "maxPrice", value: string) => {
@@ -525,6 +540,85 @@ function MerchantPortalContent() {
               <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium pt-1 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
                 <span className="truncate">{activeMerchant.neighborhood}, {activeMerchant.district} / {activeMerchant.city} — {activeMerchant.address}</span>
+              </div>
+            </div>
+
+            {/* Profil Bilgileri Düzenleyici */}
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-5 space-y-4 shadow-xs">
+              <div className="space-y-0.5">
+                <h3 className="text-sm font-extrabold text-black dark:text-white flex items-center gap-1.5">
+                  <User className="w-4 h-4 text-brand" />
+                  <span>Profil Bilgileri & Saatler</span>
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                  Vitrin resminizi, sloganınızı ve çalışma saatlerinizi güncelleyin.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Kapak Fotoğrafı URL</label>
+                  <input
+                    type="text"
+                    value={activeMerchant.heroImage}
+                    onChange={(e) => handleUpdateProfile("heroImage", e.target.value)}
+                    className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Kısa Slogan (Zanaat)</label>
+                  <input
+                    type="text"
+                    value={activeMerchant.craftTitle}
+                    onChange={(e) => handleUpdateProfile("craftTitle", e.target.value)}
+                    placeholder="Örn: OTO BAKIM & MEKANİK"
+                    className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Biyografi / Hakkımızda</label>
+                  <textarea
+                    value={activeMerchant.bio}
+                    onChange={(e) => handleUpdateProfile("bio", e.target.value)}
+                    rows={3}
+                    className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Hafta İçi</label>
+                    <input
+                      type="text"
+                      value={activeMerchant.workingHours.weekdays}
+                      onChange={(e) => handleUpdateWorkingHours("weekdays", e.target.value)}
+                      placeholder="09:00 - 19:30"
+                      className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Cumartesi</label>
+                    <input
+                      type="text"
+                      value={activeMerchant.workingHours.saturday}
+                      onChange={(e) => handleUpdateWorkingHours("saturday", e.target.value)}
+                      placeholder="09:00 - 19:00"
+                      className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Pazar</label>
+                    <input
+                      type="text"
+                      value={activeMerchant.workingHours.sunday}
+                      onChange={(e) => handleUpdateWorkingHours("sunday", e.target.value)}
+                      placeholder="Kapalı"
+                      className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
