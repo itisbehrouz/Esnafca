@@ -1,19 +1,29 @@
-class ApiConstants {
-  // Configurable at build-time via --dart-define=API_BASE_URL=https://api.esnafca.com/api
-  // Default for local development: 127.0.0.1:3005 (iOS simulator) or 10.0.2.2:3005 (Android)
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:3005/api',
-  );
+import 'dart:io' show Platform;
 
-  static const String merchants = "$baseUrl/merchants";
-  static const String applications = "$baseUrl/applications";
-  static const String auth = "$baseUrl/merchants/auth";
-  static const String sendOtp = "$baseUrl/merchants/auth/send-otp";
-  static const String verifyOtp = "$baseUrl/merchants/auth/verify-otp";
-  static const String locate = "$baseUrl/locate";
-  static const String profile = "$baseUrl/merchants/profile";
-  static const String services = "$baseUrl/merchants/services";
-  static const String upload = "$baseUrl/upload";
-  static const String paymentsCheckout = "$baseUrl/payments/checkout";
+class ApiConstants {
+  // Configurable at build-time via --dart-define=API_BASE_URL=https://...
+  static const String _customBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  /// Dynamic base URL depending on platform or custom environment flag
+  static String get baseUrl {
+    if (_customBaseUrl.isNotEmpty) {
+      return _customBaseUrl;
+    }
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:3005/api';
+    }
+    return 'http://127.0.0.1:3005/api';
+  }
+
+  static String get merchants => "$baseUrl/merchants";
+  static String get applications => "$baseUrl/applications";
+  static String get auth => "$baseUrl/merchants/auth";
+  static String get sendOtp => "$baseUrl/merchants/auth/send-otp";
+  static String get verifyOtp => "$baseUrl/merchants/auth/verify-otp";
+  static String get locate => "$baseUrl/locate";
+  static String get profile => "$baseUrl/merchants/profile";
+  static String get services => "$baseUrl/merchants/services";
+  static String get upload => "$baseUrl/upload";
+  static String get paymentsCheckout => "$baseUrl/payments/checkout";
+  static String get appointments => "$baseUrl/merchants/appointments";
 }

@@ -40,6 +40,17 @@
 	<string>Esnafça, çevrenizdeki en yakın mahalle esnafını ve ustaları haritada gösterebilmek için konum izninizi kullanır.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Esnafça, yakınınızdaki doğrulanmış esnaflara ve acil ustalara anında ulaşabilmeniz için konumunuzu kullanır.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Esnafça dükkan vitrin ve kapak fotoğrafınızı güncelleyebilmeniz için fotoğraf galerinize erişim izni gereklidir.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Esnafça dükkanınızın fotoğrafını çekip vitrin görseli yapabilmeniz için kamera izni gereklidir.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>whatsapp</string>

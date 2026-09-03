@@ -10,6 +10,7 @@ class AuthState {
   final String? errorMessage;
   final bool isOtpSent;
   final String? pendingPhone;
+  final bool isAuthenticated;
 
   AuthState({
     this.currentMerchant,
@@ -18,6 +19,7 @@ class AuthState {
     this.errorMessage,
     this.isOtpSent = false,
     this.pendingPhone,
+    this.isAuthenticated = false,
   });
 
   AuthState copyWith({
@@ -27,6 +29,7 @@ class AuthState {
     String? errorMessage,
     bool? isOtpSent,
     String? pendingPhone,
+    bool? isAuthenticated,
   }) {
     return AuthState(
       currentMerchant: currentMerchant ?? this.currentMerchant,
@@ -35,6 +38,7 @@ class AuthState {
       errorMessage: errorMessage,
       isOtpSent: isOtpSent ?? this.isOtpSent,
       pendingPhone: pendingPhone ?? this.pendingPhone,
+      isAuthenticated: isAuthenticated ?? (currentMerchant != null ? true : this.isAuthenticated),
     );
   }
 }
@@ -47,11 +51,55 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _initSession();
   }
 
+  /// Rehydrate session from stored JWT token on app launch
   Future<void> _initSession() async {
+    state = state.copyWith(isLoading: true);
     final token = await _storage.read(key: 'auth_token');
-    final merchantId = await _storage.read(key: 'merchant_id');
-    if (token != null && merchantId != null) {
-      // In production, fetch current merchant profile to rehydrate
+    if (token != null && token.isNotEmpty) {
+      final profile = await _apiService.getProfile();
+      if (profile != null) {
+        await _storage.write(key: 'merchant_id', value: profile.id);
+        state = state.copyWith(
+          currentMerchant: profile,
+          isAuthenticated: true,
+          status: 'approved',
+          isLoading: false,
+        );
+        return;
+      }
+    }
+    state = state.copyWith(isLoading: false);
+  }
+
+  /// 1-Tap Fast Demo Login by Merchant ID
+  Future<bool> loginWithId(String id) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final res = await _apiService.loginById(id);
+      if (res != null && res['success'] == true) {
+        if (res['merchant'] != null) {
+          final merchant = Merchant.fromJson(res['merchant']);
+          await _storage.write(key: 'merchant_id', value: merchant.id);
+          state = state.copyWith(
+            currentMerchant: merchant,
+            isAuthenticated: true,
+            status: 'approved',
+            isLoading: false,
+          );
+          return true;
+        }
+      }
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: res?['error'] ?? "Giriş yapılamadı.",
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: "Giriş sırasında hata oluştu.",
+      );
+      return false;
     }
   }
 
@@ -97,6 +145,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           await _storage.write(key: 'merchant_id', value: merchant.id);
           state = state.copyWith(
             currentMerchant: merchant,
+            isAuthenticated: true,
             status: 'approved',
             isLoading: false,
             isOtpSent: false,

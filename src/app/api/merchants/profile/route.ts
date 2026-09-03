@@ -3,6 +3,80 @@ import { prisma } from "@/lib/db";
 import { getMerchantSessionFromRequest } from "@/lib/auth";
 import { parseJsonField } from "@/lib/utils";
 
+export async function GET(request: Request) {
+  try {
+    const session = await getMerchantSessionFromRequest(request);
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Yetkisiz erişim. Lütfen giriş yapınız." },
+        { status: 401 }
+      );
+    }
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: session.id },
+      include: {
+        services: { where: { isArchived: false } },
+        reviews: true,
+      },
+    });
+
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, error: "Esnaf profili bulunamadı." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: merchant.id,
+        slug: merchant.slug,
+        name: merchant.name,
+        craftTitle: merchant.craftTitle,
+        masterName: merchant.masterName,
+        category: merchant.category,
+        city: merchant.city,
+        district: merchant.district,
+        neighborhood: merchant.neighborhood,
+        address: merchant.address,
+        latitude: merchant.latitude,
+        longitude: merchant.longitude,
+        phone: merchant.phone,
+        whatsapp: merchant.whatsapp,
+        rating: merchant.rating,
+        reviewCount: merchant.reviewCount,
+        verified: merchant.verified,
+        verifiedYear: merchant.verifiedYear,
+        tier: merchant.tier,
+        experienceYears: merchant.experienceYears,
+        minPrice: merchant.minPrice,
+        maxPrice: merchant.maxPrice,
+        priceNote: merchant.priceNote,
+        workingHours: parseJsonField(merchant.workingHours, {}),
+        heroImage: merchant.heroImage,
+        galleryImages: parseJsonField(merchant.galleryImages, []),
+        bio: merchant.bio,
+        specialties: parseJsonField(merchant.specialties, []),
+        features: parseJsonField(merchant.features, {}),
+        isOpenNow: merchant.isOpenNow,
+        services: merchant.services,
+        reviews: merchant.reviews.map((r) => ({
+          ...r,
+          tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("API Profile GET Error:", error);
+    return NextResponse.json(
+      { success: false, error: "Profil getirilemedi." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(request: Request) {
   try {
     // 1. Authenticate Request via JWT / HttpOnly Session Cookie
