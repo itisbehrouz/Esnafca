@@ -13,9 +13,16 @@ const INSECURE_DEFAULT_ADMIN_PASSWORD = "esnafca2026!";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
+export const IS_BUILD_PHASE =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.npm_lifecycle_event === "build" ||
+  (Array.isArray(process.argv) && process.argv.includes("build")) ||
+  Boolean(process.env.NEXT_BUILD);
+
 export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   IS_PROD,
+  IS_BUILD_PHASE,
 
   // Database
   DATABASE_URL: process.env.DATABASE_URL || "file:./dev.db",
@@ -39,7 +46,7 @@ export const env = {
   PAYMENT_WEBHOOK_SECRET: process.env.PAYMENT_WEBHOOK_SECRET || "",
 };
 
-function assertProductionSecrets() {
+export function assertProductionSecrets(): void {
   if (!IS_PROD) return;
 
   const problems: string[] = [];
@@ -54,12 +61,23 @@ function assertProductionSecrets() {
   }
 
   if (problems.length > 0) {
-    throw new Error(
+    const errorMessage =
       "Üretim ortamı başlatılamadı, zorunlu ortam değişkenleri eksik:\n- " +
-        problems.join("\n- ") +
-        "\n\n.env.example dosyasına bakın ve bu değerleri gerçek, gizli değerlerle tanımlayın."
-    );
+      problems.join("\n- ") +
+      "\n\n.env.example dosyasına bakın ve bu değerleri gerçek, gizli değerlerle tanımlayın.";
+
+    if (IS_BUILD_PHASE) {
+      console.warn(
+        `\n⚠️ [BUILD WARNING] Eksik üretim ortam değişkenleri tespit edildi:\n- ${problems.join(
+          "\n- "
+        )}\nNext.js build aşamasında devam ediliyor; canlı sunucuda (runtime) bu değişkenlerin girilmesi zorunludur.\n`
+      );
+      return;
+    }
+
+    throw new Error(errorMessage);
   }
 }
 
+// Validate environment on module load
 assertProductionSecrets();
