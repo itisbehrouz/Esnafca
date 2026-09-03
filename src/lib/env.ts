@@ -15,9 +15,7 @@ const IS_PROD = process.env.NODE_ENV === "production";
 
 export const IS_BUILD_PHASE =
   process.env.NEXT_PHASE === "phase-production-build" ||
-  process.env.npm_lifecycle_event === "build" ||
-  (Array.isArray(process.argv) && process.argv.includes("build")) ||
-  Boolean(process.env.NEXT_BUILD);
+  process.env.npm_lifecycle_event === "build";
 
 export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
@@ -44,6 +42,10 @@ export const env = {
   // Shared secret the payment provider (or our own mock flow) must present
   // on every call to /api/payments/webhook. Required in production.
   PAYMENT_WEBHOOK_SECRET: process.env.PAYMENT_WEBHOOK_SECRET || "",
+
+  // Private Preview Mode (Site-wide password gatekeeper)
+  SITE_PASSWORD: process.env.SITE_PASSWORD || "",
+  SITE_ACCESS_COOKIE: process.env.SITE_ACCESS_COOKIE || "esnaf_preview_session",
 };
 
 export function assertProductionSecrets(): void {

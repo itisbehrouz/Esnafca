@@ -3,16 +3,94 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { env } from "@/lib/env";
 
-// Same secret source as src/lib/auth.ts — see env.ts for the production
-// safety check that refuses to boot with the fallback value.
 const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
+
+/**
+ * Check if the path is a public static asset or an exempted route
+ */
+function isExemptedPath(pathname: string): boolean {
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/uploads") ||
+    pathname === "/favicon.ico" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/api/payments/webhook" ||
+    pathname === "/preview-gate"
+  ) {
+    return true;
+  }
+
+  // Common static file extensions
+  if (
+    /\.(png|svg|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot|css|js|map|txt|xml|json)$/i.test(
+      pathname
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Protect Admin Routes
+  // 1. If user is accessing the preview gate page, check if already authenticated
+  if (pathname === "/preview-gate") {
+    if (!env.SITE_PASSWORD) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    const previewCookie = request.cookies.get(env.SITE_ACCESS_COOKIE)?.value;
+    if (previewCookie) {
+      try {
+        const { payload } = await jwtVerify(previewCookie, JWT_SECRET);
+        if (payload.role === "preview_tester") {
+          const redirectTo = request.nextUrl.searchParams.get("redirect") || "/";
+          return NextResponse.redirect(new URL(redirectTo, request.url));
+        }
+      } catch {
+        // Invalid token, allow access to preview-gate
+      }
+    }
+    return NextResponse.next();
+  }
+
+  // 2. Skip checks for static assets and exempted endpoints
+  if (isExemptedPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  // 3. Site-Wide Private Preview Gatekeeper
+  if (env.SITE_PASSWORD) {
+    const previewCookie = request.cookies.get(env.SITE_ACCESS_COOKIE)?.value;
+    let isPreviewAuthorized = false;
+
+    if (previewCookie) {
+      try {
+        const { payload } = await jwtVerify(previewCookie, JWT_SECRET);
+        if (payload.role === "preview_tester") {
+          isPreviewAuthorized = true;
+        }
+      } catch {
+        isPreviewAuthorized = false;
+      }
+    }
+
+    if (!isPreviewAuthorized) {
+      const gateUrl = new URL("/preview-gate", request.url);
+      const fullPath = pathname + request.nextUrl.search;
+      if (fullPath !== "/" && fullPath !== "") {
+        gateUrl.searchParams.set("redirect", fullPath);
+      }
+      return NextResponse.redirect(gateUrl);
+    }
+  }
+
+  // 4. Protect Admin Routes
   if (pathname.startsWith("/admin")) {
-    // Exclude the login page itself
+    // Exclude the admin login page itself
     if (pathname === "/admin/login") {
       const adminCookie = request.cookies.get("esnaf_admin_session")?.value;
       if (adminCookie) {
@@ -31,7 +109,8 @@ export async function middleware(request: NextRequest) {
     // Check admin session for all other /admin pages
     const adminCookie = request.cookies.get("esnaf_admin_session")?.value;
     const authHeader = request.headers.get("authorization");
-    const bearerToken = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const bearerToken =
+      authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
     const token = adminCookie || bearerToken;
 
     if (!token) {
@@ -46,7 +125,7 @@ export async function middleware(request: NextRequest) {
         const loginUrl = new URL("/admin/login", request.url);
         return NextResponse.redirect(loginUrl);
       }
-    } catch (err) {
+    } catch {
       const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
@@ -57,5 +136,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except for:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
 };
