@@ -42,13 +42,16 @@ export async function verifySitePasswordAction(
   password: string,
   redirectPath?: string
 ): Promise<PreviewAuthResult> {
+  const expectedPassword = (process.env.SITE_PASSWORD || env.SITE_PASSWORD || "").trim();
+  const siteCookieName = process.env.SITE_ACCESS_COOKIE || env.SITE_ACCESS_COOKIE || "esnaf_preview_session";
+
   // If SITE_PASSWORD is not configured, preview gate is open
-  if (!env.SITE_PASSWORD) {
+  if (!expectedPassword) {
     return { success: true, redirectUrl: redirectPath || "/" };
   }
 
   const cleanInput = (password || "").trim();
-  const isValid = isPasswordValid(cleanInput, env.SITE_PASSWORD.trim());
+  const isValid = isPasswordValid(cleanInput, expectedPassword);
 
   if (!isValid) {
     // Artificial 300ms delay to thwart automated brute-force attempts
@@ -61,7 +64,7 @@ export async function verifySitePasswordAction(
   try {
     const cookieStore = await cookies();
     cookieStore.set({
-      name: env.SITE_ACCESS_COOKIE,
+      name: siteCookieName,
       value: token,
       httpOnly: true,
       secure: env.IS_PROD,

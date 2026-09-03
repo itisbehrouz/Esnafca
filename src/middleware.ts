@@ -35,14 +35,16 @@ function isExemptedPath(pathname: string): boolean {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const sitePassword = process.env.SITE_PASSWORD || env.SITE_PASSWORD;
+  const siteCookieName = process.env.SITE_ACCESS_COOKIE || env.SITE_ACCESS_COOKIE || "esnaf_preview_session";
 
   // 1. If user is accessing the preview gate page, check if already authenticated
   if (pathname === "/preview-gate") {
-    if (!env.SITE_PASSWORD) {
+    if (!sitePassword) {
       return NextResponse.redirect(new URL("/", request.url));
     }
 
-    const previewCookie = request.cookies.get(env.SITE_ACCESS_COOKIE)?.value;
+    const previewCookie = request.cookies.get(siteCookieName)?.value;
     if (previewCookie) {
       try {
         const { payload } = await jwtVerify(previewCookie, JWT_SECRET);
@@ -63,8 +65,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Site-Wide Private Preview Gatekeeper
-  if (env.SITE_PASSWORD) {
-    const previewCookie = request.cookies.get(env.SITE_ACCESS_COOKIE)?.value;
+  if (sitePassword) {
+    const previewCookie = request.cookies.get(siteCookieName)?.value;
     let isPreviewAuthorized = false;
 
     if (previewCookie) {

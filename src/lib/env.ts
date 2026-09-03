@@ -44,7 +44,7 @@ export const env = {
   PAYMENT_WEBHOOK_SECRET: process.env.PAYMENT_WEBHOOK_SECRET || "",
 
   // Private Preview Mode (Site-wide password gatekeeper)
-  SITE_PASSWORD: process.env.SITE_PASSWORD || "",
+  SITE_PASSWORD: process.env.SITE_PASSWORD || "esnafca2026!",
   SITE_ACCESS_COOKIE: process.env.SITE_ACCESS_COOKIE || "esnaf_preview_session",
 };
 
