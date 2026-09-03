@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * @deprecated This client-side localStorage merchant store is DEPRECATED.
+ * All merchant data, applications, and updates are now persisted directly in
+ * the centralized database via Prisma ORM and Next.js Server Actions / API routes.
+ * Do not use for new features.
+ */
+
 import { Merchant, ServiceItem } from "@/types";
 import { MERCHANTS as INITIAL_MERCHANTS } from "@/data/seed-merchants";
 

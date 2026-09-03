@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, CheckCircle2, Info, Sparkles, Clock } from "lucide-react";
+import { MessageCircle, CheckCircle2, Info, Sparkles, Clock, Calendar } from "lucide-react";
 import { Merchant, ServiceItem } from "@/types";
 import { generateWhatsAppUrl } from "@/lib/whatsapp";
 
@@ -25,14 +25,28 @@ export function PriceMenuList({ merchant, services, onBookService }: PriceMenuLi
   return (
     <div className="space-y-3">
       {/* Apple Style Transparency Callout */}
-      <div className="p-3.5 rounded-ios-card bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20 dark:border-emerald-800/40 flex items-start gap-2.5">
-        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className={`p-3.5 rounded-ios-card border flex items-start gap-2.5 ${
+        onBookService
+          ? "bg-brand/10 dark:bg-brand/15 border-brand/20 dark:border-brand/30"
+          : "bg-emerald-500/10 dark:bg-emerald-950/40 border-emerald-500/20 dark:border-emerald-800/40"
+      }`}>
+        {onBookService ? (
+          <Calendar className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+        ) : (
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+        )}
         <div className="space-y-0.5">
-          <h4 className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
-            Doğrulanmış Şeffaf Fiyat Güvencesi
+          <h4 className={`text-xs font-bold ${
+            onBookService ? "text-brand dark:text-brand" : "text-emerald-950 dark:text-emerald-200"
+          }`}>
+            {onBookService ? "Online Randevu & Şeffaf Fiyat Güvencesi" : "Doğrulanmış Şeffaf Fiyat Güvencesi"}
           </h4>
-          <p className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80 leading-relaxed font-medium">
-            Herhangi bir hizmete dokunarak doğrudan {merchant.masterName}'ya o işlem için WhatsApp'tan soru sorabilir veya randevu alabilirsiniz.
+          <p className={`text-[11px] leading-relaxed font-medium ${
+            onBookService ? "text-zinc-700 dark:text-zinc-300" : "text-emerald-900/80 dark:text-emerald-300/80"
+          }`}>
+            {onBookService
+              ? "Herhangi bir hizmete dokunarak doğrudan online randevu oluşturabilir ve uygun saati seçebilirsiniz."
+              : `Herhangi bir hizmete dokunarak doğrudan ${merchant.masterName}'ya o işlem için WhatsApp'tan soru sorabilir veya bilgi alabilirsiniz.`}
           </p>
         </div>
       </div>
@@ -48,7 +62,11 @@ export function PriceMenuList({ merchant, services, onBookService }: PriceMenuLi
             >
               <div className="space-y-0.5 flex-1 pr-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h4 className="font-bold text-xs sm:text-sm text-black dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
+                  <h4 className={`font-bold text-xs sm:text-sm text-black dark:text-white transition-colors ${
+                    onBookService
+                      ? "group-hover:text-brand dark:group-hover:text-brand"
+                      : "group-hover:text-emerald-700 dark:group-hover:text-emerald-400"
+                  }`}>
                     {service.name}
                   </h4>
                   {service.popular && (
@@ -81,9 +99,22 @@ export function PriceMenuList({ merchant, services, onBookService }: PriceMenuLi
                   </span>
                 </div>
 
-                <div className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
-                  <MessageCircle className="w-4 h-4 fill-current" />
-                </div>
+                {onBookService ? (
+                  <div
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-brand/10 text-brand group-hover:bg-brand group-hover:text-white transition-all shadow-xs text-[11px] font-extrabold"
+                    title="Online Randevu Al"
+                  >
+                    <Calendar className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <span className="hidden sm:inline">Randevu</span>
+                  </div>
+                ) : (
+                  <div
+                    className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs"
+                    title="WhatsApp'tan Yaz"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-current" />
+                  </div>
+                )}
               </div>
             </div>
           );

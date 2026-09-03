@@ -32,7 +32,6 @@ import { ShareModal } from "@/components/merchant/ShareModal";
 import { AppointmentBookingModal } from "@/components/merchant/AppointmentBookingModal";
 import { generateWhatsAppUrl } from "@/lib/whatsapp";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { getMerchantBySlug } from "@/lib/merchant-store";
 
 interface MerchantDetailClientProps {
   merchant?: Merchant;
@@ -59,33 +58,20 @@ export function MerchantDetailClient(props: MerchantDetailClientProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (props.slug) {
-      // First try fetching live from API
+    // If not passed via props or to rehydrate latest state from DB
+    if (props.slug && !props.merchant) {
       fetch(`/api/merchants/${props.slug}`)
         .then((res) => res.json())
         .then((json) => {
           if (json.success && json.data) {
             setMerchant(json.data);
-          } else {
-            const found = getMerchantBySlug(props.slug!);
-            if (found) setMerchant(found);
           }
         })
-        .catch(() => {
-          const found = getMerchantBySlug(props.slug!);
-          if (found) setMerchant(found);
+        .catch((err) => {
+          console.error("Error fetching merchant profile:", err);
         });
     }
-
-    const handleUpdate = () => {
-      if (props.slug) {
-        const found = getMerchantBySlug(props.slug);
-        if (found) setMerchant(found);
-      }
-    };
-    window.addEventListener("merchants_updated", handleUpdate);
-    return () => window.removeEventListener("merchants_updated", handleUpdate);
-  }, [props.slug]);
+  }, [props.slug, props.merchant]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

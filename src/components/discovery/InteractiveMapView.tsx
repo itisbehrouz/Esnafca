@@ -285,6 +285,17 @@ export default function InteractiveMapView({
 
       const marker = L.marker([lat, lng], { icon });
 
+      const popupHtml = `
+        <div style="padding: 10px 12px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; min-width: 190px;">
+          <h4 style="font-weight: 800; font-size: 13px; margin: 0 0 2px 0; color: #111827;">${m.name}</h4>
+          <p style="font-size: 11px; color: #6B7280; margin: 0 0 8px 0;">${m.masterName} · ${m.minPrice} ₺ - ${m.maxPrice} ₺</p>
+          <a href="/esnaf/${m.slug}" style="display: block; text-align: center; padding: 6px 12px; background: #E05A36; color: #ffffff; border-radius: 9999px; font-weight: 800; font-size: 11px; text-decoration: none;">
+            Profili İncele & Randevu Al
+          </a>
+        </div>
+      `;
+      marker.bindPopup(popupHtml, { className: "esnaf-leaflet-popup", closeButton: true });
+
       marker.on("click", () => {
         setActiveMerchant(m);
         map.panTo([lat, lng], { animate: true, duration: 0.4 });
@@ -653,9 +664,13 @@ export default function InteractiveMapView({
                   <div className="space-y-0.5 flex-1 min-w-0">
                     {/* Primary: Title + Plus Badge */}
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <h4 className="font-bold text-xs sm:text-sm text-black dark:text-white truncate">
+                      <Link
+                        href={`/esnaf/${m.slug}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-bold text-xs sm:text-sm text-black dark:text-white truncate hover:text-brand dark:hover:text-brand transition-colors"
+                      >
                         {m.name}
-                      </h4>
+                      </Link>
                       {m.tier === "plus" && (
                         <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-extrabold flex items-center gap-0.5 shrink-0">
                           <Crown className="w-2.5 h-2.5 fill-current" /> Plus
@@ -691,17 +706,27 @@ export default function InteractiveMapView({
                     </div>
                   </div>
 
-                  {/* Trailing Action: Apple Store Style GET Button */}
-                  <a
-                    href={generateWhatsAppUrl(m)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-[#2C2C2E] dark:hover:bg-zinc-700 text-blue-600 dark:text-blue-500 text-[10px] sm:text-xs font-extrabold transition-all ios-press shrink-0 flex items-center justify-center"
-                    title="WhatsApp'tan Yaz"
-                  >
-                    MESAJ
-                  </a>
+                  {/* Trailing Actions: Profile Link & WhatsApp */}
+                  <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Link
+                      href={`/esnaf/${m.slug}`}
+                      className="px-3 py-1.5 rounded-full bg-brand hover:bg-brand-hover text-white text-[10px] sm:text-xs font-extrabold transition-all ios-press shrink-0 flex items-center gap-0.5 shadow-xs"
+                      title="Profili İncele & Randevu Al"
+                    >
+                      <span>İncele</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </Link>
+
+                    <a
+                      href={generateWhatsAppUrl(m)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 text-[10px] sm:text-xs font-extrabold transition-all ios-press shrink-0 flex items-center justify-center border border-emerald-500/20"
+                      title="WhatsApp'tan Yaz"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
                 </div>
               );
             })

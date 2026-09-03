@@ -1,8 +1,8 @@
 import { MetadataRoute } from "next";
-import { MERCHANTS } from "@/data/seed-merchants";
 import { CATEGORIES } from "@/data/categories";
+import { prisma } from "@/lib/db";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://esnafca.com";
 
   // Static core routes
@@ -45,10 +45,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // Dynamic Merchant Routes
-  const merchantRoutes: MetadataRoute.Sitemap = MERCHANTS.map((m) => ({
+  // Dynamic Merchant Routes from real database records
+  let merchants: { slug: string; updatedAt: Date }[] = [];
+  try {
+    merchants = await prisma.merchant.findMany({
+      select: { slug: true, updatedAt: true },
+    });
+  } catch (err) {
+    console.error("Error loading merchants for sitemap:", err);
+  }
+
+  const merchantRoutes: MetadataRoute.Sitemap = merchants.map((m) => ({
     url: `${baseUrl}/esnaf/${m.slug}`,
-    lastModified: new Date(),
+    lastModified: m.updatedAt || new Date(),
     changeFrequency: "weekly",
     priority: 0.9,
   }));

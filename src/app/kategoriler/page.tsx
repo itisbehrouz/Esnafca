@@ -1,6 +1,3 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   ChevronLeft, 
@@ -13,10 +10,10 @@ import {
   ChevronRight 
 } from "lucide-react";
 import { CATEGORIES } from "@/data/categories";
-import { getAllMerchants } from "@/lib/merchant-store";
-import { MERCHANTS as INITIAL_MERCHANTS } from "@/data/seed-merchants";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { Merchant } from "@/types";
+import { prisma } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 const ICON_MAP: Record<string, any> = {
   Scissors,
@@ -27,15 +24,15 @@ const ICON_MAP: Record<string, any> = {
   Hammer,
 };
 
-export default function CategoriesPage() {
-  const [merchants, setMerchants] = useState<Merchant[]>(INITIAL_MERCHANTS);
-
-  useEffect(() => {
-    setMerchants(getAllMerchants());
-    const handleUpdate = () => setMerchants(getAllMerchants());
-    window.addEventListener("merchants_updated", handleUpdate);
-    return () => window.removeEventListener("merchants_updated", handleUpdate);
-  }, []);
+export default async function CategoriesPage() {
+  let merchants: { category: string }[] = [];
+  try {
+    merchants = await prisma.merchant.findMany({
+      select: { category: true },
+    });
+  } catch (error) {
+    console.error("Error fetching merchants for categories page:", error);
+  }
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24 text-black dark:text-white transition-colors duration-200">

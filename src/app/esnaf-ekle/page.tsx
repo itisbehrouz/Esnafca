@@ -27,7 +27,6 @@ import { CITIES } from "@/data/cities";
 import { PRICING_PLANS, SubscriptionTierId } from "@/data/pricing-plans";
 import { CategoryId } from "@/types";
 import { formatNumber, formatPhoneNumber } from "@/lib/utils";
-import { addPendingApplication } from "@/lib/merchant-store";
 import { submitApplication } from "@/app/actions/merchant";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 

@@ -827,7 +827,7 @@ export function AppointmentBookingModal({
 
         {/* Modal Bottom Fixed Navigation (Steps 1 to 4) */}
         {!isSuccess && (
-          <div className="px-5 py-3.5 border-t border-black/[0.05] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] flex items-center justify-between gap-3 shrink-0">
+          <div className="px-5 py-3.5 pb-safe sm:pb-3.5 border-t border-black/[0.05] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] flex items-center justify-between gap-3 shrink-0">
             {step > 1 ? (
               <button
                 type="button"
