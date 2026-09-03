@@ -46,6 +46,7 @@ model Merchant {
 
   services        ServiceItem[]
   reviews         Review[]
+  appointments    Appointment[]
 }
 
 model ServiceItem {
@@ -58,8 +59,11 @@ model ServiceItem {
   isStartingPrice   Boolean  @default(false)
   estimatedDuration String?
   popular           Boolean  @default(false)
+  requiresDeposit   Boolean  @default(false)
+  depositAmount     Float?
 
   merchant          Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  appointments      Appointment[]
 }
 
 model Review {
@@ -95,3 +99,23 @@ model MerchantApplication {
   status          String   @default("pending") // pending, approved, rejected
   createdAt       DateTime @default(now())
 }
+
+model Appointment {
+  id            String       @id @default(cuid())
+  merchantId    String
+  serviceId     String?
+  customerName  String
+  customerPhone String
+  customerNote  String?
+  date          String       // Format: YYYY-MM-DD
+  startTime     String       // Format: HH:mm, e.g., "14:30"
+  endTime       String?      // Format: HH:mm
+  price         Float
+  status        String       @default("pending") // "pending", "confirmed", "completed", "cancelled"
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  merchant      Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  service       ServiceItem? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+}
+

@@ -1,14 +1,37 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/constants/api_constants.dart';
 import '../models/merchant.dart';
 
 class ApiService {
-  final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-    ),
-  );
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  late final Dio _dio;
+
+  ApiService() {
+    _dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    );
+
+    // Request interceptor to automatically attach JWT token
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await _storage.read(key: 'auth_token');
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+      ),
+    );
+  }
 
   /// Fetch Merchants with optional filters
   Future<List<Merchant>> getMerchants({
@@ -16,6 +39,8 @@ class ApiService {
     String? district,
     String? category,
     String? query,
+    int? page,
+    int? limit,
   }) async {
     try {
       final Map<String, dynamic> queryParams = {};
@@ -23,6 +48,8 @@ class ApiService {
       if (district != null && district != 'Tüm Bölgeler') queryParams['district'] = district;
       if (category != null && category != 'all') queryParams['category'] = category;
       if (query != null && query.isNotEmpty) queryParams['q'] = query;
+      if (page != null) queryParams['page'] = page;
+      if (limit != null) queryParams['limit'] = limit;
 
       final response = await _dio.get(
         ApiConstants.merchants,
@@ -79,39 +106,43 @@ class ApiService {
     }
   }
 
-  /// Authenticate Merchant by Phone
-  Future<Map<String, dynamic>?> loginByPhone(String phone, String otp) async {
+  /// Step 1: Send SMS / WhatsApp OTP
+  Future<Map<String, dynamic>?> sendOtp(String phone) async {
     try {
       final response = await _dio.post(
-        ApiConstants.auth,
-        data: {'phone': phone, 'otp': otp},
+        ApiConstants.sendOtp,
+        data: {'phone': phone},
       );
-      if (response.statusCode == 200) {
-        return response.data;
-      }
+      return response.data;
+    } on DioException catch (e) {
+      return e.response?.data;
     } catch (e) {
-      // Error authenticating
+      return {'success': false, 'error': 'Sunucu bağlantı hatası.'};
     }
-    return null;
   }
 
-  /// Direct Login by Merchant ID (Fast Demo Login)
-  Future<Merchant?> loginById(String id) async {
+  /// Step 2: Verify OTP and save JWT token
+  Future<Map<String, dynamic>?> verifyOtp(String phone, String code) async {
     try {
       final response = await _dio.post(
-        ApiConstants.auth,
-        data: {'id': id},
+        ApiConstants.verifyOtp,
+        data: {'phone': phone, 'code': code},
       );
-      if (response.statusCode == 200 && response.data['success'] == true && response.data['merchant'] != null) {
-        return Merchant.fromJson(response.data['merchant']);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final token = response.data['token'];
+        if (token != null) {
+          await _storage.write(key: 'auth_token', value: token);
+        }
       }
+      return response.data;
+    } on DioException catch (e) {
+      return e.response?.data;
     } catch (e) {
-      // Error logging in by id
+      return {'success': false, 'error': 'Doğrulama işlemi başarısız.'};
     }
-    return null;
   }
 
-  /// Update Merchant Profile (Name, Bio, Slogan, Hero Image, Working Hours, etc.)
+  /// Update Merchant Profile (JWT Protected)
   Future<Merchant?> updateProfile(Map<String, dynamic> profileData) async {
     try {
       final response = await _dio.patch(
@@ -128,11 +159,11 @@ class ApiService {
   }
 
   /// Toggle Open / Closed Status Live
-  Future<bool> toggleOpenStatus(String merchantId, bool isOpenNow) async {
+  Future<bool> toggleOpenStatus(bool isOpenNow) async {
     try {
       final response = await _dio.patch(
         ApiConstants.profile,
-        data: {'id': merchantId, 'isOpenNow': isOpenNow},
+        data: {'isOpenNow': isOpenNow},
       );
       return response.statusCode == 200 && response.data['success'] == true;
     } catch (e) {
@@ -140,12 +171,12 @@ class ApiService {
     }
   }
 
-  /// Update Merchant Services & Price Menu
-  Future<Merchant?> updateServices(String merchantId, List<Map<String, dynamic>> services) async {
+  /// Update Merchant Services & Price Menu (JWT Protected)
+  Future<Merchant?> updateServices(List<Map<String, dynamic>> services) async {
     try {
       final response = await _dio.post(
         ApiConstants.services,
-        data: {'merchantId': merchantId, 'services': services},
+        data: {'services': services},
       );
       if (response.statusCode == 200 && response.data['success'] == true) {
         return Merchant.fromJson(response.data['data']);
@@ -154,5 +185,11 @@ class ApiService {
       // Error updating services
     }
     return null;
+  }
+
+  /// Clear token on logout
+  Future<void> clearAuth() async {
+    await _storage.delete(key: 'auth_token');
+    await _storage.delete(key: 'merchant_id');
   }
 }

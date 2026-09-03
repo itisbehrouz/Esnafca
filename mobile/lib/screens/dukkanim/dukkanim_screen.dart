@@ -857,11 +857,14 @@ class _DukkanimScreenState extends ConsumerState<DukkanimScreen> {
                               : () async {
                                   HapticFeedback.mediumImpact();
                                   if (!_otpSent) {
-                                    setState(() {
-                                      _otpSent = true;
-                                    });
+                                    final ok = await ref.read(authProvider.notifier).sendOtp(_phoneController.text);
+                                    if (ok) {
+                                      setState(() {
+                                        _otpSent = true;
+                                      });
+                                    }
                                   } else {
-                                    await ref.read(authProvider.notifier).login(
+                                    await ref.read(authProvider.notifier).verifyOtp(
                                           _phoneController.text,
                                           _otpController.text,
                                         );

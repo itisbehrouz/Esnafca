@@ -2,6 +2,15 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { 
+  getAdminSession, 
+  getMerchantSession, 
+  signMerchantToken, 
+  signAdminToken, 
+  checkAdminPassword 
+} from "@/lib/auth";
+import { generateOtp, verifyOtpCode } from "@/lib/otp";
 
 /**
  * esnaf-ekle (New Merchant Application)
@@ -51,10 +60,16 @@ export async function submitApplication(data: {
 }
 
 /**
- * admin (Get Pending Applications)
+ * admin (Get Pending Applications) - Protected
  */
 export async function getPendingApplications() {
   try {
+    const isAdmin = await getAdminSession();
+    if (!isAdmin) {
+      console.warn("Unauthorized attempt to getPendingApplications");
+      return [];
+    }
+
     return await prisma.merchantApplication.findMany({
       where: { status: "pending" },
       orderBy: { createdAt: "desc" },
@@ -66,10 +81,15 @@ export async function getPendingApplications() {
 }
 
 /**
- * admin (Approve Application)
+ * admin (Approve Application) - Protected
  */
 export async function approveApplication(appId: string) {
   try {
+    const isAdmin = await getAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Yetkisiz işlem. Yönetici girişi gereklidir." };
+    }
+
     const app = await prisma.merchantApplication.findUnique({
       where: { id: appId },
     });
@@ -172,10 +192,15 @@ export async function approveApplication(appId: string) {
 }
 
 /**
- * admin (Reject Application)
+ * admin (Reject Application) - Protected
  */
 export async function rejectApplication(appId: string) {
   try {
+    const isAdmin = await getAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Yetkisiz işlem. Yönetici girişi gereklidir." };
+    }
+
     await prisma.merchantApplication.update({
       where: { id: appId },
       data: { status: "rejected" },
@@ -189,14 +214,38 @@ export async function rejectApplication(appId: string) {
 }
 
 /**
- * dukkanim (Login by Phone)
+ * Send OTP Code to Merchant Phone
  */
-export async function loginMerchantByPhone(phone: string) {
+export async function sendMerchantOtp(phone: string) {
   const cleanPhone = phone.replace(/\D/g, "");
-  if (!cleanPhone) return { success: false, error: "Geçersiz telefon." };
+  if (cleanPhone.length < 10) return { success: false, error: "Geçersiz telefon numarası." };
 
   try {
-    // Basic lookup - in a real app this would use SMS OTP
+    const { code, expiresAt } = generateOtp(cleanPhone);
+    return {
+      success: true,
+      message: "Doğrulama kodu gönderildi.",
+      expiresAt,
+      ...(process.env.NODE_ENV !== "production" ? { devCode: code } : {}),
+    };
+  } catch (error) {
+    return { success: false, error: "Doğrulama kodu oluşturulamadı." };
+  }
+}
+
+/**
+ * Verify OTP and Login Merchant
+ */
+export async function verifyMerchantOtpAndLogin(phone: string, code: string) {
+  const cleanPhone = phone.replace(/\D/g, "");
+  if (!cleanPhone || !code) return { success: false, error: "Telefon ve doğrulama kodu gereklidir." };
+
+  const verification = verifyOtpCode(cleanPhone, code);
+  if (!verification.success) {
+    return { success: false, error: verification.error || "Geçersiz veya süresi dolmuş kod." };
+  }
+
+  try {
     const merchants = await prisma.merchant.findMany({
       include: { services: true, reviews: true },
     });
@@ -208,10 +257,32 @@ export async function loginMerchantByPhone(phone: string) {
              wClean.includes(cleanPhone) || cleanPhone.includes(wClean);
     });
 
-    if (!merchant) return { success: false, error: "Bu numaraya ait dükkan bulunamadı." };
+    if (!merchant) {
+      return { success: false, error: "Bu numaraya ait dükkan bulunamadı." };
+    }
+
+    // Sign JWT
+    const token = await signMerchantToken({
+      id: merchant.id,
+      phone: merchant.phone,
+      slug: merchant.slug,
+    });
+
+    // Set HttpOnly Cookie
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: "esnaf_session",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+    });
 
     return { 
       success: true, 
+      token,
       merchant: {
         ...merchant,
         category: merchant.category as any,
@@ -225,23 +296,89 @@ export async function loginMerchantByPhone(phone: string) {
     };
   } catch (error) {
     console.error("Error logging in:", error);
-    return { success: false, error: "Giriş yapılamadı." };
+    return { success: false, error: "Giriş işlemi tamamlanamadı." };
   }
 }
 
 /**
- * dukkanim (Update Profile)
+ * Logout Merchant
+ */
+export async function logoutMerchantAction() {
+  const cookieStore = await cookies();
+  cookieStore.set({
+    name: "esnaf_session",
+    value: "",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  return { success: true };
+}
+
+/**
+ * Admin Login Action
+ */
+export async function loginAdminAction(password: string) {
+  if (!checkAdminPassword(password)) {
+    return { success: false, error: "Hatalı yönetici şifresi." };
+  }
+
+  const token = await signAdminToken();
+  const cookieStore = await cookies();
+  cookieStore.set({
+    name: "esnaf_admin_session",
+    value: token,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60,
+  });
+
+  return { success: true };
+}
+
+/**
+ * Admin Logout Action
+ */
+export async function logoutAdminAction() {
+  const cookieStore = await cookies();
+  cookieStore.set({
+    name: "esnaf_admin_session",
+    value: "",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  return { success: true };
+}
+
+/**
+ * dukkanim (Update Profile) - Protected
  */
 export async function updateMerchantProfile(id: string, updates: any) {
   try {
-    // Fields that are stored directly vs JSON
+    // Check Merchant or Admin Session
+    const merchantSession = await getMerchantSession();
+    const isAdmin = await getAdminSession();
+
+    if (!isAdmin && (!merchantSession || merchantSession.id !== id)) {
+      return { success: false, error: "Yetkisiz işlem. Yalnızca kendi dükkanınızı güncelleyebilirsiniz." };
+    }
+
     const data: any = {};
-    
     if (updates.name) data.name = updates.name;
+    if (updates.craftTitle) data.craftTitle = updates.craftTitle;
     if (updates.bio) data.bio = updates.bio;
+    if (updates.heroImage) data.heroImage = updates.heroImage;
+    if (updates.category) data.category = updates.category;
     if (updates.phone) data.phone = updates.phone;
     if (updates.whatsapp) data.whatsapp = updates.whatsapp;
-    
+    if (typeof updates.isOpenNow === "boolean") data.isOpenNow = updates.isOpenNow;
     if (updates.workingHours) data.workingHours = JSON.stringify(updates.workingHours);
     if (updates.features) data.features = JSON.stringify(updates.features);
     
@@ -252,23 +389,30 @@ export async function updateMerchantProfile(id: string, updates: any) {
       });
     }
 
-    // Service updates (basic implementation)
+    // Service updates
     if (updates.services) {
-      // In a real app we'd do precise upserts, here we delete all and recreate
       await prisma.serviceItem.deleteMany({
         where: { merchantId: id }
       });
       
+      const minPrices = updates.services.map((s: any) => Number(s.minPrice) || 0).filter((p: number) => p > 0);
+      const maxPrices = updates.services.map((s: any) => Number(s.maxPrice) || Number(s.minPrice) || 0).filter((p: number) => p > 0);
+
+      const calculatedMin = minPrices.length > 0 ? Math.min(...minPrices) : 100;
+      const calculatedMax = maxPrices.length > 0 ? Math.max(...maxPrices) : 500;
+
       await prisma.merchant.update({
         where: { id },
         data: {
+          minPrice: calculatedMin,
+          maxPrice: calculatedMax,
           services: {
-            create: updates.services.map((s: any) => ({
+            create: updates.services.map((s: any, idx: number) => ({
               name: s.name,
-              description: s.description,
+              description: s.description || null,
               minPrice: Number(s.minPrice) || 0,
-              maxPrice: Number(s.maxPrice),
-              popular: s.popular || false,
+              maxPrice: s.maxPrice ? Number(s.maxPrice) : null,
+              popular: s.popular ?? (idx === 0),
             }))
           }
         }
@@ -314,7 +458,7 @@ export async function checkPendingByPhone(phone: string) {
 }
 
 /**
- * dukkanim (Get Merchant by ID for Auth persistence)
+ * dukkanim (Get Merchant by ID for Session Hydration)
  */
 export async function getMerchantById(id: string) {
   try {
@@ -338,4 +482,13 @@ export async function getMerchantById(id: string) {
   } catch (error) {
     return null;
   }
+}
+
+/**
+ * Get current logged in merchant from cookie session
+ */
+export async function getCurrentMerchantSession() {
+  const session = await getMerchantSession();
+  if (!session) return null;
+  return await getMerchantById(session.id);
 }

@@ -14,13 +14,16 @@ import {
   Zap, 
   MessageCircle,
   Send,
-  Check
+  Check,
+  LogOut
 } from "lucide-react";
 import { 
   getPendingApplications, 
   approveApplication, 
-  rejectApplication
+  rejectApplication,
+  logoutAdminAction
 } from "@/app/actions/merchant";
+import { useRouter } from "next/navigation";
 import type { MerchantApplication } from "@prisma/client";
 import { Merchant, SubscriptionTier } from "@/types";
 import { CITIES } from "@/data/cities";
@@ -28,6 +31,7 @@ import { CATEGORIES } from "@/data/categories";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function AdminPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"pending" | "merchants" | "finance" | "broadcast">("pending");
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [pendingApps, setPendingApps] = useState<MerchantApplication[]>([]);
@@ -44,6 +48,16 @@ export default function AdminPage() {
   const loadData = async () => {
     const apps = await getPendingApplications();
     setPendingApps(apps);
+
+    try {
+      const res = await fetch("/api/merchants");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setMerchants(json.data);
+      }
+    } catch {
+      // ignore
+    }
   };
 
   useEffect(() => {
@@ -141,6 +155,19 @@ export default function AdminPage() {
             >
               Siteye Dön ↗
             </Link>
+
+            <button
+              onClick={async () => {
+                await logoutAdminAction();
+                router.push("/admin/login");
+                router.refresh();
+              }}
+              className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 px-3 py-1.5 rounded-full ios-press flex items-center gap-1 transition-colors"
+              title="Yönetici Oturumunu Kapat"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Çıkış</span>
+            </button>
           </div>
         </div>
       </header>

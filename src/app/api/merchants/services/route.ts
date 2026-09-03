@@ -1,17 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getMerchantSessionFromRequest } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { merchantId, services } = body;
-
-    if (!merchantId || !Array.isArray(services)) {
+    // 1. Authenticate Request via JWT / HttpOnly Session Cookie
+    const session = await getMerchantSessionFromRequest(request);
+    if (!session) {
       return NextResponse.json(
-        { success: false, error: "merchantId ve services dizisi gereklidir." },
+        { success: false, error: "Yetkisiz erişim. Lütfen giriş yapınız." },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { services } = body;
+
+    if (!Array.isArray(services)) {
+      return NextResponse.json(
+        { success: false, error: "services dizisi gereklidir." },
         { status: 400 }
       );
     }
+
+    // Use verified session merchant ID
+    const merchantId = session.id;
 
     // Delete existing services and insert new list
     await prisma.serviceItem.deleteMany({

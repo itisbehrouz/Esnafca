@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { signMerchantToken } from "@/lib/auth";
+import { verifyOtpCode } from "@/lib/otp";
 
+/**
+ * GET /api/merchants/auth
+ * Returns demo / verified merchant list for public preview
+ */
 export async function GET() {
   try {
     const demoMerchants = await prisma.merchant.findMany({
@@ -63,22 +69,33 @@ export async function GET() {
   }
 }
 
+/**
+ * POST /api/merchants/auth
+ * Authenticates merchant using OTP (or verified credentials in dev mode), generates signed JWT
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phone, id } = body;
+    const { phone, otp, id } = body;
 
-    // 1. Direct ID Login (e.g. 1-Tap Fast Demo Login)
-    if (id) {
+    // Fast test demo bypass ONLY in development
+    if (process.env.NODE_ENV !== "production" && id) {
       const merchant = await prisma.merchant.findUnique({
         where: { id },
         include: { services: true, reviews: true },
       });
 
       if (merchant) {
-        return NextResponse.json({
+        const token = await signMerchantToken({
+          id: merchant.id,
+          phone: merchant.phone,
+          slug: merchant.slug,
+        });
+
+        const res = NextResponse.json({
           success: true,
           status: "approved",
+          token,
           merchant: {
             id: merchant.id,
             slug: merchant.slug,
@@ -111,6 +128,18 @@ export async function POST(request: Request) {
             })),
           },
         });
+
+        res.cookies.set({
+          name: "esnaf_session",
+          value: token,
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 30 * 24 * 60 * 60,
+        });
+
+        return res;
       }
     }
 
@@ -121,9 +150,26 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!otp) {
+      return NextResponse.json(
+        { success: false, error: "Doğrulama kodu (OTP) gereklidir. Önce /api/merchants/auth/send-otp ile kod isteyin." },
+        { status: 400 }
+      );
+    }
+
     const cleanInput = phone.replace(/\D/g, "");
 
-    // 2. Check Approved Merchants
+    // OTP is mandatory — no code, no session. This closes the phone-only
+    // bypass that used to issue a session without ever checking a code.
+    const otpRes = verifyOtpCode(cleanInput, otp);
+    if (!otpRes.success) {
+      return NextResponse.json(
+        { success: false, error: otpRes.error || "Hatalı doğrulama kodu." },
+        { status: 401 }
+      );
+    }
+
+    // Check Approved Merchants
     const allMerchants = await prisma.merchant.findMany({
       include: {
         services: true,
@@ -143,9 +189,16 @@ export async function POST(request: Request) {
     });
 
     if (matchedMerchant) {
-      return NextResponse.json({
+      const token = await signMerchantToken({
+        id: matchedMerchant.id,
+        phone: matchedMerchant.phone,
+        slug: matchedMerchant.slug,
+      });
+
+      const res = NextResponse.json({
         success: true,
         status: "approved",
+        token,
         merchant: {
           id: matchedMerchant.id,
           slug: matchedMerchant.slug,
@@ -178,9 +231,21 @@ export async function POST(request: Request) {
           })),
         },
       });
+
+      res.cookies.set({
+        name: "esnaf_session",
+        value: token,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60,
+      });
+
+      return res;
     }
 
-    // 3. Check Pending Applications
+    // Check Pending Applications
     const allApps = await prisma.merchantApplication.findMany();
     const matchedApp = allApps.find((a) => {
       const dbPhone = a.phone.replace(/\D/g, "");
@@ -196,7 +261,7 @@ export async function POST(request: Request) {
     if (matchedApp) {
       return NextResponse.json({
         success: true,
-        status: matchedApp.status, // "pending" or "rejected"
+        status: matchedApp.status,
         application: matchedApp,
         message:
           matchedApp.status === "pending"
@@ -209,7 +274,7 @@ export async function POST(request: Request) {
       success: false,
       status: "not_found",
       error: "Bu telefon numarasıyla kayıtlı bir esnaf veya başvuru bulunamadı.",
-    });
+    }, { status: 404 });
   } catch (error) {
     console.error("API Auth Error:", error);
     return NextResponse.json(

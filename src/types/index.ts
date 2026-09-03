@@ -31,23 +31,46 @@ export interface Category {
 export interface ServiceItem {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   minPrice: number;
-  maxPrice?: number;
+  maxPrice?: number | null;
   isStartingPrice?: boolean;
-  estimatedDuration?: string;
+  estimatedDuration?: string | null;
   popular?: boolean;
+  requiresDeposit?: boolean;
+  depositAmount?: number | null;
+  appointments?: Appointment[];
 }
 
 export interface Review {
   id: string;
   author: string;
-  profession?: string;
+  profession?: string | null;
   rating: number;
   date: string;
   comment: string;
   tags?: string[];
   verifiedCustomer?: boolean;
+}
+
+export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled";
+
+export interface Appointment {
+  id: string;
+  merchantId: string;
+  serviceId?: string | null;
+  customerName: string;
+  customerPhone: string;
+  customerNote?: string | null;
+  date: string; // Format: YYYY-MM-DD
+  startTime: string; // Format: HH:mm, e.g., "14:30"
+  endTime?: string | null; // Format: HH:mm
+  price: number;
+  status: AppointmentStatus;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  merchant?: Merchant;
+  service?: ServiceItem | null;
 }
 
 export interface Merchant {
@@ -70,12 +93,12 @@ export interface Merchant {
   rating: number;
   reviewCount: number;
   verified: boolean;
-  verifiedYear?: number;
+  verifiedYear?: number | null;
   tier: SubscriptionTier;
   experienceYears: number;
   minPrice: number;
   maxPrice: number;
-  priceNote?: string;
+  priceNote?: string | null;
   workingHours: {
     weekdays: string;
     saturday: string;
@@ -88,11 +111,17 @@ export interface Merchant {
   specialties: string[];
   services: ServiceItem[];
   reviews: Review[];
+  appointments?: Appointment[];
   features: {
     transparentPricing: boolean;
     whatsappBooking: boolean;
     expressOption: boolean;
     homePickup?: boolean;
+    slotInterval?: number; // 15, 30, 45, 60
+    bufferTime?: number; // 0, 5, 10, 15
+    maxAdvanceDays?: number; // 7, 14, 30
+    iban?: string;
+    depositNote?: string;
   };
 }
 

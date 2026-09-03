@@ -1,17 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getMerchantSessionFromRequest } from "@/lib/auth";
 
 export async function PATCH(request: Request) {
   try {
-    const body = await request.json();
-    const { id, isOpenNow, name, craftTitle, bio, heroImage, category, workingHours, phone, whatsapp } = body;
-
-    if (!id) {
+    // 1. Authenticate Request via JWT / HttpOnly Session Cookie
+    const session = await getMerchantSessionFromRequest(request);
+    if (!session) {
       return NextResponse.json(
-        { success: false, error: "Dükkan ID gereklidir." },
-        { status: 400 }
+        { success: false, error: "Yetkisiz erişim. Lütfen giriş yapınız." },
+        { status: 401 }
       );
     }
+
+    const body = await request.json();
+    const { isOpenNow, name, craftTitle, bio, heroImage, category, workingHours, phone, whatsapp } = body;
+
+    // Use verified session merchant ID
+    const merchantId = session.id;
 
     const updateData: any = {};
     if (typeof isOpenNow === "boolean") updateData.isOpenNow = isOpenNow;
@@ -25,7 +31,7 @@ export async function PATCH(request: Request) {
     if (workingHours) updateData.workingHours = JSON.stringify(workingHours);
 
     const updated = await prisma.merchant.update({
-      where: { id },
+      where: { id: merchantId },
       data: updateData,
       include: {
         services: true,

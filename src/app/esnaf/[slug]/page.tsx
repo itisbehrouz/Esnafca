@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { MERCHANTS } from "@/data/seed-merchants";
 import { MerchantDetailClient } from "./MerchantDetailClient";
+import { prisma } from "@/lib/db";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -8,7 +9,15 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const merchant = MERCHANTS.find((m) => m.slug === resolvedParams.slug);
+  
+  let merchant = await prisma.merchant.findUnique({
+    where: { slug: resolvedParams.slug },
+  });
+
+  if (!merchant) {
+    const seed = MERCHANTS.find((m) => m.slug === resolvedParams.slug);
+    if (seed) merchant = seed as any;
+  }
 
   if (!merchant) {
     return {
@@ -50,12 +59,89 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MerchantDetailPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const initialMerchant = MERCHANTS.find((m) => m.slug === resolvedParams.slug) || null;
+  
+  let merchant = await prisma.merchant.findUnique({
+    where: { slug: resolvedParams.slug },
+    include: { services: true, reviews: true },
+  });
+
+  const fallback = MERCHANTS.find((m) => m.slug === resolvedParams.slug) || null;
+
+  const current = merchant || fallback;
+
+  const lat = (current as any)?.coordinates?.lat ?? (current as any)?.latitude ?? null;
+  const lng = (current as any)?.coordinates?.lng ?? (current as any)?.longitude ?? null;
+
+  // JSON-LD Schema.org LocalBusiness
+  const jsonLd = current
+    ? {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        name: current.name,
+        image: current.heroImage,
+        telephone: current.phone,
+        priceRange: `${current.minPrice} TL - ${current.maxPrice} TL`,
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: current.address,
+          addressLocality: current.district,
+          addressRegion: current.city,
+          addressCountry: "TR",
+        },
+        ...(lat && lng
+          ? {
+              geo: {
+                "@type": "GeoCoordinates",
+                latitude: lat,
+                longitude: lng,
+              },
+            }
+          : {}),
+        aggregateRating:
+          current.rating > 0
+            ? {
+                "@type": "AggregateRating",
+                ratingValue: current.rating,
+                reviewCount: Math.max(1, current.reviewCount),
+              }
+            : undefined,
+      }
+    : null;
+
+  let initialMerchant = fallback;
+  if (merchant) {
+    try {
+      initialMerchant = {
+        ...merchant,
+        category: merchant.category as any,
+        tier: merchant.tier as any,
+        workingHours: JSON.parse(merchant.workingHours || "{}"),
+        galleryImages: JSON.parse(merchant.galleryImages || "[]"),
+        specialties: JSON.parse(merchant.specialties || "[]"),
+        features: JSON.parse(merchant.features || "{}"),
+        services: merchant.services,
+        reviews: merchant.reviews.map((r) => ({
+          ...r,
+          tags: JSON.parse(r.tags || "[]"),
+        })),
+      };
+    } catch {
+      // fallback
+    }
+  }
 
   return (
-    <MerchantDetailClient
-      slug={resolvedParams.slug}
-      initialMerchant={initialMerchant}
-    />
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <MerchantDetailClient
+        slug={resolvedParams.slug}
+        initialMerchant={initialMerchant}
+      />
+    </>
   );
 }

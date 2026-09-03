@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -23,19 +23,30 @@ import {
   AlertCircle,
   Clock,
   MapPin,
-  User
+  User,
+  Upload,
+  CreditCard,
+  Crown,
+  Zap,
+  Loader2,
+  Calendar
 } from "lucide-react";
 import { 
-  loginMerchantByPhone,
   updateMerchantProfile,
   checkPendingByPhone,
   approveApplication,
-  getMerchantById
+  getMerchantById,
+  sendMerchantOtp,
+  verifyMerchantOtpAndLogin,
+  logoutMerchantAction,
+  getCurrentMerchantSession
 } from "@/app/actions/merchant";
+import { getMerchantAppointmentsAction } from "@/app/actions/appointment";
 import type { MerchantApplication } from "@prisma/client";
 import { Merchant, ServiceItem, CategoryId } from "@/types";
 import { CATEGORIES } from "@/data/categories";
 import { QrWindowModal } from "@/components/merchant/QrWindowModal";
+import { MerchantAppointmentsView } from "@/components/merchant/MerchantAppointmentsView";
 import { EsnafcaLogo } from "@/components/brand/EsnafcaLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { formatPhoneNumber } from "@/lib/utils";
@@ -56,46 +67,97 @@ function MerchantPortalContent() {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [pendingNotice, setPendingNotice] = useState<MerchantApplication | null>(null);
 
+  // Navigation tab state: "profile" | "agenda"
+  const [activeTab, setActiveTab] = useState<"profile" | "agenda">("profile");
+  const [pendingTodayCount, setPendingTodayCount] = useState<number>(0);
+
   // Editable Dashboard Form State
   const [isOpen, setIsOpen] = useState(true);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [paymentSuccessNotice, setPaymentSuccessNotice] = useState<string | null>(null);
+
+  const refreshPendingCount = useCallback(async (merchantId: string) => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    try {
+      const res = await getMerchantAppointmentsAction(merchantId, todayStr);
+      if (res.success && Array.isArray(res.appointments)) {
+        const count = res.appointments.filter((a: any) => a.status === "pending").length;
+        setPendingTodayCount(count);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     setMounted(true);
-    
-    // Check if session exists
-    const savedMerchantId = localStorage.getItem(AUTH_MERCHANT_KEY);
-    if (savedMerchantId) {
-      getMerchantById(savedMerchantId).then(merchant => {
-        if (merchant) {
-          setActiveMerchant(merchant as Merchant);
-          setIsOpen(merchant.isOpenNow);
-          setServices(merchant.services as any);
-        } else {
-          const pendingRaw = localStorage.getItem("esnafca_pending_application_data");
-          if (pendingRaw) setPendingNotice(JSON.parse(pendingRaw));
-        }
-      });
-    } else {
-      const pendingRaw = localStorage.getItem("esnafca_pending_application_data");
-      if (pendingRaw) setPendingNotice(JSON.parse(pendingRaw));
+
+    // Check payment success from redirect
+    if (searchParams.get("payment_success") === "true") {
+      const tier = searchParams.get("tier") || "pro";
+      setPaymentSuccessNotice(`🎉 Tebrikler! Aboneliğiniz başarıyla aktifleşti ve paketiniz ${tier.toUpperCase()} olarak güncellendi.`);
     }
+
+    // Check URL tab parameter
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "agenda") {
+      setActiveTab("agenda");
+    }
+    
+    // Check if session exists in Cookie or local
+    getCurrentMerchantSession().then(merchant => {
+      if (merchant) {
+        setActiveMerchant(merchant as Merchant);
+        setIsOpen(merchant.isOpenNow);
+        setServices(merchant.services as any);
+        refreshPendingCount(merchant.id);
+      } else {
+        const savedMerchantId = localStorage.getItem(AUTH_MERCHANT_KEY);
+        if (savedMerchantId) {
+          getMerchantById(savedMerchantId).then(m => {
+            if (m) {
+              setActiveMerchant(m as Merchant);
+              setIsOpen(m.isOpenNow);
+              setServices(m.services as any);
+              refreshPendingCount(m.id);
+            }
+          });
+        }
+      }
+    });
+
+    // Fetch demo merchants for preview selector
+    fetch("/api/merchants")
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && Array.isArray(json.data)) {
+          setMerchants(json.data);
+        }
+      })
+      .catch(() => {});
 
     // Check URL phone parameter
     const phoneFromUrl = searchParams.get("phone");
     if (phoneFromUrl) {
       setPhoneInput(formatPhoneNumber(phoneFromUrl));
     }
-  }, [searchParams]);
+  }, [searchParams, refreshPendingCount]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // 1. Phone submission -> Send WhatsApp OTP
+  // 1. Phone submission -> Send WhatsApp / SMS OTP
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
@@ -107,82 +169,71 @@ function MerchantPortalContent() {
       return;
     }
 
-    // Check if merchant exists in live directory
-    const liveRes = await loginMerchantByPhone(cleanPhone);
-    const liveMerchant = liveRes.success ? liveRes.merchant : null;
-    if (liveMerchant) {
-      setIsSendingOtp(true);
-      setTimeout(() => {
-        setIsSendingOtp(false);
+    setIsSendingOtp(true);
+    try {
+      const res = await sendMerchantOtp(cleanPhone);
+      if (res.success) {
         setLoginStep("otp");
-        setOtpInput("123456");
-      }, 500);
-      return;
+        if ("devCode" in res && res.devCode) {
+          setOtpInput(res.devCode);
+        }
+      } else {
+        setLoginError(res.error || "Doğrulama kodu gönderilemedi.");
+      }
+    } catch {
+      setLoginError("Bağlantı hatası oluştu.");
+    } finally {
+      setIsSendingOtp(false);
     }
-
-    // Check if merchant is in pending applications
-    const pendingRes = await checkPendingByPhone(cleanPhone);
-    const pending = pendingRes.success ? pendingRes.application : null;
-    if (pending) {
-      setPendingNotice(pending);
-      setIsSendingOtp(true);
-      setTimeout(() => {
-        setIsSendingOtp(false);
-        setLoginStep("otp");
-        setOtpInput("123456");
-      }, 500);
-      return;
-    }
-
-    setLoginError("Bu telefon numarasına ait bir dükkan kaydı bulunamadı. Lütfen önce 'Esnaf Ol' sayfasından dükkanınızı ekleyin.");
   };
 
-  // 2. OTP Verification -> Login
+  // 2. OTP Verification -> Login with JWT Session
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
 
-    if (otpInput.trim() !== "123456" && otpInput.length < 6) {
-      setLoginError("Girdiğiniz 6 haneli kod hatalı. (Test Kodu: 123456)");
-      return;
-    }
-
     const cleanPhone = phoneInput.replace(/\D/g, "");
-
-    // 1. Check live merchants
-    const liveRes = await loginMerchantByPhone(cleanPhone);
-    const liveMerchant = liveRes.success ? liveRes.merchant : null;
-    if (liveMerchant) {
-      localStorage.setItem(AUTH_MERCHANT_KEY, liveMerchant.id);
-      setActiveMerchant(liveMerchant as any);
-      setIsOpen(liveMerchant.isOpenNow);
-      setServices(liveMerchant.services as any);
-      showToast(`Hoş geldiniz, ${liveMerchant.masterName}!`);
+    if (!otpInput || otpInput.trim().length < 6) {
+      setLoginError("Lütfen 6 haneli doğrulama kodunu giriniz.");
       return;
     }
 
-    // 2. Check pending applications & approve into live
-    const pendingRes = await checkPendingByPhone(cleanPhone);
-    const pending = pendingRes.success ? pendingRes.application : null;
-    if (pending) {
-      alert("Başvurunuz henüz onaylanmamış. Lütfen yönetici onayını bekleyiniz.");
-      return;
+    try {
+      const res = await verifyMerchantOtpAndLogin(cleanPhone, otpInput.trim());
+      if (res.success && res.merchant) {
+        localStorage.setItem(AUTH_MERCHANT_KEY, res.merchant.id);
+        setActiveMerchant(res.merchant as any);
+        setIsOpen(res.merchant.isOpenNow);
+        setServices(res.merchant.services as any);
+        showToast(`Hoş geldiniz, ${res.merchant.masterName}!`);
+      } else {
+        setLoginError(res.error || "Kod doğrulanamadı.");
+      }
+    } catch {
+      setLoginError("Giriş işlemi başarısız oldu.");
     }
-
-    setLoginError("Dükkan kaydına erişilemedi.");
   };
 
   // 1-Tap Fast Demo Login Selector
-  const handleFastDemoLogin = (merchant: Merchant) => {
-    localStorage.setItem(AUTH_MERCHANT_KEY, merchant.id);
-    setActiveMerchant(merchant);
-    setIsOpen(merchant.isOpenNow);
-    setServices(merchant.services as any);
-    showToast(`Giriş yapıldı: ${merchant.name}`);
+  const handleFastDemoLogin = async (merchant: Merchant) => {
+    const res = await verifyMerchantOtpAndLogin(merchant.phone, "123456");
+    if (res.success && res.merchant) {
+      localStorage.setItem(AUTH_MERCHANT_KEY, res.merchant.id);
+      setActiveMerchant(res.merchant as any);
+      setIsOpen(res.merchant.isOpenNow);
+      setServices(res.merchant.services as any);
+      showToast(`Giriş yapıldı: ${res.merchant.name}`);
+    } else {
+      setActiveMerchant(merchant);
+      setIsOpen(merchant.isOpenNow);
+      setServices(merchant.services as any);
+      showToast(`Demo girişi: ${merchant.name}`);
+    }
   };
 
   // Logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutMerchantAction();
     localStorage.removeItem(AUTH_MERCHANT_KEY);
     setActiveMerchant(null);
     setLoginStep("phone");
@@ -204,6 +255,56 @@ function MerchantPortalContent() {
     if (!activeMerchant) return;
     setActiveMerchant({ ...activeMerchant, [field]: value });
     await updateMerchantProfile(activeMerchant.id, { [field]: value });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+      if (json.success && json.url) {
+        await handleUpdateProfile("heroImage", json.url);
+        showToast("Fotoğraf başarıyla yüklendi ve vitrine eklendi!");
+      } else {
+        alert(json.error || "Görsel yüklenemedi.");
+      }
+    } catch {
+      alert("Yükleme sırasında bağlantı hatası oluştu.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleStartCheckout = async (tier: "pro" | "plus") => {
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch("/api/payments/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier, billingInterval: "monthly" }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.checkoutUrl) {
+        window.location.href = json.checkoutUrl;
+      } else {
+        alert(json.error || "Ödeme başlatılamadı.");
+        setIsCheckingOut(false);
+      }
+    } catch {
+      alert("Bağlantı hatası oluştu.");
+      setIsCheckingOut(false);
+    }
   };
 
   const handleUpdateWorkingHours = async (day: "weekdays" | "saturday" | "sunday", value: string) => {
@@ -473,6 +574,59 @@ function MerchantPortalContent() {
           </header>
 
           <main className="max-w-3xl mx-auto px-4 py-4 space-y-4">
+            {/* iOS Segmented Navigation Tab */}
+            <div className="flex p-1 rounded-2xl bg-zinc-200/80 dark:bg-zinc-800/80 backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setActiveTab("profile")}
+                className={`flex-1 py-2.5 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all ios-press ${
+                  activeTab === "profile"
+                    ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                <Store className="w-4 h-4" />
+                <span>Dükkan Bilgileri</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("agenda")}
+                className={`flex-1 py-2.5 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all ios-press relative ${
+                  activeTab === "agenda"
+                    ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                <Calendar className="w-4 h-4 text-brand" />
+                <span>Randevu Ajandası</span>
+                {pendingTodayCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black animate-pulse">
+                    {pendingTodayCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* View Switching: Agenda vs Profile */}
+            {activeTab === "agenda" ? (
+              <MerchantAppointmentsView
+                merchant={activeMerchant}
+                onMerchantUpdated={(updated) => {
+                  setActiveMerchant(updated);
+                  refreshPendingCount(updated.id);
+                }}
+              />
+            ) : (
+              <>
+                {/* Payment Success Banner */}
+            {paymentSuccessNotice && (
+              <div className="p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 flex items-center gap-3 shadow-xs animate-in fade-in slide-in-from-top-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="text-xs font-bold leading-relaxed">{paymentSuccessNotice}</span>
+              </div>
+            )}
+
             {/* 1. Dükkan Canlı Durum Kartı */}
             <div className="p-4 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex items-center justify-between gap-3">
               <div className="space-y-0.5">
@@ -543,12 +697,28 @@ function MerchantPortalContent() {
               </div>
 
               <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block px-1">Kapak Fotoğrafı URL</label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                      Kapak Fotoğrafı
+                    </label>
+                    <label className="text-[10px] font-bold text-brand hover:underline cursor-pointer flex items-center gap-1">
+                      <Upload className="w-3 h-3" />
+                      <span>{isUploading ? "Yükleniyor..." : "Cihazdan Fotoğraf Yükle"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploading}
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
                   <input
                     type="text"
                     value={activeMerchant.heroImage}
                     onChange={(e) => handleUpdateProfile("heroImage", e.target.value)}
+                    placeholder="https://..."
                     className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors"
                   />
                 </div>
@@ -620,6 +790,99 @@ function MerchantPortalContent() {
                       className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 focus:outline-none p-2.5 rounded-xl border border-transparent focus:border-brand transition-colors"
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Randevu & Müsaitlik Parametreleri Düzenleyici */}
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-5 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-extrabold text-black dark:text-white flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-brand" />
+                    <span>Online Randevu ve Müsaitlik Parametreleri</span>
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                    Müşterilerin dükkanınızdan randevu alma sıklığını ve aralıklarını yönetin.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("agenda")}
+                  className="px-3 py-1.5 rounded-full bg-brand/10 text-brand text-xs font-bold hover:bg-brand/20 ios-press"
+                >
+                  Ajandaya Git →
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                {/* Slot Interval */}
+                <div className="space-y-1.5 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-black/[0.04] dark:border-white/[0.06]">
+                  <label className="text-[11px] font-bold text-black dark:text-white block">
+                    Randevu Aralığı
+                  </label>
+                  <select
+                    value={activeMerchant.features?.slotInterval || 30}
+                    onChange={async (e) => {
+                      const val = Number(e.target.value);
+                      const updated = { ...activeMerchant.features, slotInterval: val };
+                      setActiveMerchant({ ...activeMerchant, features: updated });
+                      await updateMerchantProfile(activeMerchant.id, { features: updated });
+                      showToast(`Randevu aralığı ${val} dk olarak güncellendi.`);
+                    }}
+                    className="w-full text-xs font-bold text-black dark:text-white bg-white dark:bg-[#1C1C1E] p-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.1] focus:outline-none focus:border-brand cursor-pointer"
+                  >
+                    <option value={15}>15 Dakika</option>
+                    <option value={30}>30 Dakika</option>
+                    <option value={45}>45 Dakika</option>
+                    <option value={60}>60 Dakika</option>
+                  </select>
+                </div>
+
+                {/* Buffer Time */}
+                <div className="space-y-1.5 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-black/[0.04] dark:border-white/[0.06]">
+                  <label className="text-[11px] font-bold text-black dark:text-white block">
+                    Dinlenme / Temizlik Molası
+                  </label>
+                  <select
+                    value={activeMerchant.features?.bufferTime ?? 5}
+                    onChange={async (e) => {
+                      const val = Number(e.target.value);
+                      const updated = { ...activeMerchant.features, bufferTime: val };
+                      setActiveMerchant({ ...activeMerchant, features: updated });
+                      await updateMerchantProfile(activeMerchant.id, { features: updated });
+                      showToast(`Mola süresi ${val} dk olarak güncellendi.`);
+                    }}
+                    className="w-full text-xs font-bold text-black dark:text-white bg-white dark:bg-[#1C1C1E] p-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.1] focus:outline-none focus:border-brand cursor-pointer"
+                  >
+                    <option value={0}>Mola Yok (0 dk)</option>
+                    <option value={5}>5 Dakika</option>
+                    <option value={10}>10 Dakika</option>
+                    <option value={15}>15 Dakika</option>
+                  </select>
+                </div>
+
+                {/* Max Advance Days */}
+                <div className="space-y-1.5 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-black/[0.04] dark:border-white/[0.06]">
+                  <label className="text-[11px] font-bold text-black dark:text-white block">
+                    İleri Tarih Limiti
+                  </label>
+                  <select
+                    value={activeMerchant.features?.maxAdvanceDays || 14}
+                    onChange={async (e) => {
+                      const val = Number(e.target.value);
+                      const updated = { ...activeMerchant.features, maxAdvanceDays: val };
+                      setActiveMerchant({ ...activeMerchant, features: updated });
+                      await updateMerchantProfile(activeMerchant.id, { features: updated });
+                      showToast(`İleri tarih limiti ${val} gün olarak güncellendi.`);
+                    }}
+                    className="w-full text-xs font-bold text-black dark:text-white bg-white dark:bg-[#1C1C1E] p-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.1] focus:outline-none focus:border-brand cursor-pointer"
+                  >
+                    <option value={7}>7 Gün (1 Hafta)</option>
+                    <option value={14}>14 Gün (2 Hafta)</option>
+                    <option value={30}>30 Gün (1 Ay)</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -742,23 +1005,61 @@ function MerchantPortalContent() {
             </div>
 
             {/* 5. Abonelik & Paket Bilgisi */}
-            <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.08] flex items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
-                  Mevcut Paketiniz
-                </span>
-                <span className="text-xs font-extrabold text-black dark:text-white uppercase">
-                  {activeMerchant.tier === "plus" ? "Usta Plus" : activeMerchant.tier === "pro" ? "Esnafça Pro" : "Mahalleli (Ücretsiz)"}
-                </span>
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                    Mevcut Paketiniz
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-extrabold text-black dark:text-white uppercase">
+                      {activeMerchant.tier === "plus" ? "Usta Plus" : activeMerchant.tier === "pro" ? "Esnafça Pro" : "Mahalleli (Ücretsiz)"}
+                    </span>
+                    {activeMerchant.tier === "plus" ? (
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-0.5">
+                        <Crown className="w-2.5 h-2.5" /> En Yüksek Paket
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                        Aktif
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <Link
+                  href="/fiyatlandirma"
+                  className="text-xs font-bold text-brand hover:underline"
+                >
+                  Tüm Paketleri İncele →
+                </Link>
               </div>
 
-              <Link
-                href="/fiyatlandirma"
-                className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.1] text-black dark:text-white text-xs font-bold hover:bg-zinc-50 dark:hover:bg-zinc-800 ios-press"
-              >
-                Paketi Yükselt →
-              </Link>
+              {activeMerchant.tier !== "plus" && (
+                <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex flex-col sm:flex-row items-center gap-2">
+                  {activeMerchant.tier !== "pro" && (
+                    <button
+                      disabled={isCheckingOut}
+                      onClick={() => handleStartCheckout("pro")}
+                      className="w-full sm:flex-1 py-2.5 px-3 rounded-2xl bg-brand text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs ios-press disabled:opacity-50"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>{isCheckingOut ? "Başlatılıyor..." : "Pro'ya Geç (390 ₺/ay)"}</span>
+                    </button>
+                  )}
+                  <button
+                    disabled={isCheckingOut}
+                    onClick={() => handleStartCheckout("plus")}
+                    className="w-full sm:flex-1 py-2.5 px-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-xs ios-press disabled:opacity-50"
+                  >
+                    <Crown className="w-3.5 h-3.5" />
+                    <span>{isCheckingOut ? "Başlatılıyor..." : "Usta Plus'a Geç (890 ₺/ay)"}</span>
+                  </button>
+                </div>
+              )}
             </div>
+              </>
+            )}
           </main>
 
           {/* QR Modal Sheet */}

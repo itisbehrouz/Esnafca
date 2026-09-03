@@ -7,12 +7,17 @@ import { generateWhatsAppUrl } from "@/lib/whatsapp";
 interface PriceMenuListProps {
   merchant: Merchant;
   services?: ServiceItem[];
+  onBookService?: (service: ServiceItem) => void;
 }
 
-export function PriceMenuList({ merchant, services }: PriceMenuListProps) {
+export function PriceMenuList({ merchant, services, onBookService }: PriceMenuListProps) {
   const displayServices = services || merchant.services || [];
 
   const handleBookingClick = (service: ServiceItem) => {
+    if (onBookService) {
+      onBookService(service);
+      return;
+    }
     const url = generateWhatsAppUrl(merchant, service);
     window.open(url, "_blank", "noopener,noreferrer");
   };
