@@ -430,30 +430,46 @@ export async function updateMerchantProfile(id: string, updates: any) {
 }
 
 /**
- * dukkanim (Check Pending by Phone)
+ * Normalize phone number to 10-digit format (e.g. 5321234567)
+ */
+function normalizeToTenDigits(raw: string): string | null {
+  const digits = (raw || "").replace(/\D/g, "");
+  if (digits.length === 10) return digits;
+  if (digits.length === 11 && digits.startsWith("0")) return digits.slice(1);
+  if (digits.length === 12 && digits.startsWith("90")) return digits.slice(2);
+  return null;
+}
+
+/**
+ * dukkanim (Check Pending by Phone) - Privacy-Preserving Minimal Query
+ * Enforces strict exact equality on normalized 10-digit phone number.
+ * Returns only minimal status to prevent PII exposure (KVKK/GDPR).
  */
 export async function checkPendingByPhone(phone: string) {
-  const cleanPhone = phone.replace(/\D/g, "");
-  if (!cleanPhone) return { success: false };
+  const normalizedPhone = normalizeToTenDigits(phone);
+  if (!normalizedPhone) {
+    return { success: false, exists: false, error: "Geçersiz telefon numarası." };
+  }
 
   try {
     const apps = await prisma.merchantApplication.findMany({
       where: { status: "pending" },
+      select: { phone: true, whatsapp: true, status: true },
     });
 
     const pending = apps.find((a) => {
-      const pClean = a.phone.replace(/\D/g, "");
-      const wClean = a.whatsapp.replace(/\D/g, "");
-      return pClean.includes(cleanPhone) || cleanPhone.includes(pClean) || 
-             wClean.includes(cleanPhone) || cleanPhone.includes(wClean);
+      const pNorm = normalizeToTenDigits(a.phone);
+      const wNorm = normalizeToTenDigits(a.whatsapp);
+      return pNorm === normalizedPhone || wNorm === normalizedPhone;
     });
 
     if (pending) {
-      return { success: true, application: pending };
+      return { success: true, exists: true, status: pending.status };
     }
-    return { success: false };
+    return { success: true, exists: false };
   } catch (error) {
-    return { success: false };
+    console.error("Error checking pending application:", error);
+    return { success: false, exists: false };
   }
 }
 

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { AppointmentStatus } from "@/types";
 import { isSlotAvailable, parseDurationMinutes, getAvailableSlots } from "@/lib/booking-engine";
 import { getNewBookingMerchantAlert } from "@/lib/whatsapp-templates";
+import { getMerchantSession, getAdminSession } from "@/lib/auth";
 
 export interface CreateAppointmentInput {
   merchantId: string;
@@ -178,6 +179,19 @@ export async function getMerchantAppointmentsAction(
       return { success: false, error: "Esnaf kimliği gereklidir.", appointments: [] };
     }
 
+    // Verify caller authorization: caller must be an admin or the merchant themself
+    const merchantSession = await getMerchantSession();
+    const isAdmin = await getAdminSession();
+
+    if (!isAdmin && (!merchantSession || merchantSession.id !== merchantId)) {
+      return {
+        success: false,
+        error: "Yetkisiz erişim.",
+        status: 401,
+        appointments: [],
+      };
+    }
+
     const whereClause: { merchantId: string; date?: string } = { merchantId };
     if (date) {
       whereClause.date = date;
@@ -229,6 +243,18 @@ export async function updateAppointmentStatusAction(
 
     if (!existing) {
       return { success: false, error: "Randevu bulunamadı." };
+    }
+
+    // Verify caller authorization: caller must be an admin or own this merchant profile
+    const merchantSession = await getMerchantSession();
+    const isAdmin = await getAdminSession();
+
+    if (!isAdmin && (!merchantSession || merchantSession.id !== existing.merchantId)) {
+      return {
+        success: false,
+        error: "Yetkisiz erişim.",
+        status: 401,
+      };
     }
 
     const updated = await prisma.appointment.update({

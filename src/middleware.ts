@@ -33,6 +33,35 @@ function isExemptedPath(pathname: string): boolean {
   return false;
 }
 
+/**
+ * Sanitize redirect parameter to prevent open redirect vulnerabilities.
+ * Ensures the target begins with a single '/' and not '//', and rejects external URLs.
+ */
+function sanitizeRedirect(target: string | null, fallback = "/"): string {
+  if (!target || typeof target !== "string") {
+    return fallback;
+  }
+
+  const trimmed = target.trim();
+
+  // Must begin with a single slash, not double slash or backslash
+  if (
+    !trimmed.startsWith("/") ||
+    trimmed.startsWith("//") ||
+    trimmed.includes("\\") ||
+    trimmed.includes("://")
+  ) {
+    return fallback;
+  }
+
+  // Prevent redirect loops back to preview-gate
+  if (trimmed === "/preview-gate" || trimmed.startsWith("/preview-gate?")) {
+    return fallback;
+  }
+
+  return trimmed;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sitePassword = process.env.SITE_PASSWORD || env.SITE_PASSWORD;
@@ -49,7 +78,8 @@ export async function middleware(request: NextRequest) {
       try {
         const { payload } = await jwtVerify(previewCookie, JWT_SECRET);
         if (payload.role === "preview_tester") {
-          const redirectTo = request.nextUrl.searchParams.get("redirect") || "/";
+          const rawRedirect = request.nextUrl.searchParams.get("redirect");
+          const redirectTo = sanitizeRedirect(rawRedirect, "/");
           return NextResponse.redirect(new URL(redirectTo, request.url));
         }
       } catch {
@@ -83,8 +113,9 @@ export async function middleware(request: NextRequest) {
     if (!isPreviewAuthorized) {
       const gateUrl = new URL("/preview-gate", request.url);
       const fullPath = pathname + request.nextUrl.search;
-      if (fullPath !== "/" && fullPath !== "") {
-        gateUrl.searchParams.set("redirect", fullPath);
+      const safeRedirect = sanitizeRedirect(fullPath, "/");
+      if (safeRedirect !== "/") {
+        gateUrl.searchParams.set("redirect", safeRedirect);
       }
       return NextResponse.redirect(gateUrl);
     }
@@ -117,7 +148,7 @@ export async function middleware(request: NextRequest) {
 
     if (!token) {
       const loginUrl = new URL("/admin/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
+      loginUrl.searchParams.set("from", sanitizeRedirect(pathname, "/admin"));
       return NextResponse.redirect(loginUrl);
     }
 
@@ -129,7 +160,7 @@ export async function middleware(request: NextRequest) {
       }
     } catch {
       const loginUrl = new URL("/admin/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
+      loginUrl.searchParams.set("from", sanitizeRedirect(pathname, "/admin"));
       return NextResponse.redirect(loginUrl);
     }
   }

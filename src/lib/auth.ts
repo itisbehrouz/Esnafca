@@ -1,3 +1,4 @@
+import { timingSafeEqual, createHash } from "crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
@@ -63,10 +64,14 @@ export async function signAdminToken(): Promise<string> {
 }
 
 /**
- * Verify Admin password
+ * Verify Admin password using timing-safe comparison via SHA-256 hashes
+ * to eliminate timing side-channel attack vectors.
  */
 export function checkAdminPassword(password: string): boolean {
-  return password === ADMIN_PASSWORD;
+  if (!password || !ADMIN_PASSWORD) return false;
+  const hashSubmitted = createHash("sha256").update(password.trim()).digest();
+  const hashExpected = createHash("sha256").update(ADMIN_PASSWORD.trim()).digest();
+  return timingSafeEqual(hashSubmitted, hashExpected);
 }
 
 /**

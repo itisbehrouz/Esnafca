@@ -81,7 +81,10 @@ export async function verifySitePasswordAction(
   if (
     !targetUrl.startsWith("/") ||
     targetUrl.startsWith("//") ||
-    targetUrl.startsWith("/preview-gate")
+    targetUrl.includes("\\") ||
+    targetUrl.includes("://") ||
+    targetUrl === "/preview-gate" ||
+    targetUrl.startsWith("/preview-gate?")
   ) {
     targetUrl = "/";
   }
