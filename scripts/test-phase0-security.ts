@@ -26,17 +26,17 @@ async function runTests() {
   // TEST 1: OTP Generation and Verification
   console.log("--- 1. OTP Sistemi Testleri ---");
   const phone = "05321112233";
-  const { code, expiresAt } = generateOtp(phone);
+  const { code, expiresAt } = await generateOtp(phone);
   assert(code.length === 6, "OTP kodu 6 haneli üretildi");
   assert(expiresAt > Date.now(), "OTP geçerlilik süresi ileri bir tarihte");
 
-  const wrongCodeRes = verifyOtpCode(phone, "999999");
+  const wrongCodeRes = await verifyOtpCode(phone, "999999");
   // in dev mode 123456 is bypass, but 999999 should fail unless random code is 999999
   if (code !== "999999") {
     assert(!wrongCodeRes.success, "Hatalı kod (999999) reddedildi");
   }
 
-  const validCodeRes = verifyOtpCode(phone, code);
+  const validCodeRes = await verifyOtpCode(phone, code);
   assert(validCodeRes.success, "Doğru OTP kodu başarıyla doğrulandı");
 
   // TEST 2: JWT Merchant Signing & Verification

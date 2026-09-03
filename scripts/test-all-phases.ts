@@ -31,10 +31,10 @@ async function runMasterSuite() {
   console.log("📦 [FAZ 0] Güvenlik, OTP & JWT Doğrulama Testleri");
   
   const testPhone = "05329998877";
-  const { code: generatedCode } = generateOtp(testPhone);
+  const { code: generatedCode } = await generateOtp(testPhone);
   assert(generatedCode.length === 6, "OTP 6 haneli üretildi");
-  assert(verifyOtpCode(testPhone, generatedCode).success, "Geçerli OTP kodu doğrulandı");
-  assert(!verifyOtpCode(testPhone, "000000").success, "Geçersiz OTP kodu (000000) reddedildi");
+  assert((await verifyOtpCode(testPhone, generatedCode)).success, "Geçerli OTP kodu doğrulandı");
+  assert(!(await verifyOtpCode(testPhone, "000000")).success, "Geçersiz OTP kodu (000000) reddedildi");
 
   const merchantToken = await signMerchantToken({
     id: "merchant-test-id-1",

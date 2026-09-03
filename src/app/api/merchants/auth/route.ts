@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { signMerchantToken } from "@/lib/auth";
 import { verifyOtpCode } from "@/lib/otp";
+import { parseJsonField } from "@/lib/utils";
 
 /**
  * GET /api/merchants/auth
@@ -42,17 +43,17 @@ export async function GET() {
       minPrice: m.minPrice,
       maxPrice: m.maxPrice,
       priceNote: m.priceNote,
-      workingHours: JSON.parse(m.workingHours || "{}"),
+      workingHours: parseJsonField(m.workingHours, {}),
       heroImage: m.heroImage,
-      galleryImages: JSON.parse(m.galleryImages || "[]"),
+      galleryImages: parseJsonField(m.galleryImages, []),
       bio: m.bio,
-      specialties: JSON.parse(m.specialties || "[]"),
-      features: JSON.parse(m.features || "{}"),
+      specialties: parseJsonField(m.specialties, []),
+      features: parseJsonField(m.features, {}),
       isOpenNow: m.isOpenNow,
       services: m.services,
       reviews: m.reviews.map((r) => ({
         ...r,
-        tags: JSON.parse(r.tags || "[]"),
+        tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
       })),
     }));
 
@@ -115,16 +116,16 @@ export async function POST(request: Request) {
             reviewCount: merchant.reviewCount,
             tier: merchant.tier,
             isOpenNow: merchant.isOpenNow,
-            workingHours: JSON.parse(merchant.workingHours || "{}"),
+            workingHours: parseJsonField(merchant.workingHours, {}),
             heroImage: merchant.heroImage,
-            galleryImages: JSON.parse(merchant.galleryImages || "[]"),
+            galleryImages: parseJsonField(merchant.galleryImages, []),
             bio: merchant.bio,
-            specialties: JSON.parse(merchant.specialties || "[]"),
-            features: JSON.parse(merchant.features || "{}"),
+            specialties: parseJsonField(merchant.specialties, []),
+            features: parseJsonField(merchant.features, {}),
             services: merchant.services,
             reviews: merchant.reviews.map((r) => ({
               ...r,
-              tags: JSON.parse(r.tags || "[]"),
+              tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
             })),
           },
         });
@@ -161,7 +162,7 @@ export async function POST(request: Request) {
 
     // OTP is mandatory — no code, no session. This closes the phone-only
     // bypass that used to issue a session without ever checking a code.
-    const otpRes = verifyOtpCode(cleanInput, otp);
+    const otpRes = await verifyOtpCode(cleanInput, otp);
     if (!otpRes.success) {
       return NextResponse.json(
         { success: false, error: otpRes.error || "Hatalı doğrulama kodu." },
@@ -218,16 +219,16 @@ export async function POST(request: Request) {
           reviewCount: matchedMerchant.reviewCount,
           tier: matchedMerchant.tier,
           isOpenNow: matchedMerchant.isOpenNow,
-          workingHours: JSON.parse(matchedMerchant.workingHours || "{}"),
+          workingHours: parseJsonField(matchedMerchant.workingHours, {}),
           heroImage: matchedMerchant.heroImage,
-          galleryImages: JSON.parse(matchedMerchant.galleryImages || "[]"),
+          galleryImages: parseJsonField(matchedMerchant.galleryImages, []),
           bio: matchedMerchant.bio,
-          specialties: JSON.parse(matchedMerchant.specialties || "[]"),
-          features: JSON.parse(matchedMerchant.features || "{}"),
+          specialties: parseJsonField(matchedMerchant.specialties, []),
+          features: parseJsonField(matchedMerchant.features, {}),
           services: matchedMerchant.services,
           reviews: matchedMerchant.reviews.map((r) => ({
             ...r,
-            tags: JSON.parse(r.tags || "[]"),
+            tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
           })),
         },
       });

@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { MERCHANTS } from "@/data/seed-merchants";
 import { MerchantDetailClient } from "./MerchantDetailClient";
 import { prisma } from "@/lib/db";
+import { parseJsonField } from "@/lib/utils";
+import { Merchant } from "@/types";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -111,20 +113,20 @@ export default async function MerchantDetailPage({ params }: PageProps) {
   let initialMerchant = fallback;
   if (merchant) {
     try {
-      initialMerchant = {
+      initialMerchant = ({
         ...merchant,
         category: merchant.category as any,
         tier: merchant.tier as any,
-        workingHours: JSON.parse(merchant.workingHours || "{}"),
-        galleryImages: JSON.parse(merchant.galleryImages || "[]"),
-        specialties: JSON.parse(merchant.specialties || "[]"),
-        features: JSON.parse(merchant.features || "{}"),
+        workingHours: parseJsonField(merchant.workingHours, {}),
+        galleryImages: parseJsonField(merchant.galleryImages, []),
+        specialties: parseJsonField(merchant.specialties, []),
+        features: parseJsonField(merchant.features, {}),
         services: merchant.services,
         reviews: merchant.reviews.map((r) => ({
           ...r,
-          tags: JSON.parse(r.tags || "[]"),
+          tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
         })),
-      };
+      } as unknown as Merchant);
     } catch {
       // fallback
     }

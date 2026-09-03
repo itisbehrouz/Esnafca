@@ -1,6 +1,6 @@
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -32,13 +32,13 @@ model Merchant {
   maxPrice        Float    @default(0)
   priceNote       String?
   
-  // Storing JSON for simplicity in SQLite
-  workingHours    String   // JSON string
+  // Native JSON types for PostgreSQL
+  workingHours    Json
   heroImage       String
-  galleryImages   String   // JSON string array
+  galleryImages   Json
   bio             String
-  specialties     String   // JSON string array
-  features        String   // JSON string object
+  specialties     Json
+  features        Json
   
   isOpenNow       Boolean  @default(false)
   createdAt       DateTime @default(now())
@@ -61,6 +61,7 @@ model ServiceItem {
   popular           Boolean  @default(false)
   requiresDeposit   Boolean  @default(false)
   depositAmount     Float?
+  isArchived        Boolean  @default(false)
 
   merchant          Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   appointments      Appointment[]
@@ -117,5 +118,15 @@ model Appointment {
 
   merchant      Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   service       ServiceItem? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@unique([merchantId, date, startTime])
 }
 
+model OtpVerification {
+  id         String   @id @default(cuid())
+  phone      String   @unique
+  tokenHash  String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+}

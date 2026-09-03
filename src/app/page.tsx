@@ -3,6 +3,7 @@ import { HomeInteractive } from "@/components/discovery/HomeInteractive";
 import { prisma } from "@/lib/db";
 import { Merchant } from "@/types";
 import { MERCHANTS as SEED_MERCHANTS } from "@/data/seed-merchants";
+import { parseJsonField } from "@/lib/utils";
 
 async function getInitialMerchants(): Promise<Merchant[]> {
   try {
@@ -23,10 +24,10 @@ async function getInitialMerchants(): Promise<Merchant[]> {
       tier: m.tier as any,
       priceNote: m.priceNote ?? undefined,
       verifiedYear: m.verifiedYear ?? undefined,
-      workingHours: JSON.parse(m.workingHours),
-      galleryImages: JSON.parse(m.galleryImages),
-      specialties: JSON.parse(m.specialties),
-      features: JSON.parse(m.features),
+      workingHours: parseJsonField(m.workingHours, {}),
+      galleryImages: parseJsonField(m.galleryImages, []),
+      specialties: parseJsonField(m.specialties, []),
+      features: parseJsonField(m.features, {}),
       coordinates: (m.latitude && m.longitude) ? { lat: m.latitude, lng: m.longitude } : undefined,
       services: m.services.map(s => ({
         ...s,
@@ -37,9 +38,9 @@ async function getInitialMerchants(): Promise<Merchant[]> {
       reviews: m.reviews.map(r => ({
         ...r,
         profession: r.profession ?? undefined,
-        tags: JSON.parse(r.tags)
+        tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags
       }))
-    }));
+    } as unknown as Merchant));
   } catch (e) {
     console.error("DB connection error, falling back to seed", e);
     return SEED_MERCHANTS;

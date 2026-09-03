@@ -52,7 +52,7 @@ export function parseDurationMinutes(durationStr?: string | null): number {
  * Extracts working hours for a given date from merchant workingHours field.
  */
 export function getMerchantWorkingHoursForDate(
-  workingHoursData: string | Record<string, string>,
+  workingHoursData: any,
   dateStr: string
 ): { isClosed: boolean; startMinutes: number; endMinutes: number } {
   let hoursObj: Record<string, string> = {
@@ -243,27 +243,13 @@ export async function isSlotAvailable(
   merchantId: string,
   date: string,
   startTime: string,
-  durationMinutes: number = 30
+  durationMinutes: number = 30,
+  client: any = prisma
 ): Promise<boolean> {
   const reqStart = timeToMinutes(startTime);
   const reqEnd = reqStart + durationMinutes;
 
-  const conflicting = await prisma.appointment.findFirst({
-    where: {
-      merchantId,
-      date,
-      status: { in: ["pending", "confirmed"] },
-    },
-    select: {
-      id: true,
-      startTime: true,
-      endTime: true,
-    },
-  });
-
-  if (!conflicting) return true;
-
-  const allActive = await prisma.appointment.findMany({
+  const allActive = await client.appointment.findMany({
     where: {
       merchantId,
       date,

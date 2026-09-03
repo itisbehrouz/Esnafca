@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { parseJsonField } from "@/lib/utils";
 
 export async function GET(
   request: Request,
@@ -47,17 +48,17 @@ export async function GET(
       minPrice: m.minPrice,
       maxPrice: m.maxPrice,
       priceNote: m.priceNote,
-      workingHours: JSON.parse(m.workingHours || "{}"),
+      workingHours: parseJsonField(m.workingHours, {}),
       heroImage: m.heroImage,
-      galleryImages: JSON.parse(m.galleryImages || "[]"),
+      galleryImages: parseJsonField(m.galleryImages, []),
       bio: m.bio,
-      specialties: JSON.parse(m.specialties || "[]"),
-      features: JSON.parse(m.features || "{}"),
+      specialties: parseJsonField(m.specialties, []),
+      features: parseJsonField(m.features, {}),
       isOpenNow: m.isOpenNow,
       services: m.services,
       reviews: m.reviews.map((r) => ({
         ...r,
-        tags: JSON.parse(r.tags || "[]"),
+        tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
       })),
     };
 

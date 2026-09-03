@@ -103,35 +103,35 @@ export async function createAppointmentAction(
       }
     }
 
-    // 6.5. Race-Condition Prevention: Check slot collision before inserting!
-    const durationMinutes = parseDurationMinutes(selectedService?.estimatedDuration);
-    const isFree = await isSlotAvailable(merchant.id, data.date, data.startTime, durationMinutes);
-    if (!isFree) {
-      return {
-        success: false,
-        error: "Seçtiğiniz randevu saati az önce başka bir müşteri tarafından rezerve edildi. Lütfen başka bir saat seçin.",
-      };
-    }
-
-    // 7. Calculate End Time
+    // 7. Calculate End Time & Duration
     const endTime =
       data.endTime ||
       calculateEndTime(data.startTime, selectedService?.estimatedDuration);
+    const durationMinutes = parseDurationMinutes(selectedService?.estimatedDuration);
 
-    // 8. Create Appointment in DB
-    const appointment = await prisma.appointment.create({
-      data: {
-        merchantId: merchant.id,
-        serviceId: selectedService?.id || null,
-        customerName,
-        customerPhone: cleanPhone,
-        customerNote: data.customerNote?.trim() || null,
-        date: data.date,
-        startTime: data.startTime,
-        endTime: endTime || null,
-        price: finalPrice,
-        status: "pending",
-      },
+    // 8. Prevent Double-Booking Race Conditions inside prisma.$transaction
+    const appointment = await prisma.$transaction(async (tx) => {
+      // 8.1. Check slot collision inside transaction
+      const isFree = await isSlotAvailable(merchant.id, data.date, data.startTime, durationMinutes, tx);
+      if (!isFree) {
+        throw new Error("SLOT_OCCUPIED");
+      }
+
+      // 8.2. Atomic insert guarded by @@unique([merchantId, date, startTime])
+      return await tx.appointment.create({
+        data: {
+          merchantId: merchant.id,
+          serviceId: selectedService?.id || null,
+          customerName,
+          customerPhone: cleanPhone,
+          customerNote: data.customerNote?.trim() || null,
+          date: data.date,
+          startTime: data.startTime,
+          endTime: endTime || null,
+          price: finalPrice,
+          status: "pending",
+        },
+      });
     });
 
     // 9. Generate WhatsApp Link using WhatsApp template generator
@@ -160,7 +160,17 @@ export async function createAppointmentAction(
         whatsappUrl,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
+    if (
+      error?.message === "SLOT_OCCUPIED" ||
+      error?.code === "P2002" ||
+      error?.message?.includes("Unique constraint")
+    ) {
+      return {
+        success: false,
+        error: "Bu saat dilimi az önce başka bir müşteri tarafından rezerve edildi.",
+      };
+    }
     console.error("Error creating appointment:", error);
     return { success: false, error: "Randevu kaydı sırasında bir hata oluştu." };
   }

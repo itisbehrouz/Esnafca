@@ -23,7 +23,7 @@ export const env = {
   IS_BUILD_PHASE,
 
   // Database
-  DATABASE_URL: process.env.DATABASE_URL || "file:./dev.db",
+  DATABASE_URL: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/esnafca?schema=public",
 
   // Security & JWT
   JWT_SECRET: process.env.JWT_SECRET || INSECURE_DEFAULT_JWT_SECRET,

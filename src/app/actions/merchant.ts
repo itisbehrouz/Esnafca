@@ -11,6 +11,8 @@ import {
   checkAdminPassword 
 } from "@/lib/auth";
 import { generateOtp, verifyOtpCode } from "@/lib/otp";
+import { parseJsonField } from "@/lib/utils";
+import { Merchant } from "@/types";
 
 /**
  * esnaf-ekle (New Merchant Application)
@@ -140,22 +142,22 @@ export async function approveApplication(appId: string) {
         experienceYears: app.experienceYears || 10,
         minPrice: calculatedMin,
         maxPrice: calculatedMax,
-        workingHours: JSON.stringify({
+        workingHours: {
           weekdays: "09:00 - 19:30",
           saturday: "09:00 - 19:00",
           sunday: "Kapalı",
-        }),
+        },
         isOpenNow: true,
         heroImage: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80",
-        galleryImages: JSON.stringify(["https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80"]),
+        galleryImages: ["https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80"],
         bio: `${app.neighborhood} bölgesinde hizmet veren doğrulanmış mahalle esnafımız.`,
-        specialties: JSON.stringify(services.map((s: any) => s.name).slice(0, 3)),
-        features: JSON.stringify({
+        specialties: services.map((s: any) => s.name).slice(0, 3),
+        features: {
           transparentPricing: true,
           whatsappBooking: true,
           expressOption: true,
           homePickup: false,
-        }),
+        },
         services: {
           create: services.map((s: any, idx: number) => ({
             name: s.name,
@@ -221,7 +223,7 @@ export async function sendMerchantOtp(phone: string) {
   if (cleanPhone.length < 10) return { success: false, error: "Geçersiz telefon numarası." };
 
   try {
-    const { code, expiresAt } = generateOtp(cleanPhone);
+    const { code, expiresAt } = await generateOtp(cleanPhone);
     return {
       success: true,
       message: "Doğrulama kodu gönderildi.",
@@ -240,7 +242,7 @@ export async function verifyMerchantOtpAndLogin(phone: string, code: string) {
   const cleanPhone = phone.replace(/\D/g, "");
   if (!cleanPhone || !code) return { success: false, error: "Telefon ve doğrulama kodu gereklidir." };
 
-  const verification = verifyOtpCode(cleanPhone, code);
+  const verification = await verifyOtpCode(cleanPhone, code);
   if (!verification.success) {
     return { success: false, error: verification.error || "Geçersiz veya süresi dolmuş kod." };
   }
@@ -283,16 +285,16 @@ export async function verifyMerchantOtpAndLogin(phone: string, code: string) {
     return { 
       success: true, 
       token,
-      merchant: {
+      merchant: ({
         ...merchant,
         category: merchant.category as any,
         tier: merchant.tier as any,
-        workingHours: JSON.parse(merchant.workingHours),
-        galleryImages: JSON.parse(merchant.galleryImages),
-        specialties: JSON.parse(merchant.specialties),
-        features: JSON.parse(merchant.features),
-        reviews: merchant.reviews.map(r => ({ ...r, tags: JSON.parse(r.tags) }))
-      } 
+        workingHours: parseJsonField(merchant.workingHours, {}),
+        galleryImages: parseJsonField(merchant.galleryImages, []),
+        specialties: parseJsonField(merchant.specialties, []),
+        features: parseJsonField(merchant.features, {}),
+        reviews: merchant.reviews.map(r => ({ ...r, tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags }))
+      } as unknown as Merchant)
     };
   } catch (error) {
     console.error("Error logging in:", error);
@@ -378,9 +380,12 @@ export async function updateMerchantProfile(id: string, updates: any) {
     if (updates.category) data.category = updates.category;
     if (updates.phone) data.phone = updates.phone;
     if (updates.whatsapp) data.whatsapp = updates.whatsapp;
-    if (typeof updates.isOpenNow === "boolean") data.isOpenNow = updates.isOpenNow;
-    if (updates.workingHours) data.workingHours = JSON.stringify(updates.workingHours);
-    if (updates.features) data.features = JSON.stringify(updates.features);
+    if (updates.workingHours) {
+      data.workingHours = typeof updates.workingHours === "string" ? JSON.parse(updates.workingHours) : updates.workingHours;
+    }
+    if (updates.features) {
+      data.features = typeof updates.features === "string" ? JSON.parse(updates.features) : updates.features;
+    }
     
     if (Object.keys(data).length > 0) {
       await prisma.merchant.update({
@@ -389,12 +394,49 @@ export async function updateMerchantProfile(id: string, updates: any) {
       });
     }
 
-    // Service updates
+    // Service updates: upsert and soft-archive to preserve appointment history
     if (updates.services) {
-      await prisma.serviceItem.deleteMany({
-        where: { merchantId: id }
+      const incomingIds = updates.services
+        .filter((s: any) => Boolean(s.id))
+        .map((s: any) => String(s.id));
+
+      await prisma.serviceItem.updateMany({
+        where: {
+          merchantId: id,
+          id: { notIn: incomingIds },
+          isArchived: false,
+        },
+        data: {
+          isArchived: true,
+        },
       });
-      
+
+      for (let idx = 0; idx < updates.services.length; idx++) {
+        const s = updates.services[idx];
+        const sData = {
+          name: s.name,
+          description: s.description || null,
+          minPrice: Number(s.minPrice) || 0,
+          maxPrice: s.maxPrice ? Number(s.maxPrice) : null,
+          popular: s.popular ?? (idx === 0),
+          isArchived: false,
+        };
+
+        if (s.id) {
+          await prisma.serviceItem.update({
+            where: { id: s.id },
+            data: sData,
+          });
+        } else {
+          await prisma.serviceItem.create({
+            data: {
+              merchantId: id,
+              ...sData,
+            },
+          });
+        }
+      }
+
       const minPrices = updates.services.map((s: any) => Number(s.minPrice) || 0).filter((p: number) => p > 0);
       const maxPrices = updates.services.map((s: any) => Number(s.maxPrice) || Number(s.minPrice) || 0).filter((p: number) => p > 0);
 
@@ -406,16 +448,7 @@ export async function updateMerchantProfile(id: string, updates: any) {
         data: {
           minPrice: calculatedMin,
           maxPrice: calculatedMax,
-          services: {
-            create: updates.services.map((s: any, idx: number) => ({
-              name: s.name,
-              description: s.description || null,
-              minPrice: Number(s.minPrice) || 0,
-              maxPrice: s.maxPrice ? Number(s.maxPrice) : null,
-              popular: s.popular ?? (idx === 0),
-            }))
-          }
-        }
+        },
       });
     }
 
@@ -485,16 +518,16 @@ export async function getMerchantById(id: string) {
     
     if (!merchant) return null;
     
-    return {
+    return ({
       ...merchant,
       category: merchant.category as any,
       tier: merchant.tier as any,
-      workingHours: JSON.parse(merchant.workingHours),
-      galleryImages: JSON.parse(merchant.galleryImages),
-      specialties: JSON.parse(merchant.specialties),
-      features: JSON.parse(merchant.features),
-      reviews: merchant.reviews.map(r => ({ ...r, tags: JSON.parse(r.tags) }))
-    };
+      workingHours: parseJsonField(merchant.workingHours, {}),
+      galleryImages: parseJsonField(merchant.galleryImages, []),
+      specialties: parseJsonField(merchant.specialties, []),
+      features: parseJsonField(merchant.features, {}),
+      reviews: merchant.reviews.map(r => ({ ...r, tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags }))
+    } as unknown as Merchant);
   } catch (error) {
     return null;
   }

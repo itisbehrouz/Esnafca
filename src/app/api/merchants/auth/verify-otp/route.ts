@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyOtpCode } from "@/lib/otp";
 import { signMerchantToken } from "@/lib/auth";
+import { parseJsonField } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     const cleanInput = phone.replace(/\D/g, "");
 
     // 1. Verify OTP code
-    const otpVerification = verifyOtpCode(cleanInput, code);
+    const otpVerification = await verifyOtpCode(cleanInput, code);
     if (!otpVerification.success) {
       return NextResponse.json(
         { success: false, error: otpVerification.error || "Geçersiz veya süresi dolmuş kod." },
@@ -72,16 +73,16 @@ export async function POST(request: Request) {
         reviewCount: matchedMerchant.reviewCount,
         tier: matchedMerchant.tier,
         isOpenNow: matchedMerchant.isOpenNow,
-        workingHours: JSON.parse(matchedMerchant.workingHours || "{}"),
+        workingHours: parseJsonField(matchedMerchant.workingHours, {}),
         heroImage: matchedMerchant.heroImage,
-        galleryImages: JSON.parse(matchedMerchant.galleryImages || "[]"),
+        galleryImages: parseJsonField(matchedMerchant.galleryImages, []),
         bio: matchedMerchant.bio,
-        specialties: JSON.parse(matchedMerchant.specialties || "[]"),
-        features: JSON.parse(matchedMerchant.features || "{}"),
+        specialties: parseJsonField(matchedMerchant.specialties, []),
+        features: parseJsonField(matchedMerchant.features, {}),
         services: matchedMerchant.services,
         reviews: matchedMerchant.reviews.map((r) => ({
           ...r,
-          tags: JSON.parse(r.tags || "[]"),
+          tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
         })),
       };
 

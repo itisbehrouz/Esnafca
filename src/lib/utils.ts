@@ -35,3 +35,18 @@ export function formatPhoneNumber(val: string): string {
   if (digits.length <= 9) return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
   return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 9)} ${digits.slice(9, 11)}`;
 }
+
+/**
+ * Safely parses a JSON field that may be either a string or native JSON object (PostgreSQL / SQLite)
+ */
+export function parseJsonField<T = any>(field: unknown, fallback: T): T {
+  if (field === null || field === undefined) return fallback;
+  if (typeof field === "string") {
+    try {
+      return JSON.parse(field) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return field as T;
+}

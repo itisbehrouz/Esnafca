@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     });
 
     if (matchedMerchant) {
-      const { code, expiresAt } = generateOtp(cleanInput);
+      const { code, expiresAt } = await generateOtp(cleanInput);
       return NextResponse.json({
         success: true,
         status: "approved",
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     });
 
     if (matchedApp) {
-      const { code, expiresAt } = generateOtp(cleanInput);
+      const { code, expiresAt } = await generateOtp(cleanInput);
       return NextResponse.json({
         success: true,
         status: "pending",

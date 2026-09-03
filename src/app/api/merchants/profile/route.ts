@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getMerchantSessionFromRequest } from "@/lib/auth";
+import { parseJsonField } from "@/lib/utils";
 
 export async function PATCH(request: Request) {
   try {
@@ -28,7 +29,9 @@ export async function PATCH(request: Request) {
     if (category) updateData.category = category;
     if (phone) updateData.phone = phone;
     if (whatsapp) updateData.whatsapp = whatsapp;
-    if (workingHours) updateData.workingHours = JSON.stringify(workingHours);
+    if (workingHours) {
+      updateData.workingHours = typeof workingHours === "string" ? JSON.parse(workingHours) : workingHours;
+    }
 
     const updated = await prisma.merchant.update({
       where: { id: merchantId },
@@ -65,17 +68,17 @@ export async function PATCH(request: Request) {
         minPrice: updated.minPrice,
         maxPrice: updated.maxPrice,
         priceNote: updated.priceNote,
-        workingHours: JSON.parse(updated.workingHours || "{}"),
+        workingHours: parseJsonField(updated.workingHours, {}),
         heroImage: updated.heroImage,
-        galleryImages: JSON.parse(updated.galleryImages || "[]"),
+        galleryImages: parseJsonField(updated.galleryImages, []),
         bio: updated.bio,
-        specialties: JSON.parse(updated.specialties || "[]"),
-        features: JSON.parse(updated.features || "{}"),
+        specialties: parseJsonField(updated.specialties, []),
+        features: parseJsonField(updated.features, {}),
         isOpenNow: updated.isOpenNow,
         services: updated.services,
         reviews: updated.reviews.map((r) => ({
           ...r,
-          tags: JSON.parse(r.tags || "[]"),
+          tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
         })),
       },
     });

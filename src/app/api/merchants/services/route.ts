@@ -26,38 +26,70 @@ export async function POST(request: Request) {
     // Use verified session merchant ID
     const merchantId = session.id;
 
-    // Delete existing services and insert new list
-    await prisma.serviceItem.deleteMany({
-      where: { merchantId },
-    });
-
     const minPrices = services.map((s: any) => Number(s.minPrice) || 0).filter((p: number) => p > 0);
     const maxPrices = services.map((s: any) => Number(s.maxPrice) || Number(s.minPrice) || 0).filter((p: number) => p > 0);
 
     const calculatedMin = minPrices.length > 0 ? Math.min(...minPrices) : 100;
     const calculatedMax = maxPrices.length > 0 ? Math.max(...maxPrices) : 500;
 
+    // 1. Soft-archive any services no longer in the submitted list (preserves Appointment foreign keys)
+    const incomingIds = services
+      .filter((s: any) => Boolean(s.id))
+      .map((s: any) => String(s.id));
+
+    await prisma.serviceItem.updateMany({
+      where: {
+        merchantId,
+        id: { notIn: incomingIds },
+        isArchived: false,
+      },
+      data: {
+        isArchived: true,
+      },
+    });
+
+    // 2. Upsert each service: update existing, create new
+    for (let idx = 0; idx < services.length; idx++) {
+      const s = services[idx];
+      const serviceData = {
+        name: s.name,
+        description: s.description || null,
+        minPrice: Number(s.minPrice) || 0,
+        maxPrice: s.maxPrice ? Number(s.maxPrice) : null,
+        popular: s.popular ?? (idx === 0),
+        isArchived: false,
+      };
+
+      if (s.id) {
+        await prisma.serviceItem.update({
+          where: { id: s.id },
+          data: serviceData,
+        });
+      } else {
+        await prisma.serviceItem.create({
+          data: {
+            merchantId,
+            ...serviceData,
+          },
+        });
+      }
+    }
+
+    // 3. Update Merchant min/max price range
     await prisma.merchant.update({
       where: { id: merchantId },
       data: {
         minPrice: calculatedMin,
         maxPrice: calculatedMax,
-        services: {
-          create: services.map((s: any, idx: number) => ({
-            name: s.name,
-            description: s.description || null,
-            minPrice: Number(s.minPrice) || 0,
-            maxPrice: s.maxPrice ? Number(s.maxPrice) : null,
-            popular: s.popular ?? (idx === 0),
-          })),
-        },
       },
     });
 
     const updated = await prisma.merchant.findUnique({
       where: { id: merchantId },
       include: {
-        services: true,
+        services: {
+          where: { isArchived: false },
+        },
         reviews: true,
       },
     });
@@ -68,6 +100,11 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+
+    const workingHours = typeof updated.workingHours === "string" ? JSON.parse(updated.workingHours || "{}") : updated.workingHours;
+    const galleryImages = typeof updated.galleryImages === "string" ? JSON.parse(updated.galleryImages || "[]") : updated.galleryImages;
+    const specialties = typeof updated.specialties === "string" ? JSON.parse(updated.specialties || "[]") : updated.specialties;
+    const features = typeof updated.features === "string" ? JSON.parse(updated.features || "{}") : updated.features;
 
     return NextResponse.json({
       success: true,
@@ -95,17 +132,17 @@ export async function POST(request: Request) {
         minPrice: updated.minPrice,
         maxPrice: updated.maxPrice,
         priceNote: updated.priceNote,
-        workingHours: JSON.parse(updated.workingHours || "{}"),
+        workingHours,
         heroImage: updated.heroImage,
-        galleryImages: JSON.parse(updated.galleryImages || "[]"),
+        galleryImages,
         bio: updated.bio,
-        specialties: JSON.parse(updated.specialties || "[]"),
-        features: JSON.parse(updated.features || "{}"),
+        specialties,
+        features,
         isOpenNow: updated.isOpenNow,
         services: updated.services,
         reviews: updated.reviews.map((r) => ({
           ...r,
-          tags: JSON.parse(r.tags || "[]"),
+          tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
         })),
       },
     });
