@@ -56,7 +56,6 @@ const AUTH_MERCHANT_KEY = "esnafca_logged_in_merchant_id";
 function MerchantPortalContent() {
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
-  const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [activeMerchant, setActiveMerchant] = useState<Merchant | null>(null);
 
   // Login State
@@ -135,15 +134,6 @@ function MerchantPortalContent() {
       }
     });
 
-    // Fetch demo merchants for preview selector
-    fetch("/api/merchants")
-      .then(res => res.json())
-      .then(json => {
-        if (json.success && Array.isArray(json.data)) {
-          setMerchants(json.data);
-        }
-      })
-      .catch(() => {});
 
     // Check URL phone parameter
     const phoneFromUrl = searchParams.get("phone");
@@ -174,9 +164,6 @@ function MerchantPortalContent() {
       const res = await sendMerchantOtp(cleanPhone);
       if (res.success) {
         setLoginStep("otp");
-        if ("devCode" in res && res.devCode) {
-          setOtpInput(res.devCode);
-        }
       } else {
         setLoginError(res.error || "Doğrulama kodu gönderilemedi.");
       }
@@ -211,23 +198,6 @@ function MerchantPortalContent() {
       }
     } catch {
       setLoginError("Giriş işlemi başarısız oldu.");
-    }
-  };
-
-  // 1-Tap Fast Demo Login Selector
-  const handleFastDemoLogin = async (merchant: Merchant) => {
-    const res = await verifyMerchantOtpAndLogin(merchant.phone, "123456");
-    if (res.success && res.merchant) {
-      localStorage.setItem(AUTH_MERCHANT_KEY, res.merchant.id);
-      setActiveMerchant(res.merchant as any);
-      setIsOpen(res.merchant.isOpenNow);
-      setServices(res.merchant.services as any);
-      showToast(`Giriş yapıldı: ${res.merchant.name}`);
-    } else {
-      setActiveMerchant(merchant);
-      setIsOpen(merchant.isOpenNow);
-      setServices(merchant.services as any);
-      showToast(`Demo girişi: ${merchant.name}`);
     }
   };
 
@@ -412,7 +382,7 @@ function MerchantPortalContent() {
                     <span>Başvurunuz Onay Sürecinde</span>
                   </div>
                   <p className="text-[11px] leading-relaxed">
-                    <strong>{pendingNotice.name}</strong> başvurunuz alındı. Giriş kodunu (123456) girerek hemen panele bağlanabilirsiniz.
+                    <strong>{pendingNotice.name}</strong> başvurunuz alındı. Giriş kodunu girerek hemen panele bağlanabilirsiniz.
                   </p>
                 </div>
               )}
@@ -477,12 +447,9 @@ function MerchantPortalContent() {
                       suppressHydrationWarning
                       value={otpInput}
                       onChange={(e) => setOtpInput(e.target.value)}
-                      placeholder="123456"
+                      placeholder="••••••"
                       className="w-full py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-black/[0.04] dark:border-white/[0.08] text-center text-xl font-extrabold tracking-widest text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20"
                     />
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block text-center pt-0.5">
-                      Geliştirici Test Kodu: <strong>123456</strong>
-                    </span>
                   </div>
 
                   <button
@@ -496,38 +463,15 @@ function MerchantPortalContent() {
               )}
             </div>
 
-            {/* Fast Demo Accounts Selector */}
-            <div className="space-y-2 pt-2 text-center" suppressHydrationWarning>
-              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
-                Hızlı Test Hesabı Seçin:
-              </span>
-              <div className="grid grid-cols-1 gap-1.5">
-                {merchants.slice(0, 4).map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => handleFastDemoLogin(m)}
-                    className="p-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] hover:border-black/20 dark:hover:border-white/20 flex items-center justify-between text-left ios-press shadow-xs"
-                  >
-                    <div>
-                      <span className="text-xs font-bold text-black dark:text-white block">{m.name}</span>
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
-                        {m.masterName} · {m.district} / {m.city}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-extrabold text-brand">Hemen Gir →</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="pt-3">
-                <Link
-                  href="/esnaf-ekle"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-brand hover:underline"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Yeni Bir Dükkan Kaydetmek İstiyorum</span>
-                </Link>
-              </div>
+            {/* New Shop Registration Link */}
+            <div className="pt-2 text-center" suppressHydrationWarning>
+              <Link
+                href="/esnaf-ekle"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand hover:underline"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Yeni Bir Dükkan Kaydetmek İstiyorum</span>
+              </Link>
             </div>
           </div>
         </div>
