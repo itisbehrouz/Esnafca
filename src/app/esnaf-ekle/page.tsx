@@ -29,6 +29,7 @@ import { CategoryId } from "@/types";
 import { formatNumber, formatPhoneNumber } from "@/lib/utils";
 import { submitApplication } from "@/app/actions/merchant";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { getSafeCurrentPosition } from "@/lib/geolocation";
 
 interface ServiceDraft {
   name: string;
@@ -109,47 +110,30 @@ function EsnafEkleWizard() {
       return false;
     };
 
-    if (typeof window === "undefined" || !navigator.geolocation) {
-      const ok = await fallbackIp();
-      setIsLocating(false);
-      if (!ok) {
-        setFormError("Konum belirlenemedi. Lütfen şehir ve ilçenizi listeden seçiniz.");
+    try {
+      const pos = await getSafeCurrentPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 });
+      const { latitude, longitude } = pos;
+      setCoords({ lat: latitude, lng: longitude });
+      const res = await fetch("/api/locate?lat=" + latitude + "&lon=" + longitude);
+      const data = await res.json();
+
+      if (data.success && data.city && data.district) {
+        setCity(data.city);
+        setDistrict(data.district);
+        if (data.neighborhood) setNeighborhood(data.neighborhood);
+        if (data.address) setAddress(data.address);
+        setLocateSuccess("Konum tespit edildi: " + data.city + " / " + data.district + " - " + (data.neighborhood || ""));
+      } else {
+        setFormError("Konumunuz tam eşleştirilemedi. Lütfen listeden seçiniz.");
       }
-      return;
+    } catch {
+      const ok = await fallbackIp();
+      if (!ok) {
+        setFormError("Konum bilgisi alınamadı. Lütfen şehir ve ilçenizi listeden seçiniz.");
+      }
+    } finally {
+      setIsLocating(false);
     }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          setCoords({ lat: latitude, lng: longitude });
-          const res = await fetch("/api/locate?lat=" + latitude + "&lon=" + longitude);
-          const data = await res.json();
-
-          if (data.success && data.city && data.district) {
-            setCity(data.city);
-            setDistrict(data.district);
-            if (data.neighborhood) setNeighborhood(data.neighborhood);
-            if (data.address) setAddress(data.address);
-            setLocateSuccess("Konum tespit edildi: " + data.city + " / " + data.district + " - " + (data.neighborhood || ""));
-          } else {
-            setFormError("Konumunuz tam eşleştirilemedi. Lütfen listeden seçiniz.");
-          }
-        } catch {
-          setFormError("Konum servisiyle bağlantı kurulamadı. Lütfen listeden seçiniz.");
-        } finally {
-          setIsLocating(false);
-        }
-      },
-      async () => {
-        const ok = await fallbackIp();
-        setIsLocating(false);
-        if (!ok) {
-          setFormError("Konum bilgisi alınamadı. Lütfen şehir ve ilçenizi listeden seçiniz.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
-    );
   };
 
   const addService = () => {

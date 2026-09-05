@@ -301,27 +301,28 @@ export function MerchantDetailClient(props: MerchantDetailClientProps) {
             </div>
 
             {/* Hero Card Primary Action Row */}
-            <div className="pt-3 flex flex-wrap items-center gap-2.5 border-t border-black/[0.04] dark:border-white/[0.06]">
+            <div className="pt-3 flex items-center gap-2.5 border-t border-black/[0.04] dark:border-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
                   setBookingServiceId(null);
                   setIsBookingModalOpen(true);
                 }}
-                className="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-brand hover:bg-brand-hover text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm ios-press transition-all"
+                className="flex-1 h-11 px-4 rounded-full bg-brand hover:bg-brand-hover text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm ios-press transition-all whitespace-nowrap"
               >
                 <Calendar className="w-4 h-4" />
-                <span>Online Randevu Al</span>
+                <span>Online Randevu</span>
               </button>
 
               <a
                 href={defaultWhatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 sm:flex-initial px-4 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-sm ios-press transition-all"
+                className="flex-1 sm:flex-initial h-11 px-4 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-sm ios-press transition-all whitespace-nowrap"
               >
                 <MessageCircle className="w-4 h-4 fill-white/20" />
-                <span>WhatsApp ile İletişim</span>
+                <span>WhatsApp</span>
+                <span className="hidden sm:inline"> ile İletişim</span>
               </a>
             </div>
           </div>

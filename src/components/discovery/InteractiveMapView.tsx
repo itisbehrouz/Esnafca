@@ -43,6 +43,7 @@ import {
   getCoordinatesForLocation, 
   getDistanceInMeters 
 } from "@/data/coordinates";
+import { getSafeCurrentPosition } from "@/lib/geolocation";
 
 
 const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
@@ -368,25 +369,16 @@ export default function InteractiveMapView({
   }, [merchants, onSelectLocation]);
 
   // 5. GPS Trigger (Attempts real hardware GPS)
-  const handleLocateMe = useCallback(() => {
+  const handleLocateMe = useCallback(async () => {
     setIsLocating(true);
 
-    if (typeof window === "undefined" || !navigator.geolocation) {
+    try {
+      const coords = await getSafeCurrentPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+      await processLocationCoordinates(coords.latitude, coords.longitude);
+    } catch (err) {
+      console.warn("Geolocation unavailable:", err);
       setIsLocating(false);
-      return;
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        processLocationCoordinates(latitude, longitude);
-      },
-      (err) => {
-        console.warn("Geolocation unavailable:", err);
-        setIsLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-    );
   }, [processLocationCoordinates]);
 
   const handleSelectMerchantCard = (m: any) => {

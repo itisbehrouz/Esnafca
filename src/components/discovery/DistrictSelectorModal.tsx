@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { X, Search, ChevronRight, ChevronLeft, MapPin, Check, Crosshair, Loader2, AlertCircle } from "lucide-react";
 import { CITIES } from "@/data/cities";
 import { City, District } from "@/types";
+import { getSafeCurrentPosition } from "@/lib/geolocation";
 
 interface DistrictSelectorModalProps {
   isOpen: boolean;
@@ -140,28 +141,16 @@ export function DistrictSelectorModal({
       }
     };
 
-    if (typeof window === "undefined" || !navigator.geolocation) {
+    try {
+      const coords = await getSafeCurrentPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+      await processCoords(coords.latitude, coords.longitude);
+    } catch {
       const ok = await fallbackIpLocate();
       if (!ok) {
         setIsLocating(false);
-        setLocateError("Konum belirlenemedi. Lütfen listeden şehir/ilçe seçiniz.");
+        setLocateError("Konum izni alınamadı veya konum belirlenemedi. Lütfen listeden seçiniz.");
       }
-      return;
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        processCoords(pos.coords.latitude, pos.coords.longitude);
-      },
-      async () => {
-        const ok = await fallbackIpLocate();
-        if (!ok) {
-          setIsLocating(false);
-          setLocateError("Konum izni alınamadı. Lütfen listeden seçiniz.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
   };
 
   return (
