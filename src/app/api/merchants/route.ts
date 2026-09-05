@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseJsonField } from "@/lib/utils";
+import { MERCHANTS } from "@/data/seed-merchants";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -105,10 +106,47 @@ export async function GET(request: Request) {
       data: formatted,
     });
   } catch (error) {
-    console.error("API Merchants Error:", error);
-    return NextResponse.json(
-      { success: false, error: "Sunucu hatası oluştu." },
-      { status: 500 }
-    );
+    console.error("API Merchants DB Error, falling back to seed:", error);
+    try {
+      let filtered = [...MERCHANTS];
+      if (city && city !== "Tüm Şehirler" && city !== "all") {
+        filtered = filtered.filter((m) => m.city.toLowerCase() === city.toLowerCase());
+      }
+      if (district && district !== "Tüm İlçeler" && district !== "all") {
+        filtered = filtered.filter((m) => m.district.toLowerCase() === district.toLowerCase());
+      }
+      if (category && category !== "all") {
+        filtered = filtered.filter((m) => m.category.toLowerCase() === category.toLowerCase());
+      }
+      const search = q?.trim().toLowerCase();
+      if (search) {
+        filtered = filtered.filter(
+          (m) =>
+            m.name.toLowerCase().includes(search) ||
+            m.masterName.toLowerCase().includes(search) ||
+            m.craftTitle.toLowerCase().includes(search) ||
+            m.district.toLowerCase().includes(search) ||
+            m.neighborhood.toLowerCase().includes(search) ||
+            m.bio.toLowerCase().includes(search)
+        );
+      }
+      const total = filtered.length;
+      const data = filtered.slice(skip, skip + limit);
+      const totalPages = Math.ceil(total / limit) || 1;
+      return NextResponse.json({
+        success: true,
+        total,
+        page,
+        limit,
+        totalPages,
+        hasMore: page < totalPages,
+        data,
+      });
+    } catch {
+      return NextResponse.json(
+        { success: false, error: "Sunucu hatası oluştu." },
+        { status: 500 }
+      );
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseJsonField } from "@/lib/utils";
+import { MERCHANTS } from "@/data/seed-merchants";
 
 export async function GET(
   request: Request,
@@ -9,15 +10,28 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    const m = await prisma.merchant.findUnique({
-      where: { slug },
-      include: {
-        services: true,
-        reviews: true,
-      },
-    });
+    let m: any = null;
+    try {
+      m = await prisma.merchant.findUnique({
+        where: { slug },
+        include: {
+          services: true,
+          reviews: true,
+        },
+      });
+    } catch (dbErr) {
+      console.error(`[API /api/merchants/${slug}] DB lookup failed, checking seed:`, dbErr);
+    }
 
     if (!m) {
+      const seed = MERCHANTS.find((s) => s.slug === slug);
+      if (seed) {
+        return NextResponse.json({
+          success: true,
+          data: seed,
+        });
+      }
+
       return NextResponse.json(
         { success: false, error: "Esnaf bulunamadı." },
         { status: 404 }
@@ -56,7 +70,7 @@ export async function GET(
       features: parseJsonField(m.features, {}),
       isOpenNow: m.isOpenNow,
       services: m.services,
-      reviews: m.reviews.map((r) => ({
+      reviews: m.reviews.map((r: any) => ({
         ...r,
         tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
       })),

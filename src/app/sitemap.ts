@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { CATEGORIES } from "@/data/categories";
+import { MERCHANTS } from "@/data/seed-merchants";
 import { prisma } from "@/lib/db";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -53,6 +54,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   } catch (err) {
     console.error("Error loading merchants for sitemap:", err);
+  }
+
+  if (merchants.length === 0) {
+    merchants = MERCHANTS.map((m) => ({
+      slug: m.slug,
+      updatedAt: new Date(),
+    }));
   }
 
   const merchantRoutes: MetadataRoute.Sitemap = merchants.map((m) => ({

@@ -12,9 +12,14 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
   
-  let merchant = await prisma.merchant.findUnique({
-    where: { slug: resolvedParams.slug },
-  });
+  let merchant: any = null;
+  try {
+    merchant = await prisma.merchant.findUnique({
+      where: { slug: resolvedParams.slug },
+    });
+  } catch (err) {
+    console.error(`[generateMetadata] DB lookup failed for slug: ${resolvedParams.slug}`, err);
+  }
 
   if (!merchant) {
     const seed = MERCHANTS.find((m) => m.slug === resolvedParams.slug);
@@ -62,10 +67,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function MerchantDetailPage({ params }: PageProps) {
   const resolvedParams = await params;
   
-  let merchant = await prisma.merchant.findUnique({
-    where: { slug: resolvedParams.slug },
-    include: { services: true, reviews: true },
-  });
+  let merchant: any = null;
+  try {
+    merchant = await prisma.merchant.findUnique({
+      where: { slug: resolvedParams.slug },
+      include: { services: true, reviews: true },
+    });
+  } catch (err) {
+    console.error(`[MerchantDetailPage] DB lookup failed for slug: ${resolvedParams.slug}`, err);
+  }
 
   const fallback = MERCHANTS.find((m) => m.slug === resolvedParams.slug) || null;
 
@@ -122,7 +132,7 @@ export default async function MerchantDetailPage({ params }: PageProps) {
         specialties: parseJsonField(merchant.specialties, []),
         features: parseJsonField(merchant.features, {}),
         services: merchant.services,
-        reviews: merchant.reviews.map((r) => ({
+        reviews: merchant.reviews.map((r: any) => ({
           ...r,
           tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags,
         })),

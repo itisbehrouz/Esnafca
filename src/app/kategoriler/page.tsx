@@ -10,6 +10,7 @@ import {
   ChevronRight 
 } from "lucide-react";
 import { CATEGORIES } from "@/data/categories";
+import { MERCHANTS } from "@/data/seed-merchants";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { prisma } from "@/lib/db";
 
@@ -32,6 +33,10 @@ export default async function CategoriesPage() {
     });
   } catch (error) {
     console.error("Error fetching merchants for categories page:", error);
+  }
+
+  if (merchants.length === 0) {
+    merchants = MERCHANTS.map((m) => ({ category: m.category }));
   }
 
   return (
