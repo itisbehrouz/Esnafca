@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { 
   ChevronLeft, 
@@ -56,6 +56,17 @@ export function MerchantDetailClient(props: MerchantDetailClientProps) {
   const [reviewComment, setReviewComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const formattedAddress = useMemo(() => {
+    if (!merchant) return "";
+    const addr = merchant.address || "";
+    const addrLower = addr.toLowerCase();
+    const districtLower = (merchant.district || "").toLowerCase();
+    if (addrLower.includes(districtLower)) {
+      return addr;
+    }
+    return `${addr} (${merchant.neighborhood ? `${merchant.neighborhood}, ` : ""}${merchant.district} / ${merchant.city})`;
+  }, [merchant]);
 
   useEffect(() => {
     // If not passed via props or to rehydrate latest state from DB
@@ -262,7 +273,7 @@ export function MerchantDetailClient(props: MerchantDetailClientProps) {
           <div className="space-y-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
             <div className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
               <MapPin className="w-4 h-4 text-brand shrink-0 mt-0.5" />
-              <span>{merchant.address} ({merchant.neighborhood}, {merchant.district} / {merchant.city})</span>
+              <span>{formattedAddress}</span>
             </div>
 
             {merchant.bio && (

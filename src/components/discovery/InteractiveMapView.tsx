@@ -25,6 +25,10 @@ import {
   KeyRound,
   Dog,
   Hammer,
+  Zap,
+  Wrench,
+  Bike,
+  Shirt,
   Sparkles,
   CircleDollarSign,
   LucideIcon
@@ -46,16 +50,16 @@ const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   "kuafor": Sparkles,
   "guzellik": Sparkles,
   "cilingir": KeyRound,
-  "elektrikci": KeyRound,
+  "elektrikci": Zap,
   "tesisat": Hammer,
-  "kucuk-ev-aletleri": Hammer,
-  "bisiklet-tamir": KeyRound,
+  "kucuk-ev-aletleri": Wrench,
+  "bisiklet-tamir": Bike,
   "oto-tamir": Car,
   "oto-yikama": Sparkles,
   "oto-lastik": Car,
   "terzi": Scissors,
   "lostra": Footprints,
-  "kuru-temizleme": Sparkles,
+  "kuru-temizleme": Shirt,
   "veteriner": Dog,
   "pet-kuafor": Dog,
 };
@@ -402,12 +406,12 @@ export default function InteractiveMapView({
   };
 
   return (
-    <div className="relative w-full h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] overflow-hidden bg-zinc-100 dark:bg-black flex flex-col">
+    <div className="relative w-full h-[calc(100dvh-7rem)] sm:h-[calc(100dvh-3.5rem)] overflow-hidden bg-zinc-100 dark:bg-black flex flex-col">
       {/* 1. Leaflet Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* 2. Floating Top Search & Quick Filters Card */}
-      <div className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-[520px] z-[9999] space-y-2 pointer-events-auto">
+      <div className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-[520px] z-30 space-y-2 pointer-events-auto">
         <div className="bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl rounded-3xl border border-black/[0.08] dark:border-white/[0.12] p-3 sm:p-3.5 shadow-2xl space-y-2.5 transition-all">
           {/* Search Bar */}
           <div className="flex items-center gap-2">
@@ -533,7 +537,7 @@ export default function InteractiveMapView({
       </div>
 
       {/* 4. Floating Zoom Controls */}
-      <div className="absolute right-4 top-20 z-[9999] hidden sm:flex flex-col gap-1.5 pointer-events-auto">
+      <div className="absolute right-4 top-20 z-30 hidden sm:flex flex-col gap-1.5 pointer-events-auto">
         <div className="bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-md rounded-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-lg p-1 flex flex-col">
           <button
             type="button"
@@ -559,7 +563,7 @@ export default function InteractiveMapView({
       {/* 5. EXPANDABLE BOTTOM SHEET & NEAREST LIST                */}
       {/* ======================================================== */}
       <div
-        className={`absolute bottom-0 left-0 right-0 z-[9999] transition-all duration-300 pointer-events-auto flex flex-col bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl border-t border-black/[0.08] dark:border-white/[0.1] shadow-2xl rounded-t-3xl ${
+        className={`absolute bottom-0 left-0 right-0 z-30 transition-all duration-300 pointer-events-auto flex flex-col bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl border-t border-black/[0.08] dark:border-white/[0.1] shadow-2xl rounded-t-3xl ${
           isDrawerExpanded ? "h-[55vh] sm:h-[45vh]" : "h-[220px] sm:h-[165px]"
         }`}
       >
@@ -685,22 +689,22 @@ export default function InteractiveMapView({
 
                     {/* Tertiary: Clean 1-Line Metadata (Rating · Distance · Walk · Open Status) */}
                     <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 whitespace-nowrap overflow-hidden">
-                      <span className="flex items-center gap-0.5 font-bold text-amber-500 dark:text-amber-400">
+                      <span className="flex items-center gap-0.5 font-bold text-amber-500 dark:text-amber-400 shrink-0">
                         <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                         {m.rating}
                       </span>
                       <span>·</span>
-                      <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-0.5">
+                      <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-0.5 shrink-0">
                         <Navigation className="w-2.5 h-2.5" />
                         {m.distanceLabel}
                       </span>
-                      <span>·</span>
-                      <span className="flex items-center gap-0.5">
-                        <Footprints className="w-2.5 h-2.5" />
+                      <span className="hidden sm:inline-flex items-center gap-0.5">
+                        <span>·</span>
+                        <Footprints className="w-2.5 h-2.5 ml-1" />
                         {m.walkTimeLabel}
                       </span>
                       <span>·</span>
-                      <span className={m.isOpenNow ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-zinc-400"}>
+                      <span className={`shrink-0 ${m.isOpenNow ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-zinc-400"}`}>
                         {m.isOpenNow ? "Açık" : "Kapalı"}
                       </span>
                     </div>

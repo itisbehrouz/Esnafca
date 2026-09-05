@@ -22,7 +22,7 @@ export function NeighborhoodClient({
   const currentCityObj = CITIES.find((c) => c.name === selectedCity) || CITIES[0];
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24 text-black dark:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-28 sm:pb-16 text-black dark:text-white transition-colors duration-200">
       {/* Apple Translucent Header */}
       <div className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -53,7 +53,7 @@ export function NeighborhoodClient({
         </div>
 
         {/* City Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 px-1 -mx-1">
           {CITIES.map((c) => (
             <button
               key={c.name}

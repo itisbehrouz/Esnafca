@@ -14,15 +14,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   
   let merchant: any = null;
   try {
-    merchant = await prisma.merchant.findUnique({
-      where: { slug: resolvedParams.slug },
+    merchant = await prisma.merchant.findFirst({
+      where: {
+        OR: [{ slug: resolvedParams.slug }, { id: resolvedParams.slug }],
+      },
     });
   } catch (err) {
     console.error(`[generateMetadata] DB lookup failed for slug: ${resolvedParams.slug}`, err);
   }
 
   if (!merchant) {
-    const seed = MERCHANTS.find((m) => m.slug === resolvedParams.slug);
+    const seed = MERCHANTS.find((m) => m.slug === resolvedParams.slug || m.id === resolvedParams.slug);
     if (seed) merchant = seed as any;
   }
 
@@ -69,15 +71,17 @@ export default async function MerchantDetailPage({ params }: PageProps) {
   
   let merchant: any = null;
   try {
-    merchant = await prisma.merchant.findUnique({
-      where: { slug: resolvedParams.slug },
+    merchant = await prisma.merchant.findFirst({
+      where: {
+        OR: [{ slug: resolvedParams.slug }, { id: resolvedParams.slug }],
+      },
       include: { services: true, reviews: true },
     });
   } catch (err) {
     console.error(`[MerchantDetailPage] DB lookup failed for slug: ${resolvedParams.slug}`, err);
   }
 
-  const fallback = MERCHANTS.find((m) => m.slug === resolvedParams.slug) || null;
+  const fallback = MERCHANTS.find((m) => m.slug === resolvedParams.slug || m.id === resolvedParams.slug) || null;
 
   const current = merchant || fallback;
 

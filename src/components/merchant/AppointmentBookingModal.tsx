@@ -81,6 +81,23 @@ export function AppointmentBookingModal({
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [customerNote, setCustomerNote] = useState<string>("");
 
+  const notePlaceholder = useMemo(() => {
+    const cat = merchant.category || "";
+    if (cat.includes("oto")) {
+      return "Örn: Periyodik bakım, fren kontrolü veya ustanıza iletmek istediğiniz not...";
+    }
+    if (cat.includes("berber") || cat.includes("kuafor") || cat.includes("guzellik")) {
+      return "Örn: Saç kesimi/sakal tercihi veya randevu saat notu...";
+    }
+    if (cat.includes("terzi") || cat.includes("lostra")) {
+      return "Örn: Paça boyu, daraltma veya teslim tarihi notunuz...";
+    }
+    if (cat.includes("vet") || cat.includes("pet")) {
+      return "Örn: Aşı kontrolü, genel muayene veya evcil hayvanınızın durumu...";
+    }
+    return "Örn: Varsa ustanıza iletmek istediğiniz özel not veya tercih...";
+  }, [merchant.category]);
+
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -725,7 +742,7 @@ export function AppointmentBookingModal({
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Örn: Aracın freninden ses geliyor / Saat 14:00 öncesi gelemem."
+                  placeholder={notePlaceholder}
                   value={customerNote}
                   onChange={(e) => setCustomerNote(e.target.value)}
                   className="w-full text-xs font-medium text-black dark:text-white bg-zinc-100 dark:bg-zinc-800 p-3 rounded-2xl border border-transparent focus:border-brand focus:outline-none resize-none"
@@ -743,8 +760,8 @@ export function AppointmentBookingModal({
                 <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
               </div>
 
-              <div className="space-y-1">
-                <h3 className="text-lg sm:text-xl font-extrabold text-black dark:text-white">
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-extrabold text-black dark:text-white tracking-tight">
                   Randevu Talebiniz Alındı!
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium max-w-sm mx-auto">
@@ -761,23 +778,23 @@ export function AppointmentBookingModal({
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-400 font-medium">Esnaf:</span>
-                  <span className="font-extrabold text-black dark:text-white">
+                <div className="flex items-start justify-between gap-3 text-xs">
+                  <span className="text-zinc-400 font-medium shrink-0">Esnaf:</span>
+                  <span className="font-extrabold text-black dark:text-white text-right flex-1">
                     {merchant.name} ({merchant.masterName})
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-400 font-medium">Hizmet:</span>
-                  <span className="font-extrabold text-black dark:text-white">
+                <div className="flex items-start justify-between gap-3 text-xs">
+                  <span className="text-zinc-400 font-medium shrink-0">Hizmet:</span>
+                  <span className="font-extrabold text-black dark:text-white text-right flex-1">
                     {selectedService?.name || "Genel Randevu"}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-400 font-medium">Zaman:</span>
-                  <span className="font-extrabold text-black dark:text-white">
+                <div className="flex items-start justify-between gap-3 text-xs">
+                  <span className="text-zinc-400 font-medium shrink-0">Zaman:</span>
+                  <span className="font-extrabold text-black dark:text-white text-right flex-1">
                     {selectedDate?.dayNumber} {selectedDate?.monthName} ({selectedDate?.dayLabel}) · {selectedTime}
                   </span>
                 </div>
@@ -827,12 +844,12 @@ export function AppointmentBookingModal({
 
         {/* Modal Bottom Fixed Navigation (Steps 1 to 4) */}
         {!isSuccess && (
-          <div className="px-5 py-3.5 pb-safe sm:pb-3.5 border-t border-black/[0.05] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] flex items-center justify-between gap-3 shrink-0">
+          <div className="px-5 py-3.5 pb-safe sm:pb-4 border-t border-black/[0.05] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] flex items-center justify-between gap-3 shrink-0">
             {step > 1 ? (
               <button
                 type="button"
                 onClick={() => setStep((s) => s - 1)}
-                className="px-5 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs ios-press"
+                className="px-5 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs ios-press shrink-0 min-w-[76px]"
               >
                 Geri
               </button>
@@ -840,7 +857,7 @@ export function AppointmentBookingModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-bold text-xs ios-press"
+                className="px-5 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-bold text-xs ios-press shrink-0 min-w-[76px]"
               >
                 Vazgeç
               </button>

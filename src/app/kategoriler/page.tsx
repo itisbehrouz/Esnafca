@@ -7,6 +7,11 @@ import {
   KeyRound, 
   Dog, 
   Hammer, 
+  Zap,
+  Bike,
+  Shirt,
+  Wrench,
+  Footprints,
   ChevronRight 
 } from "lucide-react";
 import { CATEGORIES } from "@/data/categories";
@@ -23,6 +28,11 @@ const ICON_MAP: Record<string, any> = {
   KeyRound,
   Dog,
   Hammer,
+  Zap,
+  Bike,
+  Shirt,
+  Wrench,
+  Footprints,
 };
 
 export default async function CategoriesPage() {
@@ -40,7 +50,7 @@ export default async function CategoriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24 text-black dark:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-28 sm:pb-16 text-black dark:text-white transition-colors duration-200">
       {/* Apple Translucent Header */}
       <div className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -92,8 +102,10 @@ export default async function CategoriesPage() {
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug font-medium line-clamp-2">
                     {cat.description}
                   </p>
-                  <span className="inline-block text-[10px] font-bold text-brand pt-0.5">
-                    {count} Usta Listelendi
+                  <span className={`inline-block text-[10px] font-bold pt-0.5 ${
+                    count > 0 ? "text-brand" : "text-zinc-400 dark:text-zinc-500 font-medium"
+                  }`}>
+                    {count > 0 ? `${count} Usta Listelendi` : "Henüz Usta Eklenmedi"}
                   </span>
                 </div>
               </Link>

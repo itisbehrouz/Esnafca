@@ -12,8 +12,10 @@ export async function GET(
 
     let m: any = null;
     try {
-      m = await prisma.merchant.findUnique({
-        where: { slug },
+      m = await prisma.merchant.findFirst({
+        where: {
+          OR: [{ slug }, { id: slug }],
+        },
         include: {
           services: true,
           reviews: true,
@@ -24,7 +26,7 @@ export async function GET(
     }
 
     if (!m) {
-      const seed = MERCHANTS.find((s) => s.slug === slug);
+      const seed = MERCHANTS.find((s) => s.slug === slug || s.id === slug);
       if (seed) {
         return NextResponse.json({
           success: true,
