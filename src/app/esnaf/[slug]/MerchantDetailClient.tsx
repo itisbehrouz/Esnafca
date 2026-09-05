@@ -135,7 +135,10 @@ export function MerchantDetailClient(props: MerchantDetailClientProps) {
   if (!merchant) {
     return (
       <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-black dark:text-white flex flex-col justify-between">
-        <div className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08]">
+        <div
+          className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] pt-safe"
+          style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+        >
           <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
             <Link
               href="/"
@@ -185,7 +188,10 @@ export function MerchantDetailClient(props: MerchantDetailClientProps) {
       )}
 
       {/* Navigation Header */}
-      <header className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors">
+      <header
+        className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         <div className="max-w-4xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
           <Link
             href="/"
@@ -448,7 +454,10 @@ export function MerchantDetailClient(props: MerchantDetailClientProps) {
       </div>
 
       {/* Apple Style Fixed Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 ios-blur dark:bg-black/85 border-t border-black/[0.08] dark:border-white/[0.08] p-3 sm:p-4 pb-safe shadow-ios-floating transition-colors">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 ios-blur dark:bg-black/85 border-t border-black/[0.08] dark:border-white/[0.08] p-3 sm:p-4 pb-safe shadow-ios-floating transition-colors"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           <div className="hidden sm:block">
             <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block">{merchant.name}</span>

@@ -114,7 +114,7 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
   };
 
   return (
-    <div className={`min-h-[100dvh] bg-[#F2F2F7] dark:bg-black ${viewMode === 'map' ? 'pb-0' : 'pb-20 sm:pb-0'} text-black dark:text-white transition-colors duration-200`} suppressHydrationWarning>
+    <div className={`min-h-[100dvh] bg-[#F2F2F7] dark:bg-black ${viewMode === 'map' ? 'pb-0' : 'pb-6 sm:pb-0'} text-black dark:text-white transition-colors duration-200`} suppressHydrationWarning>
       <Navbar viewMode={viewMode} onViewModeChange={setViewMode} />
 
       {viewMode === "map" ? (

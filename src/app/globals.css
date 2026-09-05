@@ -13,6 +13,12 @@
   --ios-blur-bg: rgba(255, 255, 255, 0.88);
   --ios-glass-border: rgba(0, 0, 0, 0.06);
   --brand-terracotta: #C4512D;
+
+  /* Safe Area Inset Custom Properties */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 .dark {
@@ -170,5 +176,34 @@ body {
 }
 .dark .leaflet-control-attribution a {
   color: #A1A1A6 !important;
+}
+
+/* Safe Area Inset & Dynamic Viewport Height Utilities */
+.pt-safe {
+  padding-top: max(var(--sat), 0px);
+}
+
+.pb-safe {
+  padding-bottom: max(var(--sab), 0px);
+}
+
+.pl-safe {
+  padding-left: max(var(--sal), 0px);
+}
+
+.pr-safe {
+  padding-right: max(var(--sar), 0px);
+}
+
+.pb-safe-nav {
+  padding-bottom: calc(3.5rem + max(var(--sab), 0px));
+}
+
+.min-h-dvh {
+  min-height: 100dvh;
+}
+
+.h-dvh {
+  height: 100dvh;
 }
 

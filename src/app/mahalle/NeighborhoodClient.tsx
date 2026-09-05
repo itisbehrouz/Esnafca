@@ -22,9 +22,12 @@ export function NeighborhoodClient({
   const currentCityObj = CITIES.find((c) => c.name === selectedCity) || CITIES[0];
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-28 sm:pb-16 text-black dark:text-white transition-colors duration-200">
+    <div className="min-h-[100dvh] bg-[#F2F2F7] dark:bg-black pb-8 text-black dark:text-white transition-colors duration-200">
       {/* Apple Translucent Header */}
-      <div className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors">
+      <div
+        className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link
             href="/"

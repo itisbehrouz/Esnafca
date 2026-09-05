@@ -537,7 +537,10 @@ function MerchantPortalContent() {
         /* ======================================================== */
         <>
           {/* Header */}
-          <header className="sticky top-0 z-30 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors">
+          <header
+            className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
+            style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+          >
             <div className="max-w-3xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Link href="/" className="font-extrabold text-base tracking-tight text-black dark:text-white flex items-center gap-1.5">

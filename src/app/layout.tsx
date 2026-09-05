@@ -47,8 +47,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#F2F2F7" },
     { media: "(prefers-color-scheme: dark)", color: "#000000" },
@@ -79,7 +78,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased min-h-screen pb-20 sm:pb-8 flex flex-col bg-[#F2F2F7] dark:bg-black text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
+      <body className="antialiased min-h-[100dvh] pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:pb-8 flex flex-col bg-[#F2F2F7] dark:bg-black text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
         <ThemeProvider>
           <PwaInstallPrompt />
           <div className="flex-1 flex flex-col">{children}</div>

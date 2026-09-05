@@ -48,7 +48,10 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/85 dark:bg-[#121212]/85 backdrop-blur-2xl border-t-[0.5px] border-black/10 dark:border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.4)] sm:hidden pb-safe transition-colors duration-200">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-[#121212]/90 backdrop-blur-2xl border-t-[0.5px] border-black/10 dark:border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.4)] sm:hidden transition-colors duration-200 pb-safe"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
       <div className="grid grid-cols-4 h-14 max-w-md mx-auto items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
