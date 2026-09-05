@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Download, X, Smartphone } from "lucide-react";
 
 export function PwaInstallPrompt() {
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -31,6 +33,11 @@ export function PwaInstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
   }, []);
 
+  // Do not show on admin cockpit or preview gate
+  if (pathname?.startsWith("/admin") || pathname === "/preview-gate") {
+    return null;
+  }
+
   if (!mounted || !show) return null;
 
   const handleInstall = async () => {
@@ -49,7 +56,7 @@ export function PwaInstallPrompt() {
   };
 
   return (
-    <div className="fixed top-16 left-4 right-4 z-40 max-w-md mx-auto bg-black/90 text-white p-3.5 rounded-2xl shadow-xl border border-white/10 flex items-center justify-between gap-3 animate-in slide-in-from-top backdrop-blur-xl">
+    <div className="fixed bottom-20 sm:bottom-6 right-4 left-4 sm:left-auto sm:max-w-md z-40 bg-black/90 dark:bg-[#1C1C1E]/95 text-white p-3.5 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 backdrop-blur-xl">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-brand flex items-center justify-center text-white shrink-0 shadow-sm">
           <Smartphone className="w-5 h-5" />
