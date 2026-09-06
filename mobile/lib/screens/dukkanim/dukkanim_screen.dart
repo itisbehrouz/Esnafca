@@ -29,11 +29,9 @@ class _DukkanimScreenState extends ConsumerState<DukkanimScreen> {
   int _selectedTab = 0; // 0: Randevular, 1: Hizmet & Fiyatlar, 2: Vitrin & Profil
 
   // Login State
-  final TextEditingController _phoneController = TextEditingController(text: "0212 555 01 01");
-  final TextEditingController _otpController = TextEditingController(text: "123456");
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
   bool _otpSent = false;
-  List<Merchant> _demoMerchants = [];
-  bool _isLoadingDemo = false;
 
   // Appointments State
   List<Appointment> _appointments = [];
@@ -59,18 +57,6 @@ class _DukkanimScreenState extends ConsumerState<DukkanimScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDemoAccounts();
-  }
-
-  void _loadDemoAccounts() async {
-    setState(() => _isLoadingDemo = true);
-    final list = await _apiService.getDemoMerchants();
-    if (mounted) {
-      setState(() {
-        _demoMerchants = list;
-        _isLoadingDemo = false;
-      });
-    }
   }
 
   Future<void> _loadAppointments() async {
@@ -618,7 +604,7 @@ class _DukkanimScreenState extends ConsumerState<DukkanimScreen> {
     }
 
     // =========================================================
-    // 2. UNAUTHENTICATED: LOGIN / DEMO SELECTION VIEW
+    // 2. UNAUTHENTICATED: LOGIN VIEW
     // =========================================================
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
@@ -774,93 +760,32 @@ class _DukkanimScreenState extends ConsumerState<DukkanimScreen> {
                                 ),
                         ),
                       ),
+                      if (_otpSent) ...[
+                        const SizedBox(height: 10),
+                        Center(
+                          child: TextButton(
+                            onPressed: () {
+                              ref.read(authProvider.notifier).resetOtpState();
+                              setState(() {
+                                _otpSent = false;
+                                _otpController.clear();
+                              });
+                            },
+                            child: Text(
+                              "Farklı Numara ile Giriş Yap",
+                              style: TextStyle(
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Fast 1-Tap Demo Accounts Selector
-                Text(
-                  "HIZLI TEST HESAPLARI (1-DOKUNUŞLA GİRİŞ)",
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                if (_isLoadingDemo)
-                  const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)))
-                else
-                  ..._demoMerchants.map((demo) => Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: InkWell(
-                          onTap: () {
-                            HapticFeedback.mediumImpact();
-                            ref.read(authProvider.notifier).loginWithId(demo.id);
-                          },
-                          borderRadius: BorderRadius.circular(18),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.surfaceDark : Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: isDark ? AppColors.glassBorderDark : AppColors.glassBorderLight,
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.brand.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(Icons.storefront_rounded, color: AppColors.brand, size: 20),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        demo.name,
-                                        style: TextStyle(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: isDark ? Colors.white : Colors.black87,
-                                        ),
-                                      ),
-                                      Text(
-                                        "${demo.masterName} · ${demo.district} / ${demo.city}",
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Text(
-                                  "Giriş →",
-                                  style: TextStyle(
-                                    color: AppColors.brand,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )),
-
-                const SizedBox(height: 16),
 
                 // Register New Merchant Button
                 Center(

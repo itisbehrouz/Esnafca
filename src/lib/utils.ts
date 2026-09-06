@@ -50,3 +50,17 @@ export function parseJsonField<T = any>(field: unknown, fallback: T): T {
   }
   return field as T;
 }
+
+/**
+ * Normalizes any Turkish phone number format (05xx, +905xx, 905xx, 00905xx, 5xx) to standard 10 digits
+ */
+export function normalizeToTenDigits(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0090")) digits = digits.slice(4);
+  if (digits.startsWith("90") && digits.length === 12) digits = digits.slice(2);
+  if (digits.startsWith("0") && digits.length === 11) digits = digits.slice(1);
+  if (digits.length === 10) return digits;
+  return null;
+}
+

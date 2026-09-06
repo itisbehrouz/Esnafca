@@ -98,51 +98,7 @@ export function getPendingApplications(): MerchantApplication[] {
   try {
     const raw = localStorage.getItem(PENDING_KEY);
     if (!raw) {
-      // Seed 2 mock pending applications for immediate testing
-      const initialPending: MerchantApplication[] = [
-        {
-          id: "app-101",
-          name: "Usta Ahmet Erkek Kuaförü",
-          masterName: "Ahmet Usta",
-          category: "berber",
-          experienceYears: 18,
-          city: "İstanbul",
-          district: "Beşiktaş",
-          neighborhood: "Sinanpaşa (Çarşı)",
-          address: "Sinanpaşa Mah. Şair Nedim Cad. No: 12/B, Beşiktaş / İstanbul",
-          phone: "0532 999 88 77",
-          whatsapp: "905329998877",
-          plan: "pro",
-          services: [
-            { name: "Saç Kesimi & Yıkama", minPrice: "250", maxPrice: "350" },
-            { name: "Sakal Tıraşı (Sıcak Havlu)", minPrice: "150", maxPrice: "200" },
-          ],
-          submittedAt: "Bugün, 14:20",
-          status: "pending",
-        },
-        {
-          id: "app-102",
-          name: "Kadıköy Hızlı Lostra & Deri Bakım",
-          masterName: "Kemal Usta",
-          category: "terzi",
-          experienceYears: 24,
-          city: "İstanbul",
-          district: "Kadıköy",
-          neighborhood: "Moda (Caferağa)",
-          address: "Caferağa Mah. Mühürdar Cad. No: 44, Kadıköy / İstanbul",
-          phone: "0533 111 22 33",
-          whatsapp: "905331112233",
-          plan: "plus",
-          services: [
-            { name: "Ayakkabı Boya & Lostra", minPrice: "100", maxPrice: "180" },
-            { name: "Deri Taban & Ökçe Değişimi", minPrice: "300", maxPrice: "500" },
-          ],
-          submittedAt: "Bugün, 11:05",
-          status: "pending",
-        },
-      ];
-      localStorage.setItem(PENDING_KEY, JSON.stringify(initialPending));
-      return initialPending;
+      return [];
     }
     return JSON.parse(raw);
   } catch {

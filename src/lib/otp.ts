@@ -1,5 +1,6 @@
 import { randomInt, createHash, timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/db";
+import { normalizeToTenDigits } from "@/lib/utils";
 
 const OTP_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_ATTEMPTS = 5;
@@ -15,7 +16,7 @@ function hashOtpCode(code: string): string {
  * Generate, securely hash, and persist a 6-digit OTP code for a phone number in database
  */
 export async function generateOtp(phone: string): Promise<{ code: string; expiresAt: number }> {
-  const cleanPhone = phone.replace(/\D/g, "");
+  const cleanPhone = normalizeToTenDigits(phone) || phone.replace(/\D/g, "");
 
   // Generate cryptographically secure 6-digit code in range [100000, 1000000)
   const randomCode = randomInt(100000, 1000000).toString();
@@ -49,7 +50,7 @@ export async function verifyOtpCode(
   phone: string,
   inputCode: string
 ): Promise<{ success: boolean; error?: string }> {
-  const cleanPhone = phone.replace(/\D/g, "");
+  const cleanPhone = normalizeToTenDigits(phone) || phone.replace(/\D/g, "");
   const trimmedCode = (inputCode || "").trim();
 
   // Test bypass in non-production environments

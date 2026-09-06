@@ -23,14 +23,14 @@ class _EsnafEkleScreenState extends State<EsnafEkleScreen> {
   final _neighborhoodController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _experienceController = TextEditingController(text: "10");
+  final _experienceController = TextEditingController();
 
   String _selectedCategory = "oto-tamir";
   String _selectedPlan = "pro"; // free, pro, plus
 
   // Multi-service list
   final List<Map<String, dynamic>> _services = [
-    {"name": "Genel Hizmet & Teşhis", "minPrice": 300.0, "maxPrice": 600.0}
+    {"name": "", "minPrice": 0.0, "maxPrice": 0.0}
   ];
 
   bool _isLocating = false;
@@ -499,7 +499,7 @@ class _EsnafEkleScreenState extends State<EsnafEkleScreen> {
                                   onPressed: () {
                                     HapticFeedback.lightImpact();
                                     setState(() {
-                                      _services.add({"name": "Yeni Hizmet", "minPrice": 200.0, "maxPrice": 400.0});
+                                      _services.add({"name": "", "minPrice": 0.0, "maxPrice": 0.0});
                                     });
                                   },
                                   icon: const Icon(Icons.add_rounded, size: 18),
@@ -552,10 +552,10 @@ class _EsnafEkleScreenState extends State<EsnafEkleScreen> {
                                           children: [
                                             Expanded(
                                               child: TextFormField(
-                                                initialValue: s['minPrice'].toInt().toString(),
+                                                initialValue: (s['minPrice'] != null && s['minPrice'] > 0) ? s['minPrice'].toInt().toString() : "",
                                                 keyboardType: TextInputType.number,
                                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                                                decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
+                                                decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none, hintText: "Fiyat"),
                                                 onChanged: (val) => _services[idx]['minPrice'] = double.tryParse(val) ?? 0,
                                               ),
                                             ),

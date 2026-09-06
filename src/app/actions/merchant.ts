@@ -11,7 +11,7 @@ import {
   checkAdminPassword 
 } from "@/lib/auth";
 import { generateOtp, verifyOtpCode } from "@/lib/otp";
-import { parseJsonField } from "@/lib/utils";
+import { parseJsonField, normalizeToTenDigits } from "@/lib/utils";
 import { Merchant } from "@/types";
 
 /**
@@ -53,7 +53,9 @@ export async function submitApplication(data: {
         status: "pending",
       },
     });
-    revalidatePath("/admin");
+    try {
+      revalidatePath("/admin");
+    } catch {}
     return { success: true, applicationId: newApp.id };
   } catch (error) {
     console.error("Error submitting application:", error);
@@ -183,8 +185,10 @@ export async function approveApplication(appId: string) {
       data: { status: "approved" },
     });
 
-    revalidatePath("/admin");
-    revalidatePath("/");
+    try {
+      revalidatePath("/admin");
+      revalidatePath("/");
+    } catch {}
     
     return { success: true, merchantId: newMerchant.id };
   } catch (error) {
@@ -207,7 +211,9 @@ export async function rejectApplication(appId: string) {
       where: { id: appId },
       data: { status: "rejected" },
     });
-    revalidatePath("/admin");
+    try {
+      revalidatePath("/admin");
+    } catch {}
     return { success: true };
   } catch (error) {
     console.error("Error rejecting application:", error);
@@ -219,18 +225,69 @@ export async function rejectApplication(appId: string) {
  * Send OTP Code to Merchant Phone
  */
 export async function sendMerchantOtp(phone: string) {
-  const cleanPhone = phone.replace(/\D/g, "");
-  if (cleanPhone.length < 10) return { success: false, error: "Geçersiz telefon numarası." };
+  const normalizedPhone = normalizeToTenDigits(phone);
+  if (!normalizedPhone) {
+    return { success: false, error: "Lütfen geçerli bir telefon numarası giriniz (en az 10 hane)." };
+  }
 
   try {
-    const { code, expiresAt } = await generateOtp(cleanPhone);
+    // 1. Check live merchants
+    const merchants = await prisma.merchant.findMany({
+      select: { id: true, name: true, phone: true, whatsapp: true },
+    });
+
+    const matchedMerchant = merchants.find((m) => {
+      const pNorm = normalizeToTenDigits(m.phone);
+      const wNorm = normalizeToTenDigits(m.whatsapp);
+      return pNorm === normalizedPhone || wNorm === normalizedPhone;
+    });
+
+    if (matchedMerchant) {
+      const { code, expiresAt } = await generateOtp(normalizedPhone);
+      return {
+        success: true,
+        status: "approved",
+        message: "SMS / WhatsApp doğrulama kodu gönderildi.",
+        expiresAt,
+        ...(process.env.NODE_ENV !== "production" ? { devCode: code } : {}),
+      };
+    }
+
+    // 2. Check pending applications
+    const pendingApps = await prisma.merchantApplication.findMany({
+      where: { status: "pending" },
+      select: { id: true, name: true, masterName: true, phone: true, whatsapp: true, status: true },
+    });
+
+    const matchedApp = pendingApps.find((a) => {
+      const pNorm = normalizeToTenDigits(a.phone);
+      const wNorm = normalizeToTenDigits(a.whatsapp);
+      return pNorm === normalizedPhone || wNorm === normalizedPhone;
+    });
+
+    if (matchedApp) {
+      const { code, expiresAt } = await generateOtp(normalizedPhone);
+      return {
+        success: true,
+        status: "pending",
+        application: {
+          id: matchedApp.id,
+          name: matchedApp.name,
+          masterName: matchedApp.masterName,
+        },
+        message: "Başvurunuz henüz onay aşamasındadır. Doğrulama kodu gönderildi.",
+        expiresAt,
+        ...(process.env.NODE_ENV !== "production" ? { devCode: code } : {}),
+      };
+    }
+
     return {
-      success: true,
-      message: "Doğrulama kodu gönderildi.",
-      expiresAt,
-      ...(process.env.NODE_ENV !== "production" ? { devCode: code } : {}),
+      success: false,
+      status: "not_found",
+      error: "Bu telefon numarasıyla kayıtlı bir esnaf veya başvuru bulunamadı.",
     };
   } catch (error) {
+    console.error("Error sending merchant OTP:", error);
     return { success: false, error: "Doğrulama kodu oluşturulamadı." };
   }
 }
@@ -239,10 +296,12 @@ export async function sendMerchantOtp(phone: string) {
  * Verify OTP and Login Merchant
  */
 export async function verifyMerchantOtpAndLogin(phone: string, code: string) {
-  const cleanPhone = phone.replace(/\D/g, "");
-  if (!cleanPhone || !code) return { success: false, error: "Telefon ve doğrulama kodu gereklidir." };
+  const normalizedPhone = normalizeToTenDigits(phone);
+  if (!normalizedPhone || !code) {
+    return { success: false, error: "Telefon ve doğrulama kodu gereklidir." };
+  }
 
-  const verification = await verifyOtpCode(cleanPhone, code);
+  const verification = await verifyOtpCode(normalizedPhone, code);
   if (!verification.success) {
     return { success: false, error: verification.error || "Geçersiz veya süresi dolmuş kod." };
   }
@@ -253,49 +312,77 @@ export async function verifyMerchantOtpAndLogin(phone: string, code: string) {
     });
 
     const merchant = merchants.find((m) => {
-      const pClean = m.phone.replace(/\D/g, "");
-      const wClean = m.whatsapp.replace(/\D/g, "");
-      return pClean.includes(cleanPhone) || cleanPhone.includes(pClean) || 
-             wClean.includes(cleanPhone) || cleanPhone.includes(wClean);
+      const pNorm = normalizeToTenDigits(m.phone);
+      const wNorm = normalizeToTenDigits(m.whatsapp);
+      return pNorm === normalizedPhone || wNorm === normalizedPhone;
     });
 
-    if (!merchant) {
-      return { success: false, error: "Bu numaraya ait dükkan bulunamadı." };
+    if (merchant) {
+      // Sign JWT
+      const token = await signMerchantToken({
+        id: merchant.id,
+        phone: merchant.phone,
+        slug: merchant.slug,
+      });
+
+      // Set HttpOnly Cookie (when within request context)
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set({
+          name: "esnaf_session",
+          value: token,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 30 * 24 * 60 * 60,
+        });
+      } catch {
+        // Ignored when called outside Next.js request scope (tests, CLI)
+      }
+
+      return { 
+        success: true, 
+        status: "approved",
+        token,
+        merchant: ({
+          ...merchant,
+          category: merchant.category as any,
+          tier: merchant.tier as any,
+          workingHours: parseJsonField(merchant.workingHours, {}),
+          galleryImages: parseJsonField(merchant.galleryImages, []),
+          specialties: parseJsonField(merchant.specialties, []),
+          features: parseJsonField(merchant.features, {}),
+          reviews: merchant.reviews.map(r => ({ ...r, tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags }))
+        } as unknown as Merchant)
+      };
     }
 
-    // Sign JWT
-    const token = await signMerchantToken({
-      id: merchant.id,
-      phone: merchant.phone,
-      slug: merchant.slug,
+    // Check pending applications
+    const pendingApps = await prisma.merchantApplication.findMany();
+    const matchedApp = pendingApps.find((a) => {
+      const pNorm = normalizeToTenDigits(a.phone);
+      const wNorm = normalizeToTenDigits(a.whatsapp);
+      return pNorm === normalizedPhone || wNorm === normalizedPhone;
     });
 
-    // Set HttpOnly Cookie
-    const cookieStore = await cookies();
-    cookieStore.set({
-      name: "esnaf_session",
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-    });
+    if (matchedApp) {
+      return {
+        success: false,
+        status: matchedApp.status,
+        application: {
+          id: matchedApp.id,
+          name: matchedApp.name,
+          masterName: matchedApp.masterName,
+        },
+        error:
+          matchedApp.status === "pending"
+            ? `Başvurunuz (${matchedApp.name}) henüz yönetici onay aşamasındadır.`
+            : "Başvurunuz onaylanmadı.",
+      };
+    }
 
-    return { 
-      success: true, 
-      token,
-      merchant: ({
-        ...merchant,
-        category: merchant.category as any,
-        tier: merchant.tier as any,
-        workingHours: parseJsonField(merchant.workingHours, {}),
-        galleryImages: parseJsonField(merchant.galleryImages, []),
-        specialties: parseJsonField(merchant.specialties, []),
-        features: parseJsonField(merchant.features, {}),
-        reviews: merchant.reviews.map(r => ({ ...r, tags: typeof r.tags === "string" ? JSON.parse(r.tags || "[]") : r.tags }))
-      } as unknown as Merchant)
-    };
+    return { success: false, error: "Bu numaraya ait dükkan veya başvuru kaydı bulunamadı." };
   } catch (error) {
     console.error("Error logging in:", error);
     return { success: false, error: "Giriş işlemi tamamlanamadı." };
@@ -306,16 +393,18 @@ export async function verifyMerchantOtpAndLogin(phone: string, code: string) {
  * Logout Merchant
  */
 export async function logoutMerchantAction() {
-  const cookieStore = await cookies();
-  cookieStore.set({
-    name: "esnaf_session",
-    value: "",
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: "esnaf_session",
+      value: "",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+  } catch {}
   return { success: true };
 }
 
@@ -328,34 +417,38 @@ export async function loginAdminAction(password: string) {
   }
 
   const token = await signAdminToken();
-  const cookieStore = await cookies();
-  cookieStore.set({
-    name: "esnaf_admin_session",
-    value: token,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 7 * 24 * 60 * 60,
-  });
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: "esnaf_admin_session",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+  } catch {}
 
-  return { success: true };
+  return { success: true, token };
 }
 
 /**
  * Admin Logout Action
  */
 export async function logoutAdminAction() {
-  const cookieStore = await cookies();
-  cookieStore.set({
-    name: "esnaf_admin_session",
-    value: "",
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: "esnaf_admin_session",
+      value: "",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+  } catch {}
   return { success: true };
 }
 
@@ -452,8 +545,10 @@ export async function updateMerchantProfile(id: string, updates: any) {
       });
     }
 
-    revalidatePath("/dukkanim");
-    revalidatePath("/");
+    try {
+      revalidatePath("/dukkanim");
+      revalidatePath("/");
+    } catch {}
     
     return { success: true };
   } catch (error) {
@@ -462,16 +557,6 @@ export async function updateMerchantProfile(id: string, updates: any) {
   }
 }
 
-/**
- * Normalize phone number to 10-digit format (e.g. 5321234567)
- */
-function normalizeToTenDigits(raw: string): string | null {
-  const digits = (raw || "").replace(/\D/g, "");
-  if (digits.length === 10) return digits;
-  if (digits.length === 11 && digits.startsWith("0")) return digits.slice(1);
-  if (digits.length === 12 && digits.startsWith("90")) return digits.slice(2);
-  return null;
-}
 
 /**
  * dukkanim (Check Pending by Phone) - Privacy-Preserving Minimal Query

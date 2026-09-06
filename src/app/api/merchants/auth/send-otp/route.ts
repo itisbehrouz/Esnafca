@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateOtp } from "@/lib/otp";
+import { normalizeToTenDigits } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -14,8 +15,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const cleanInput = phone.replace(/\D/g, "");
-    if (cleanInput.length < 10) {
+    const normalizedInput = normalizeToTenDigits(phone);
+    if (!normalizedInput) {
       return NextResponse.json(
         { success: false, error: "Geçerli bir telefon numarası giriniz (en az 10 hane)." },
         { status: 400 }
@@ -28,18 +29,13 @@ export async function POST(request: Request) {
     });
 
     const matchedMerchant = allMerchants.find((m) => {
-      const dbPhone = m.phone.replace(/\D/g, "");
-      const dbWhatsapp = m.whatsapp.replace(/\D/g, "");
-      return (
-        dbPhone.endsWith(cleanInput) ||
-        cleanInput.endsWith(dbPhone) ||
-        dbWhatsapp.endsWith(cleanInput) ||
-        cleanInput.endsWith(dbWhatsapp)
-      );
+      const pNorm = normalizeToTenDigits(m.phone);
+      const wNorm = normalizeToTenDigits(m.whatsapp);
+      return pNorm === normalizedInput || wNorm === normalizedInput;
     });
 
     if (matchedMerchant) {
-      const { code, expiresAt } = await generateOtp(cleanInput);
+      const { code, expiresAt } = await generateOtp(normalizedInput);
       return NextResponse.json({
         success: true,
         status: "approved",
@@ -56,18 +52,13 @@ export async function POST(request: Request) {
     });
 
     const matchedApp = allApps.find((a) => {
-      const dbPhone = a.phone.replace(/\D/g, "");
-      const dbWhatsapp = a.whatsapp.replace(/\D/g, "");
-      return (
-        dbPhone.endsWith(cleanInput) ||
-        cleanInput.endsWith(dbPhone) ||
-        dbWhatsapp.endsWith(cleanInput) ||
-        cleanInput.endsWith(dbWhatsapp)
-      );
+      const pNorm = normalizeToTenDigits(a.phone);
+      const wNorm = normalizeToTenDigits(a.whatsapp);
+      return pNorm === normalizedInput || wNorm === normalizedInput;
     });
 
     if (matchedApp) {
-      const { code, expiresAt } = await generateOtp(cleanInput);
+      const { code, expiresAt } = await generateOtp(normalizedInput);
       return NextResponse.json({
         success: true,
         status: "pending",

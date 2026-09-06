@@ -258,7 +258,7 @@ function EsnafEkleWizard() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#F2F2F7] dark:bg-black pb-8 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
+    <div className="min-h-[100dvh] bg-[#F2F2F7] dark:bg-black pb-24 sm:pb-8 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
       {/* Apple Translucent Top Bar */}
       <div
         className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"

@@ -163,6 +163,11 @@ function MerchantPortalContent() {
     try {
       const res = await sendMerchantOtp(cleanPhone);
       if (res.success) {
+        if ("application" in res && res.application) {
+          setPendingNotice(res.application as any);
+        } else {
+          setPendingNotice(null);
+        }
         setLoginStep("otp");
       } else {
         setLoginError(res.error || "Doğrulama kodu gönderilemedi.");
@@ -187,13 +192,16 @@ function MerchantPortalContent() {
 
     try {
       const res = await verifyMerchantOtpAndLogin(cleanPhone, otpInput.trim());
-      if (res.success && res.merchant) {
+      if (res.success && "merchant" in res && res.merchant) {
         localStorage.setItem(AUTH_MERCHANT_KEY, res.merchant.id);
         setActiveMerchant(res.merchant as any);
         setIsOpen(res.merchant.isOpenNow);
         setServices(res.merchant.services as any);
         showToast(`Hoş geldiniz, ${res.merchant.masterName}!`);
       } else {
+        if ("application" in res && res.application) {
+          setPendingNotice(res.application as any);
+        }
         setLoginError(res.error || "Kod doğrulanamadı.");
       }
     } catch {
@@ -431,7 +439,12 @@ function MerchantPortalContent() {
                       </label>
                       <button
                         type="button"
-                        onClick={() => setLoginStep("phone")}
+                        onClick={() => {
+                          setLoginStep("phone");
+                          setOtpInput("");
+                          setLoginError(null);
+                          setPendingNotice(null);
+                        }}
                         className="text-[10px] font-bold text-brand hover:underline"
                       >
                         Numarayı Değiştir

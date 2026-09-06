@@ -81,19 +81,6 @@ class ApiService {
     return null;
   }
 
-  /// Get Demo Merchants for 1-Tap Fast Login
-  Future<List<Merchant>> getDemoMerchants() async {
-    try {
-      final response = await _dio.get(ApiConstants.auth);
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final List<dynamic> list = response.data['data'] ?? [];
-        return list.map((j) => Merchant.fromJson(j)).toList();
-      }
-    } catch (e) {
-      // Error fetching demo merchants
-    }
-    return [];
-  }
 
   /// Submit Merchant Application (Esnaf Ekle)
   Future<bool> submitApplication(Map<String, dynamic> appData) async {
@@ -202,26 +189,6 @@ class ApiService {
     return null;
   }
 
-  /// Fast Demo Login by ID
-  Future<Map<String, dynamic>?> loginById(String id) async {
-    try {
-      final response = await _dio.post(
-        ApiConstants.auth,
-        data: {'id': id},
-      );
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final token = response.data['token'];
-        if (token != null) {
-          await _storage.write(key: 'auth_token', value: token);
-        }
-      }
-      return response.data;
-    } on DioException catch (e) {
-      return e.response?.data;
-    } catch (e) {
-      return {'success': false, 'error': 'Giriş yapılamadı.'};
-    }
-  }
 
   /// Fetch Appointments for Logged-In Merchant (JWT Protected)
   Future<List<Appointment>> getAppointments({String? date}) async {

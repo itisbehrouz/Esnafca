@@ -35,12 +35,17 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
   const router = useRouter();
 
   const [merchants, setMerchants] = useState<Merchant[]>(initialMerchants);
-  const [viewMode, setViewMode] = useState<"map" | "list">("map");
-  const [selectedCity, setSelectedCity] = useState("Tüm Şehirler");
-  const [selectedDistrict, setSelectedDistrict] = useState("Tüm Bölgeler");
-  const [selectedNeighborhood, setSelectedNeighborhood] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | "all">("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"map" | "list">(() => {
+    return (searchParams.get("view") as "map" | "list") || "map";
+  });
+  const [selectedCity, setSelectedCity] = useState(() => searchParams.get("city") || "Tüm Şehirler");
+  const [selectedDistrict, setSelectedDistrict] = useState(() => searchParams.get("district") || "Tüm Bölgeler");
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState(() => searchParams.get("neighborhood") || "");
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | "all">(() => {
+    const rawCat = searchParams.get("category") || searchParams.get("cat");
+    return (rawCat && CATEGORIES.some((c) => c.id === rawCat)) ? (rawCat as CategoryId) : "all";
+  });
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
@@ -49,15 +54,21 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
     const c = searchParams.get("city");
     const d = searchParams.get("district");
     const nh = searchParams.get("neighborhood");
-    const cat = (searchParams.get("category") || searchParams.get("cat")) as CategoryId | null;
+    const rawCat = searchParams.get("category") || searchParams.get("cat");
+    const validCat = (rawCat && CATEGORIES.some((c) => c.id === rawCat)) ? (rawCat as CategoryId) : "all";
     const q = searchParams.get("q");
     const view = searchParams.get("view") as "map" | "list" | null;
 
     if (c) setSelectedCity(c);
     if (d) setSelectedDistrict(d);
     if (nh) setSelectedNeighborhood(nh);
-    if (cat) setSelectedCategory(cat);
-    if (q) setSearchQuery(q);
+    setSelectedCategory(validCat);
+    if (q !== null) {
+      setSearchQuery(q);
+    } else if (rawCat) {
+      // Clear previous search query when entering via category URL
+      setSearchQuery("");
+    }
     if (view) setViewMode(view);
   }, [searchParams]);
 
@@ -82,9 +93,19 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
         const matchesCraft = m.craftTitle.toLowerCase().includes(query);
         const matchesCity = m.city.toLowerCase().includes(query);
         const matchesDistrict = m.district.toLowerCase().includes(query);
-        const matchesServices = m.services.some((s) => s.name.toLowerCase().includes(query));
-        const matchesSpecialties = m.specialties.some((sp) => sp.toLowerCase().includes(query));
-        return matchesName || matchesMaster || matchesCraft || matchesCity || matchesDistrict || matchesServices || matchesSpecialties;
+        const matchesNh = m.neighborhood ? m.neighborhood.toLowerCase().includes(query) : false;
+        const matchesServices = m.services?.some((s) => s.name.toLowerCase().includes(query));
+        const matchesSpecialties = m.specialties?.some((sp) => sp.toLowerCase().includes(query));
+        return (
+          matchesName ||
+          matchesMaster ||
+          matchesCraft ||
+          matchesCity ||
+          matchesDistrict ||
+          matchesNh ||
+          Boolean(matchesServices) ||
+          Boolean(matchesSpecialties)
+        );
       }
 
       return true;
@@ -114,7 +135,7 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
   };
 
   return (
-    <div className={`min-h-[100dvh] bg-[#F2F2F7] dark:bg-black ${viewMode === 'map' ? 'pb-0' : 'pb-6 sm:pb-0'} text-black dark:text-white transition-colors duration-200`} suppressHydrationWarning>
+    <div className={`${viewMode === 'map' ? 'h-[100dvh] overflow-hidden' : 'min-h-[100dvh]'} bg-[#F2F2F7] dark:bg-black text-black dark:text-white transition-colors duration-200 flex flex-col`} suppressHydrationWarning>
       <Navbar viewMode={viewMode} onViewModeChange={setViewMode} />
 
       {viewMode === "map" ? (
@@ -124,6 +145,12 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
           selectedDistrict={selectedDistrict}
           selectedNeighborhood={selectedNeighborhood}
           activeLocationLabel={activeLocationLabel}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onlyVerified={onlyVerified}
+          onToggleVerified={setOnlyVerified}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
           onClearLocation={clearLocationFilter}
           onSelectLocation={(city, district, neighborhood) => {
@@ -134,7 +161,7 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
           onSwitchToListMode={() => setViewMode("list")}
         />
       ) : (
-        <main className="max-w-6xl mx-auto px-4 pt-3 pb-12 space-y-3">
+        <main className="max-w-6xl mx-auto px-4 pt-3 pb-28 sm:pb-12 space-y-3">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />

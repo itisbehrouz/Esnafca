@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyOtpCode } from "@/lib/otp";
 import { signMerchantToken } from "@/lib/auth";
-import { parseJsonField } from "@/lib/utils";
+import { parseJsonField, normalizeToTenDigits } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -16,10 +16,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const cleanInput = phone.replace(/\D/g, "");
+    const normalizedInput = normalizeToTenDigits(phone);
+    if (!normalizedInput) {
+      return NextResponse.json(
+        { success: false, error: "Geçerli bir telefon numarası giriniz (en az 10 hane)." },
+        { status: 400 }
+      );
+    }
 
     // 1. Verify OTP code
-    const otpVerification = await verifyOtpCode(cleanInput, code);
+    const otpVerification = await verifyOtpCode(normalizedInput, code);
     if (!otpVerification.success) {
       return NextResponse.json(
         { success: false, error: otpVerification.error || "Geçersiz veya süresi dolmuş kod." },
@@ -36,14 +42,9 @@ export async function POST(request: Request) {
     });
 
     const matchedMerchant = allMerchants.find((m) => {
-      const dbPhone = m.phone.replace(/\D/g, "");
-      const dbWhatsapp = m.whatsapp.replace(/\D/g, "");
-      return (
-        dbPhone.endsWith(cleanInput) ||
-        cleanInput.endsWith(dbPhone) ||
-        dbWhatsapp.endsWith(cleanInput) ||
-        cleanInput.endsWith(dbWhatsapp)
-      );
+      const pNorm = normalizeToTenDigits(m.phone);
+      const wNorm = normalizeToTenDigits(m.whatsapp);
+      return pNorm === normalizedInput || wNorm === normalizedInput;
     });
 
     if (matchedMerchant) {
@@ -110,14 +111,9 @@ export async function POST(request: Request) {
     // 3. Check Pending Applications
     const allApps = await prisma.merchantApplication.findMany();
     const matchedApp = allApps.find((a) => {
-      const dbPhone = a.phone.replace(/\D/g, "");
-      const dbWhatsapp = a.whatsapp.replace(/\D/g, "");
-      return (
-        dbPhone.endsWith(cleanInput) ||
-        cleanInput.endsWith(dbPhone) ||
-        dbWhatsapp.endsWith(cleanInput) ||
-        cleanInput.endsWith(dbWhatsapp)
-      );
+      const pNorm = normalizeToTenDigits(a.phone);
+      const wNorm = normalizeToTenDigits(a.whatsapp);
+      return pNorm === normalizedInput || wNorm === normalizedInput;
     });
 
     if (matchedApp) {

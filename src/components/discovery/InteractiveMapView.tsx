@@ -98,6 +98,12 @@ interface InteractiveMapViewProps {
   selectedDistrict?: string;
   selectedNeighborhood?: string;
   activeLocationLabel?: string;
+  selectedCategory?: CategoryId | "all";
+  onSelectCategory?: (category: CategoryId | "all") => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  onlyVerified?: boolean;
+  onToggleVerified?: (verified: boolean) => void;
   onOpenLocationModal?: () => void;
   onClearLocation?: () => void;
   onSelectMerchant?: (merchant: Merchant) => void;
@@ -111,6 +117,12 @@ export default function InteractiveMapView({
   selectedDistrict = "Tüm Bölgeler",
   selectedNeighborhood = "",
   activeLocationLabel = "Tüm Türkiye",
+  selectedCategory: propSelectedCategory,
+  onSelectCategory,
+  searchQuery: propSearchQuery,
+  onSearchChange,
+  onlyVerified: propOnlyVerified,
+  onToggleVerified,
   onOpenLocationModal,
   onClearLocation,
   onSelectMerchant,
@@ -123,9 +135,9 @@ export default function InteractiveMapView({
   const userMarkerRef = useRef<L.Marker | null>(null);
 
   const { theme } = useTheme();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | "all">("all");
-  const [onlyVerified, setOnlyVerified] = useState(false);
+  const [internalSearchQuery, setInternalSearchQuery] = useState("");
+  const [internalCategory, setInternalCategory] = useState<CategoryId | "all">("all");
+  const [internalOnlyVerified, setInternalOnlyVerified] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [onlyPlus, setOnlyPlus] = useState(false);
   
@@ -134,6 +146,31 @@ export default function InteractiveMapView({
   const [activeMerchant, setActiveMerchant] = useState<Merchant | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  const searchQuery = propSearchQuery !== undefined ? propSearchQuery : internalSearchQuery;
+  const selectedCategory = propSelectedCategory !== undefined ? propSelectedCategory : internalCategory;
+  const onlyVerified = propOnlyVerified !== undefined ? propOnlyVerified : internalOnlyVerified;
+
+  const handleSearchChange = useCallback((value: string) => {
+    if (onSearchChange) {
+      onSearchChange(value);
+    }
+    setInternalSearchQuery(value);
+  }, [onSearchChange]);
+
+  const handleSelectCategory = useCallback((cat: CategoryId | "all") => {
+    if (onSelectCategory) {
+      onSelectCategory(cat);
+    }
+    setInternalCategory(cat);
+  }, [onSelectCategory]);
+
+  const handleToggleVerified = useCallback((verified: boolean) => {
+    if (onToggleVerified) {
+      onToggleVerified(verified);
+    }
+    setInternalOnlyVerified(verified);
+  }, [onToggleVerified]);
 
   // Filtered & Sorted merchants with distance
   const filteredMerchantsWithDistance = useMemo(() => {
@@ -155,7 +192,18 @@ export default function InteractiveMapView({
         const matchesNh = m.neighborhood.toLowerCase().includes(q);
         const matchesCity = m.city.toLowerCase().includes(q);
         const matchesCraft = m.craftTitle.toLowerCase().includes(q);
-        return matchesName || matchesMaster || matchesDistrict || matchesNh || matchesCity || matchesCraft;
+        const matchesServices = m.services?.some((s) => s.name.toLowerCase().includes(q));
+        const matchesSpecialties = m.specialties?.some((sp) => sp.toLowerCase().includes(q));
+        return (
+          matchesName ||
+          matchesMaster ||
+          matchesDistrict ||
+          matchesNh ||
+          matchesCity ||
+          matchesCraft ||
+          Boolean(matchesServices) ||
+          Boolean(matchesSpecialties)
+        );
       }
       return true;
     });
@@ -309,13 +357,41 @@ export default function InteractiveMapView({
 
       group.addLayer(marker);
     });
+  }, [filteredMerchantsWithDistance, activeMerchant, userLocation, onSelectMerchant]);
 
-    if (searchQuery.trim() && filteredMerchantsWithDistance.length > 0) {
-      const coords = filteredMerchantsWithDistance.map((m) => m.coords);
-      const bounds = L.latLngBounds(coords);
-      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+  // Reset active merchant if no longer in filtered list
+  useEffect(() => {
+    if (activeMerchant && !filteredMerchantsWithDistance.some((m) => m.id === activeMerchant.id)) {
+      setActiveMerchant(null);
     }
-  }, [filteredMerchantsWithDistance, activeMerchant, searchQuery, userLocation, onSelectMerchant]);
+  }, [filteredMerchantsWithDistance, activeMerchant]);
+
+  // Frame matching merchants when category or search query changes
+  const prevFilterRef = useRef<string>("");
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const filterKey = `${selectedCategory}_${searchQuery.trim()}`;
+    if (prevFilterRef.current !== filterKey) {
+      const wasFiltered = prevFilterRef.current !== "" && prevFilterRef.current !== "all_";
+      prevFilterRef.current = filterKey;
+      if ((searchQuery.trim() || selectedCategory !== "all") && filteredMerchantsWithDistance.length > 0) {
+        const coords = filteredMerchantsWithDistance.map((m) => m.coords);
+        const bounds = L.latLngBounds(coords);
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+      } else if (wasFiltered && selectedCategory === "all" && !searchQuery.trim()) {
+        const targetCoords = getCoordinatesForLocation(selectedCity, selectedDistrict, selectedNeighborhood);
+        if (targetCoords) {
+          const zoomLevel = selectedNeighborhood ? 15 : (selectedDistrict !== "Tüm Bölgeler" ? 14 : 12);
+          map.flyTo(targetCoords, zoomLevel, { duration: 0.8 });
+        } else if (filteredMerchantsWithDistance.length > 0) {
+          const coords = filteredMerchantsWithDistance.map((m) => m.coords);
+          const bounds = L.latLngBounds(coords);
+          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
+        }
+      }
+    }
+  }, [selectedCategory, searchQuery, filteredMerchantsWithDistance, selectedCity, selectedDistrict, selectedNeighborhood]);
 
   // 4. Process real coordinates
   const processLocationCoordinates = useCallback(async (latitude: number, longitude: number) => {
@@ -420,14 +496,14 @@ export default function InteractiveMapView({
                 data-lpignore="true"
                 suppressHydrationWarning
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Usta veya zanaat ara..."
                 className="w-full pl-8 pr-7 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 transition-all"
               />
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => handleSearchChange("")}
                   className="absolute right-2 p-1 rounded-full text-zinc-400 hover:text-black dark:hover:text-white"
                 >
                   <X className="w-3 h-3" />
@@ -467,6 +543,18 @@ export default function InteractiveMapView({
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 pt-0.5">
             <button
               type="button"
+              onClick={() => handleSelectCategory("all")}
+              className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ios-press ${
+                selectedCategory === "all"
+                  ? "bg-black dark:bg-white text-white dark:text-black shadow-xs"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              <span>Tümü</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setOnlyOpen(!onlyOpen)}
               className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ios-press ${
                 onlyOpen
@@ -480,7 +568,7 @@ export default function InteractiveMapView({
 
             <button
               type="button"
-              onClick={() => setOnlyVerified(!onlyVerified)}
+              onClick={() => handleToggleVerified(!onlyVerified)}
               className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ios-press ${
                 onlyVerified
                   ? "bg-blue-600 text-white shadow-xs"
@@ -512,7 +600,7 @@ export default function InteractiveMapView({
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setSelectedCategory(isSelected ? "all" : (cat.id as CategoryId))}
+                  onClick={() => handleSelectCategory(isSelected ? "all" : (cat.id as CategoryId))}
                   className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ios-press ${
                     isSelected
                       ? "bg-brand text-white shadow-xs"
@@ -520,7 +608,7 @@ export default function InteractiveMapView({
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5 stroke-[2]" />
-                  <span>{cat.name.split("&")[0].trim()}</span>
+                  <span>{cat.shortName || cat.name}</span>
                 </button>
               );
             })}
@@ -562,7 +650,7 @@ export default function InteractiveMapView({
         {/* Pull Grabber Header */}
         <div
           onClick={() => setIsDrawerExpanded(!isDrawerExpanded)}
-          className="pt-2 pb-1.5 px-4 flex flex-col items-center cursor-pointer select-none hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors shrink-0"
+          className="pt-2 pb-1.5 px-4 flex flex-col items-center cursor-pointer select-none hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors shrink-0 touch-none"
         >
           <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mb-1.5" />
           
@@ -727,8 +815,31 @@ export default function InteractiveMapView({
               );
             })
           ) : (
-            <div className="py-8 text-center text-xs text-zinc-400">
-              Bu bölgede eşleşen usta bulunamadı.
+            <div className="py-8 text-center space-y-2">
+              <p className="text-xs text-zinc-400">Bu bölgede eşleşen usta bulunamadı.</p>
+              {(selectedCategory !== "all" ||
+                searchQuery.trim() ||
+                onlyVerified ||
+                onlyOpen ||
+                onlyPlus ||
+                selectedCity !== "Tüm Şehirler" ||
+                selectedDistrict !== "Tüm Bölgeler" ||
+                Boolean(selectedNeighborhood)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectCategory("all");
+                    handleSearchChange("");
+                    handleToggleVerified(false);
+                    setOnlyOpen(false);
+                    setOnlyPlus(false);
+                    if (onClearLocation) onClearLocation();
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-black dark:bg-white text-white dark:text-black text-[11px] font-bold ios-press"
+                >
+                  Filtreleri Sıfırla
+                </button>
+              )}
             </div>
           )}
         </div>
