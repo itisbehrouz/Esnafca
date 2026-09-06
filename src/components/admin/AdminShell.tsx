@@ -15,6 +15,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingApplicationsCount, setPendingApplicationsCount] = useState(0);
   const [liveToast, setLiveToast] = useState<{ message: string; id: string } | null>(null);
 
   // Helper to calculate true unread count against localStorage
@@ -28,13 +29,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Initial notification load
+  // Initial notification and pending count load
   const syncNotifications = async () => {
     try {
       const res = await getAdminNotifications();
       if (res.success && res.data) {
         const trueUnread = calculateUnread(res.data);
         setUnreadCount(trueUnread);
+        if (typeof res.pendingApplicationsCount === "number") {
+          setPendingApplicationsCount(res.pendingApplicationsCount);
+        }
       }
     } catch {
       // Non-blocking
@@ -43,6 +47,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     syncNotifications();
+  }, []);
+
+  // Listen to application updates across windows
+  useEffect(() => {
+    const handleApplicationUpdate = () => {
+      syncNotifications();
+    };
+
+    window.addEventListener("applications_updated", handleApplicationUpdate);
+    window.addEventListener("application_updated", handleApplicationUpdate);
+    return () => {
+      window.removeEventListener("applications_updated", handleApplicationUpdate);
+      window.removeEventListener("application_updated", handleApplicationUpdate);
+    };
   }, []);
 
   // Server-Sent Events (SSE) live telemetry stream connection
@@ -56,14 +74,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         try {
           const data = JSON.parse(e.data);
           if (typeof data.pendingCount === "number") {
-            // Re-sync with read IDs
-            syncNotifications();
+            setPendingApplicationsCount(data.pendingCount);
           }
+          syncNotifications();
         } catch {}
       });
 
-      eventSource.addEventListener("pulse", () => {
-        // Keep telemetry alive
+      eventSource.addEventListener("pulse", (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (typeof data.pendingCount === "number") {
+            setPendingApplicationsCount(data.pendingCount);
+          }
+        } catch {}
       });
 
       eventSource.addEventListener("new_application", (e) => {
@@ -74,6 +97,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
           setLiveToast({ message: msg, id: String(Date.now()) });
           setUnreadCount((prev) => prev + count);
+          if (typeof data.totalPending === "number") {
+            setPendingApplicationsCount(data.totalPending);
+          } else {
+            setPendingApplicationsCount((prev) => prev + count);
+          }
 
           setTimeout(() => {
             setLiveToast(null);
@@ -117,12 +145,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* 1. Left Operator Workstation Sidebar */}
       <AdminSidebar
-        pendingCount={unreadCount}
+        pendingCount={pendingApplicationsCount}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      {/* 2. Top Header with Quick Search, DevTower Port 3005, and Alert Bell */}
+      {/* 2. Top Header with Quick Search and Alert Bell */}
       <AdminHeader
         sidebarCollapsed={sidebarCollapsed}
         onOpenCommandPalette={() => setIsPaletteOpen(true)}

@@ -743,7 +743,8 @@ export async function getAdminNotifications() {
   try {
     await requireAdmin();
 
-    const [pendingApps, recentReviews, recentLogs] = await Promise.all([
+    const [totalPendingCount, pendingApps, recentReviews, recentLogs] = await Promise.all([
+      prisma.merchantApplication.count({ where: { status: "pending" } }),
       prisma.merchantApplication.findMany({
         where: { status: "pending" },
         take: 5,
@@ -793,10 +794,26 @@ export async function getAdminNotifications() {
     return {
       success: true,
       data: notifications,
-      unreadCount: pendingApps.length,
+      pendingApplicationsCount: totalPendingCount,
+      unreadCount: totalPendingCount,
     };
   } catch (error: any) {
     return { success: false, error: error.message || "Bildirimler yüklenemedi." };
+  }
+}
+
+/**
+ * 13b. Get Exact Pending Applications Count for Sidebar
+ */
+export async function getPendingApplicationsCount() {
+  try {
+    await requireAdmin();
+    const count = await prisma.merchantApplication.count({
+      where: { status: "pending" },
+    });
+    return { success: true, count };
+  } catch (error: any) {
+    return { success: false, count: 0, error: error.message };
   }
 }
 
