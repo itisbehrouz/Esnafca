@@ -50,10 +50,10 @@ export default async function CategoriesPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#F2F2F7] dark:bg-black pb-24 sm:pb-8 text-black dark:text-white transition-colors duration-200">
-      {/* Apple Translucent Header */}
-      <div
-        className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
+    <div className="h-[100dvh] overflow-hidden flex flex-col bg-[#F2F2F7] dark:bg-black text-black dark:text-white transition-colors duration-200">
+      {/* 1. Fixed Top Header */}
+      <header
+        className="shrink-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -67,21 +67,23 @@ export default async function CategoriesPage() {
           <h1 className="font-extrabold text-sm text-black dark:text-white">Zanaat Kategorileri</h1>
           <ThemeToggle />
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-3xl mx-auto px-4 py-5 space-y-4">
-        {/* Title */}
-        <div className="space-y-1">
-          <h2 className="text-xl font-extrabold text-black dark:text-white tracking-tight">
+      {/* 2. Fixed Section Title & Description Block */}
+      <div className="shrink-0 z-30 bg-[#F2F2F7]/95 dark:bg-black/95 backdrop-blur-md border-b border-black/[0.04] dark:border-white/[0.06]">
+        <div className="max-w-3xl mx-auto px-4 py-3.5 space-y-0.5">
+          <h2 className="text-base sm:text-lg font-extrabold text-black dark:text-white tracking-tight">
             Tüm Hizmet Alanları & Zanaatlar
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+          <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
             İhtiyacınız olan kategoriyi seçerek mahallenizdeki doğrulanmış şeffaf fiyatlı ustalara ulaşın.
           </p>
         </div>
+      </div>
 
-        {/* Apple Inset Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+      {/* 3. Scrollable Categories Grid Area */}
+      <main className="flex-1 overflow-y-auto overscroll-contain px-4 py-3.5 pb-28 sm:pb-12 touch-pan-y">
+        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3">
           {CATEGORIES.map((cat) => {
             const Icon = ICON_MAP[cat.icon] || Sparkles;
             const count = merchants.filter((m) => m.category === cat.id).length;
@@ -115,7 +117,7 @@ export default async function CategoriesPage() {
             );
           })}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
