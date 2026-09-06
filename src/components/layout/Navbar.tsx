@@ -13,7 +13,7 @@ interface NavbarProps {
 export function Navbar({ viewMode, onViewModeChange }: NavbarProps) {
   return (
     <header
-      className="sticky top-0 z-40 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-b-[0.5px] border-black/10 dark:border-white/10 transition-colors duration-200 pt-safe"
+      className="shrink-0 sticky top-0 z-40 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-b-[0.5px] border-black/10 dark:border-white/10 transition-colors duration-200 pt-safe"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">

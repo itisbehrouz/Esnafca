@@ -135,7 +135,7 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
   };
 
   return (
-    <div className={`${viewMode === 'map' ? 'h-[100dvh] overflow-hidden' : 'min-h-[100dvh]'} bg-[#F2F2F7] dark:bg-black text-black dark:text-white transition-colors duration-200 flex flex-col`} suppressHydrationWarning>
+    <div className="h-[100dvh] overflow-hidden bg-[#F2F2F7] dark:bg-black text-black dark:text-white transition-colors duration-200 flex flex-col" suppressHydrationWarning>
       <Navbar viewMode={viewMode} onViewModeChange={setViewMode} />
 
       {viewMode === "map" ? (
@@ -161,140 +161,152 @@ export function HomeInteractive({ initialMerchants }: { initialMerchants: Mercha
           onSwitchToListMode={() => setViewMode("list")}
         />
       ) : (
-        <main className="max-w-6xl mx-auto px-4 pt-3 pb-28 sm:pb-12 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-              <input
-                type="text"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                data-form-type="other"
-                data-lpignore="true"
-                suppressHydrationWarning
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Usta, işlem veya zanaat arayın..."
-                className="w-full pl-10 pr-9 py-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] text-sm text-black dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 transition-all shadow-2xs"
-              />
-              {searchQuery && (
+        <div className="flex-1 overflow-hidden flex flex-col w-full min-w-0">
+          {/* Pinned Search & Filters Bar */}
+          <div className="shrink-0 z-30 bg-[#F2F2F7]/95 dark:bg-black/95 backdrop-blur-md border-b border-black/[0.04] dark:border-white/[0.06] w-full">
+            <div className="max-w-6xl mx-auto px-4 pt-2.5 pb-2.5 space-y-2.5 w-full min-w-0">
+              <div className="flex items-center gap-2 w-full min-w-0">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    data-form-type="other"
+                    data-lpignore="true"
+                    suppressHydrationWarning
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Usta, işlem veya zanaat arayın..."
+                    className="w-full pl-10 pr-9 py-2 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] text-sm text-black dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 transition-all shadow-2xs"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  onClick={() => setIsLocationModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all shadow-2xs shrink-0 text-xs font-bold text-black dark:text-white ios-press"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
+                  <span className="max-w-[110px] sm:max-w-[200px] truncate">{activeLocationLabel}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                 </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 w-full min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("all")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ios-press ${
+                    selectedCategory === "all"
+                      ? "bg-black dark:bg-white text-white dark:text-black shadow-xs"
+                      : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  Tümü ({merchants.length})
+                </button>
+
+                {CATEGORIES.map((cat) => {
+                  const isCatActive = selectedCategory === cat.id;
+                  const catCount = merchants.filter((m) => m.category === cat.id).length;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(isCatActive ? "all" : (cat.id as CategoryId))}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ios-press ${
+                        isCatActive
+                          ? "bg-brand text-white shadow-xs"
+                          : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      <span>{cat.name}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          isCatActive
+                            ? "bg-white/20 text-white"
+                            : "bg-black/[0.05] dark:bg-white/[0.08] text-zinc-500 dark:text-zinc-400"
+                        }`}
+                      >
+                        {catCount}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between gap-2 px-1 w-full min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setOnlyVerified(!onlyVerified)}
+                  className={`px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 transition-all ios-press shrink-0 shadow-2xs ${
+                    onlyVerified
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Doğrulanmış Esnaf</span>
+                </button>
+
+                <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500">
+                  {filteredMerchants.length} Usta
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Dedicated Scrollable Merchant Cards Container */}
+          <main className="flex-1 overflow-y-auto overscroll-contain px-4 pt-3 pb-28 sm:pb-12 touch-pan-y w-full min-w-0">
+            <div className="max-w-6xl mx-auto w-full min-w-0">
+              {filteredMerchants.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {filteredMerchants.map((merchant) => (
+                    <MerchantCard key={merchant.id} merchant={merchant} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-10 text-center space-y-4 shadow-xs mt-4">
+                  <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 mx-auto flex items-center justify-center">
+                    <Search className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-extrabold text-black dark:text-white">
+                      Bu kriterlere uygun esnaf bulunamadı
+                    </h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
+                      Konum filtrenizi genişletebilir veya arama teriminizi değiştirebilirsiniz.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearLocationFilter();
+                      setSelectedCategory("all");
+                      setSearchQuery("");
+                      setOnlyVerified(false);
+                    }}
+                    className="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs font-bold ios-press shadow-xs"
+                  >
+                    Filtreleri Sıfırla
+                  </button>
+                </div>
               )}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsLocationModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all shadow-2xs shrink-0 text-xs font-bold text-black dark:text-white ios-press"
-            >
-              <MapPin className="w-3.5 h-3.5 text-brand shrink-0" />
-              <span className="max-w-[130px] sm:max-w-[200px] truncate">{activeLocationLabel}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-              <button
-                type="button"
-                onClick={() => setSelectedCategory("all")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ios-press ${
-                  selectedCategory === "all"
-                    ? "bg-black dark:bg-white text-white dark:text-black shadow-xs"
-                    : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                }`}
-              >
-                Tümü ({merchants.length})
-              </button>
-
-              {CATEGORIES.map((cat) => {
-                const isCatActive = selectedCategory === cat.id;
-                const catCount = merchants.filter(m => m.category === cat.id).length;
-
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setSelectedCategory(isCatActive ? "all" : (cat.id as CategoryId))}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ios-press ${
-                      isCatActive
-                        ? "bg-brand text-white shadow-xs"
-                        : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    <span>{cat.name}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isCatActive ? "bg-white/20 text-white" : "bg-black/[0.05] dark:bg-white/[0.08] text-zinc-500 dark:text-zinc-400"
-                    }`}>
-                      {catCount}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center justify-between gap-2 px-1">
-              <button
-                type="button"
-                onClick={() => setOnlyVerified(!onlyVerified)}
-                className={`px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 transition-all ios-press shrink-0 shadow-2xs ${
-                  onlyVerified
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white dark:bg-[#1C1C1E] text-zinc-700 dark:text-zinc-300 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Doğrulanmış Esnaf</span>
-              </button>
-
-              <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500">
-                {filteredMerchants.length} Usta
-              </span>
-            </div>
-          </div>
-
-          {filteredMerchants.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
-              {filteredMerchants.map((merchant) => (
-                <MerchantCard key={merchant.id} merchant={merchant} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-10 text-center space-y-4 shadow-xs mt-4">
-              <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 mx-auto flex items-center justify-center">
-                <Search className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-base font-extrabold text-black dark:text-white">
-                  Bu kriterlere uygun esnaf bulunamadı
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
-                  Konum filtrenizi genişletebilir veya arama teriminizi değiştirebilirsiniz.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  clearLocationFilter();
-                  setSelectedCategory("all");
-                  setSearchQuery("");
-                  setOnlyVerified(false);
-                }}
-                className="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs font-bold ios-press shadow-xs"
-              >
-                Filtreleri Sıfırla
-              </button>
-            </div>
-          )}
-        </main>
+          </main>
+        </div>
       )}
 
       <DistrictSelectorModal
