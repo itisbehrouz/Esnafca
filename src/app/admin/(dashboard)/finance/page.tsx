@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   CreditCard,
   TrendingUp,
@@ -11,14 +10,7 @@ import {
   Calendar,
   Gift,
   RotateCcw,
-  Clock,
-  ArrowUpRight,
-  ShieldAlert,
   Search,
-  Zap,
-  ExternalLink,
-  ChevronRight,
-  Sparkles,
 } from "lucide-react";
 import {
   getAdminFinanceMetrics,
@@ -703,7 +695,7 @@ export default function AdminFinancePage() {
               <button
                 type="button"
                 onClick={() => setModalType(null)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
               >
                 Vazgeç
               </button>
@@ -716,7 +708,7 @@ export default function AdminFinancePage() {
                   else if (modalType === "gift") handleGiftMonth();
                   else if (modalType === "refund") handleRefund();
                 }}
-                className={`px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98] ${
+                className={`px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer ${
                   modalType === "refund"
                     ? "bg-rose-600 hover:bg-rose-700"
                     : "bg-blue-600 hover:bg-blue-700"

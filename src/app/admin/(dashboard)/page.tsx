@@ -8,7 +8,7 @@ import {
   CheckCircle2, 
   History 
 } from "lucide-react";
-import { getAdminDashboardMetrics, approveApplicationAction, rejectApplicationAction } from "@/app/actions/admin";
+import { getAdminDashboardMetrics, approveApplicationAction } from "@/app/actions/admin";
 import { AdminKpiDashboard } from "@/components/admin/AdminKpiDashboard";
 import { MerchantApplicationDrawer } from "@/components/admin/MerchantApplicationDrawer";
 
@@ -19,6 +19,7 @@ export default function AdminDashboardPage() {
   const [selectedApp, setSelectedApp] = useState<any | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -44,22 +45,19 @@ export default function AdminDashboardPage() {
   };
 
   const handleQuickApprove = async (appId: string) => {
-    const res = await approveApplicationAction(appId);
-    if (res.success) {
-      showToast("Başvuru onaylandı ve vitrine alındı.");
-      loadData();
-    } else {
-      showToast("Hata: " + res.error);
-    }
-  };
-
-  const handleQuickReject = async (appId: string) => {
-    const res = await rejectApplicationAction(appId, "Hızlı karar masasında reddedildi.");
-    if (res.success) {
-      showToast("Başvuru reddedildi.");
-      loadData();
-    } else {
-      showToast("Hata: " + res.error);
+    setActionLoadingId(appId);
+    try {
+      const res = await approveApplicationAction(appId);
+      if (res.success) {
+        showToast("Başvuru onaylandı ve vitrine alındı.");
+        loadData();
+      } else {
+        showToast("Hata: " + res.error);
+      }
+    } catch {
+      showToast("İşlem başarısız.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -85,7 +83,6 @@ export default function AdminDashboardPage() {
 
   const pendingApps = data?.pendingApplications || [];
   const recentLogs = data?.recentLogs || [];
-  const recentReviews = data?.recentReviews || [];
 
   return (
     <div className="space-y-6">
@@ -174,16 +171,17 @@ export default function AdminDashboardPage() {
                             setSelectedApp(app);
                             setIsDrawerOpen(true);
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors"
+                          className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors cursor-pointer"
                         >
                           İncele
                         </button>
                         <button
                           type="button"
+                          disabled={actionLoadingId === app.id}
                           onClick={() => handleQuickApprove(app.id)}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-xs"
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                         >
-                          Onayla
+                          {actionLoadingId === app.id ? "Onaylanıyor..." : "Onayla"}
                         </button>
                       </div>
                     </div>

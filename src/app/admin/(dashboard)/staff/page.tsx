@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Users,
   Shield,
   UserCheck,
   UserPlus,
@@ -44,6 +43,8 @@ export default function AdminStaffPage() {
   const [selectedOperatorForAudit, setSelectedOperatorForAudit] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isRoleMatrixOpen, setIsRoleMatrixOpen] = useState(false);
+  const [updatingStaffId, setUpdatingStaffId] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<"staff" | "logs">("staff");
 
   // New staff modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -109,6 +110,7 @@ export default function AdminStaffPage() {
 
   const handleToggleStatus = async (staffId: string, currentStatus: string) => {
     const nextStatus = currentStatus === "ACTIVE" ? "ON_LEAVE" : "ACTIVE";
+    setUpdatingStaffId(staffId);
     try {
       const res = await updateStaffMemberStatusAction(staffId, nextStatus as any);
       if (res.success) {
@@ -119,6 +121,8 @@ export default function AdminStaffPage() {
       }
     } catch {
       showToast("Durum güncellenemedi.");
+    } finally {
+      setUpdatingStaffId(null);
     }
   };
 
@@ -173,41 +177,65 @@ export default function AdminStaffPage() {
             <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Personel & Operatör Masası
             </h1>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              Zero-Trust RBAC
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                Zero-Trust RBAC
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsRoleMatrixOpen(true)}
+                className="p-1 rounded-md text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                title="Yetki & Rol Matrisini İncele"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Ekip dizini, erişim yetkileri ve bireysel operatör hareket denetimi.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsRoleMatrixOpen(true)}
-            className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Yetki & Rol Matrisini İncele"
-          >
-            <HelpCircle className="w-3.5 h-3.5 text-blue-500" />
-            <span>Rol Rehberi</span>
-          </button>
+        <button
+          type="button"
+          onClick={() => setIsAddModalOpen(true)}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98] cursor-pointer w-fit"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>+ Yeni Operatör Ekle</span>
+        </button>
+      </div>
 
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>+ Yeni Operatör Ekle</span>
-          </button>
-        </div>
+      {/* Mobile Tab Switcher (< lg) */}
+      <div className="flex lg:hidden items-center p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
+        <button
+          type="button"
+          onClick={() => setMobileTab("staff")}
+          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            mobileTab === "staff"
+              ? "bg-white dark:bg-[#0B1120] text-blue-600 shadow-xs"
+              : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          Personel Kadrosu ({filteredStaff.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("logs")}
+          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            mobileTab === "logs"
+              ? "bg-white dark:bg-[#0B1120] text-blue-600 shadow-xs"
+              : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          Denetim Kütüğü ({filteredLogs.length})
+        </button>
       </div>
 
       {/* Main Split View: Staff Directory & Audit Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Staff Directory (7 cols) */}
-        <div className="lg:col-span-7 space-y-3">
+        <div className={`lg:col-span-7 space-y-3 ${mobileTab === "staff" ? "block" : "hidden lg:block"}`}>
           {/* Single-line Filter Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {roleFilterTabs.map((tab) => (
@@ -227,90 +255,97 @@ export default function AdminStaffPage() {
           </div>
 
           <div className="space-y-2.5">
-            {filteredStaff.map((member: any) => (
-              <div
-                key={member.id}
-                className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-slate-300 dark:hover:border-slate-700"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
-                    {member.name.slice(0, 2).toUpperCase()}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                        {member.name}
-                      </h3>
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                          member.role === "SUPER_ADMIN"
-                            ? "bg-purple-500/15 text-purple-600 dark:text-purple-400"
-                            : member.role === "OPERATOR"
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                            : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                        }`}
-                      >
-                        {member.role}
-                      </span>
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          member.status === "ACTIVE" ? "bg-emerald-500" : "bg-amber-500"
-                        }`}
-                        title={member.status === "ACTIVE" ? "Aktif" : "İzinde"}
-                      />
+            {filteredStaff.length > 0 ? (
+              filteredStaff.map((member: any) => (
+                <div
+                  key={member.id}
+                  className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-slate-300 dark:hover:border-slate-700"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+                      {member.name.slice(0, 2).toUpperCase()}
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                      {member.title}
-                    </p>
-                    <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono mt-1">
-                      <span className="flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        <span>{member.email}</span>
-                      </span>
-                      {member.phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          <span>{member.phone}</span>
+
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                          {member.name}
+                        </h3>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                            member.role === "SUPER_ADMIN"
+                              ? "bg-purple-500/15 text-purple-600 dark:text-purple-400"
+                              : member.role === "OPERATOR"
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                              : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                          }`}
+                        >
+                          {member.role}
                         </span>
-                      )}
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            member.status === "ACTIVE" ? "bg-emerald-500" : "bg-amber-500"
+                          }`}
+                          title={member.status === "ACTIVE" ? "Aktif" : "İzinde"}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        {member.title}
+                      </p>
+                      <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono mt-1">
+                        <span className="flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          <span>{member.email}</span>
+                        </span>
+                        {member.phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="w-3 h-3" />
+                            <span>{member.phone}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedOperatorForAudit(
-                        selectedOperatorForAudit === member.name ? null : member.name
-                      );
-                    }}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      selectedOperatorForAudit === member.name
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                    }`}
-                  >
-                    Hareketleri Gör
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOperatorForAudit(
+                          selectedOperatorForAudit === member.name ? null : member.name
+                        );
+                      }}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        selectedOperatorForAudit === member.name
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      Hareketleri Gör
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleToggleStatus(member.id, member.status)}
-                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                    title={member.status === "ACTIVE" ? "İzne Çıkar" : "Aktife Al"}
-                  >
-                    <UserCheck className="w-4 h-4" />
-                  </button>
+                    <button
+                      type="button"
+                      disabled={updatingStaffId === member.id}
+                      onClick={() => handleToggleStatus(member.id, member.status)}
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 disabled:opacity-50 cursor-pointer"
+                      title={member.status === "ACTIVE" ? "İzne Çıkar" : "Aktife Al"}
+                    >
+                      <UserCheck className={`w-4 h-4 ${updatingStaffId === member.id ? "animate-spin text-blue-500" : ""}`} />
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="p-8 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 text-center text-slate-400 text-xs">
+                Bu rolde kayıtlı personel bulunmuyor.
               </div>
-            ))}
+            )}
           </div>
         </div>
 
         {/* Right: Operator Audit Activities (5 cols) */}
-        <div className="lg:col-span-5 space-y-3">
+        <div className={`lg:col-span-5 space-y-3 ${mobileTab === "logs" ? "block" : "hidden lg:block"}`}>
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
               <History className="w-4 h-4 text-blue-500" />

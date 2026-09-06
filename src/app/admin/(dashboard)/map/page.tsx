@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 import {
-  MapPin,
   AlertTriangle,
   Filter,
 } from "lucide-react";
@@ -46,10 +44,12 @@ export default function AdminMapCoveragePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"map" | "grid">("map");
   const [showSupplyGaps, setShowSupplyGaps] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersGroupRef = useRef<any>(null);
+  const leafletLibRef = useRef<any>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -78,14 +78,18 @@ export default function AdminMapCoveragePage() {
     return true;
   });
 
-  // Initialize and update Leaflet map client-side
+  // 1. Initialize Leaflet map instance once when in map view
   useEffect(() => {
-    if (viewMode !== "map" || !mapContainerRef.current || typeof window === "undefined") return;
+    if (viewMode !== "map" || !mapContainerRef.current || typeof window === "undefined") {
+      setMapReady(false);
+      return;
+    }
 
     let isMounted = true;
 
     import("leaflet").then((L) => {
       if (!isMounted || !mapContainerRef.current) return;
+      leafletLibRef.current = L;
 
       if (!mapInstanceRef.current) {
         const map = L.map(mapContainerRef.current, {
@@ -104,74 +108,101 @@ export default function AdminMapCoveragePage() {
         markersGroupRef.current = markersGroup;
       }
 
-      const map = mapInstanceRef.current;
-      const group = markersGroupRef.current;
-      if (!map || !group) return;
-
-      group.clearLayers();
-
-      const validCoords: [number, number][] = [];
-
-      filteredMerchants.forEach((m: any) => {
-        const { lat, lon, isEstimated } = resolveMerchantCoordinates(m);
-        validCoords.push([lat, lon]);
-
-        const isPlus = m.tier === "plus";
-        const color = isPlus ? "#F59E0B" : "#2563EB";
-
-        const iconHtml = `
-          <div style="background:${color}; color:white; border-radius:9999px; padding:4px 8px; font-weight:800; font-size:10px; font-family:sans-serif; border:2px solid white; box-shadow:0 4px 6px -1px rgba(0,0,0,0.2); display:flex; items-center; gap:4px; white-space:nowrap;">
-            <span>${m.name.slice(0, 14)}...</span>
-          </div>
-        `;
-
-        const customIcon = L.divIcon({
-          className: "admin-map-pin",
-          html: iconHtml,
-          iconSize: [90, 24],
-          iconAnchor: [45, 12],
-        });
-
-        const marker = L.marker([lat, lon], { icon: customIcon });
-
-        const popupContent = `
-          <div style="font-family:sans-serif; padding:6px; min-width:160px;">
-            <strong style="display:block; font-size:12px; margin-bottom:2px;">${m.name}</strong>
-            <span style="font-size:10px; color:#64748B;">${m.masterName} · ${m.district}</span>
-            ${
-              isEstimated
-                ? `<span style="display:block; font-size:9px; color:#D97706; font-weight:bold; margin-top:2px;">📍 Mahalle/İlçe Yaklaşık Konumu</span>`
-                : ""
-            }
-            <div style="margin-top:6px; font-size:10px; font-weight:bold; color:#2563EB;">
-              ${m.category.toUpperCase()} · Paket: ${(m.tier || "pro").toUpperCase()}
-            </div>
-            <a href="/admin/merchants/${m.id}" style="display:inline-block; margin-top:6px; font-size:10px; font-weight:bold; color:#2563EB; text-decoration:underline;">
-              Esnafı Düzenle ↗
-            </a>
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-        group.addLayer(marker);
-      });
-
-      if (validCoords.length > 0) {
-        try {
-          map.fitBounds(L.latLngBounds(validCoords), { padding: [50, 50], maxZoom: 14 });
-        } catch {}
-      }
+      setMapReady(true);
+      mapInstanceRef.current.invalidateSize();
     });
+
+    const handleResize = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
 
     return () => {
       isMounted = false;
+      window.removeEventListener("resize", handleResize);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
         markersGroupRef.current = null;
+        setMapReady(false);
       }
     };
-  }, [viewMode, filteredMerchants]);
+  }, [viewMode]);
+
+  // 2. Invalidate map size when supply gaps alert collapses or expands
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const timer = setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [showSupplyGaps]);
+
+  // 3. Update map markers when filtered merchants change without destroying map
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current || !markersGroupRef.current || !leafletLibRef.current) return;
+
+    const L = leafletLibRef.current;
+    const map = mapInstanceRef.current;
+    const group = markersGroupRef.current;
+
+    group.clearLayers();
+
+    const validCoords: [number, number][] = [];
+
+    filteredMerchants.forEach((m: any) => {
+      const { lat, lon, isEstimated } = resolveMerchantCoordinates(m);
+      validCoords.push([lat, lon]);
+
+      const isPlus = m.tier === "plus";
+      const color = isPlus ? "#F59E0B" : "#2563EB";
+
+      const iconHtml = `
+        <div style="background:${color}; color:white; border-radius:9999px; padding:4px 8px; font-weight:800; font-size:10px; font-family:sans-serif; border:2px solid white; box-shadow:0 4px 6px -1px rgba(0,0,0,0.2); display:flex; items-center; gap:4px; white-space:nowrap;">
+          <span>${m.name.slice(0, 14)}...</span>
+        </div>
+      `;
+
+      const customIcon = L.divIcon({
+        className: "admin-map-pin",
+        html: iconHtml,
+        iconSize: [90, 24],
+        iconAnchor: [45, 12],
+      });
+
+      const marker = L.marker([lat, lon], { icon: customIcon });
+
+      const popupContent = `
+        <div style="font-family:sans-serif; padding:6px; min-width:160px;">
+          <strong style="display:block; font-size:12px; margin-bottom:2px;">${m.name}</strong>
+          <span style="font-size:10px; color:#64748B;">${m.masterName} · ${m.district}</span>
+          ${
+            isEstimated
+              ? `<span style="display:block; font-size:9px; color:#D97706; font-weight:bold; margin-top:2px;">📍 Mahalle/İlçe Yaklaşık Konumu</span>`
+              : ""
+          }
+          <div style="margin-top:6px; font-size:10px; font-weight:bold; color:#2563EB;">
+            ${m.category.toUpperCase()} · Paket: ${(m.tier || "pro").toUpperCase()}
+          </div>
+          <a href="/admin/merchants/${m.id}" style="display:inline-block; margin-top:6px; font-size:10px; font-weight:bold; color:#2563EB; text-decoration:underline;">
+            Esnafı Düzenle ↗
+          </a>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent);
+      group.addLayer(marker);
+    });
+
+    if (validCoords.length > 0) {
+      try {
+        map.fitBounds(L.latLngBounds(validCoords), { padding: [50, 50], maxZoom: 14 });
+      } catch {}
+    }
+  }, [mapReady, filteredMerchants]);
 
   if (loading) {
     return (
@@ -336,7 +367,7 @@ export default function AdminMapCoveragePage() {
 
       {/* Main View: Leaflet Map or Grid Matrix */}
       {viewMode === "map" ? (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs h-[calc(100vh-230px)] min-h-[620px] relative">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs h-[calc(100vh-220px)] min-h-[480px] relative">
           <div ref={mapContainerRef} className="w-full h-full z-10" />
         </div>
       ) : (

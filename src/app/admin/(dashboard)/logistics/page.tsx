@@ -1,22 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import {
-  Truck,
   Printer,
-  Clock,
   CheckCircle2,
-  ExternalLink,
-  Plus,
   RefreshCw,
   Search,
-  Filter,
-  Eye,
-  AlertCircle,
-  FileText,
-  MapPin,
-  Phone,
   ShieldCheck,
 } from "lucide-react";
 import {
@@ -474,7 +463,7 @@ export default function AdminLogisticsPage() {
               <button
                 type="button"
                 onClick={() => setStatusModalShipment(null)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
               >
                 Vazgeç
               </button>
@@ -483,7 +472,7 @@ export default function AdminLogisticsPage() {
                 type="button"
                 disabled={updating}
                 onClick={handleUpdateStatus}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 {updating ? "Güncelleniyor..." : "Kaydet"}
               </button>
@@ -503,7 +492,7 @@ export default function AdminLogisticsPage() {
               <button
                 type="button"
                 onClick={() => setCreateModalMerchant(null)}
-                className="text-slate-400 hover:text-slate-600 text-xs font-bold"
+                className="text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -512,11 +501,33 @@ export default function AdminLogisticsPage() {
             <div className="space-y-3 text-xs">
               <div>
                 <span className="text-[11px] font-bold text-slate-500 block mb-1">
-                  Esnaf Adı:
+                  Esnaf Seçimi:
                 </span>
-                <p className="font-bold text-slate-900 dark:text-white">
-                  {createModalMerchant.name}
-                </p>
+                {eligibleWithoutStand.length > 1 ? (
+                  <select
+                    value={createModalMerchant.id}
+                    onChange={(e) => {
+                      const selected = eligibleWithoutStand.find((m: any) => m.id === e.target.value);
+                      if (selected) {
+                        setCreateModalMerchant(selected);
+                        setRecipientName(selected.masterName || selected.name);
+                        setRecipientPhone(selected.phone || "");
+                        setShippingAddress(selected.address ? `${selected.address}, ${selected.district} / ${selected.city}` : "");
+                      }
+                    }}
+                    className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                  >
+                    {eligibleWithoutStand.map((m: any) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.district} / {m.city})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="font-bold text-slate-900 dark:text-white">
+                    {createModalMerchant.name}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -527,7 +538,7 @@ export default function AdminLogisticsPage() {
                   type="text"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -539,7 +550,7 @@ export default function AdminLogisticsPage() {
                   type="text"
                   value={recipientPhone}
                   onChange={(e) => setRecipientPhone(e.target.value)}
-                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white"
+                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -551,7 +562,7 @@ export default function AdminLogisticsPage() {
                   rows={3}
                   value={shippingAddress}
                   onChange={(e) => setShippingAddress(e.target.value)}
-                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white"
+                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -560,7 +571,7 @@ export default function AdminLogisticsPage() {
               <button
                 type="button"
                 onClick={() => setCreateModalMerchant(null)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
               >
                 Vazgeç
               </button>
@@ -569,7 +580,7 @@ export default function AdminLogisticsPage() {
                 type="button"
                 disabled={creating}
                 onClick={handleCreateShipment}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 {creating ? "Açılıyor..." : "Stand Talebini Onayla"}
               </button>
