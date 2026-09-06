@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { 
@@ -84,6 +84,18 @@ function EsnafEkleWizard() {
       setSelectedPlanId(p);
     }
   }, [searchParams]);
+
+  const scrollContainerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
+  useEffect(() => {
+    if (formError) {
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [formError]);
 
   // Real GPS Location Detection via Browser Geolocation (with IP Fallback)
   const handleGetLiveLocation = async () => {
@@ -258,10 +270,10 @@ function EsnafEkleWizard() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#F2F2F7] dark:bg-black pb-24 sm:pb-8 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
-      {/* Apple Translucent Top Bar */}
-      <div
-        className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
+    <div className="h-[100dvh] overflow-hidden flex flex-col bg-[#F2F2F7] dark:bg-black text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
+      {/* 1. Fixed Top Header */}
+      <header
+        className="shrink-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -277,97 +289,19 @@ function EsnafEkleWizard() {
           </h1>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-              {step}/3
-            </span>
+            {!isSubmitted && (
+              <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
+                {step}/3
+              </span>
+            )}
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
-        {/* Value Proposition Capsule */}
-        {!isSubmitted && (
-          <div className="p-3.5 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20 dark:border-emerald-800/40 flex items-start gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <h3 className="font-extrabold text-xs text-emerald-950 dark:text-emerald-200">
-                %0 Komisyon · Doğrudan Müşteri WhatsApp Hattı
-              </h3>
-              <p className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80 leading-relaxed font-medium">
-                Cironuzdan pay alınmaz. Dükkanınızı ekleyin, mahallenizin güvenilir ustası olarak öne çıkın.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Validation Error Alert */}
-        {formError && (
-          <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{formError}</span>
-          </div>
-        )}
-
-        {isSubmitted ? (
-          /* Step 4: Success / Activation View */
-          <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-6 sm:p-8 text-center space-y-5 shadow-xs animate-in zoom-in-95">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 mx-auto flex items-center justify-center">
-              <CheckCircle2 className="w-9 h-9" />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
-                <Sparkles className="w-3.5 h-3.5" /> Başvurunuz Alındı
-              </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-black dark:text-white tracking-tight">
-                Tebrikler {masterName || "Ustam"}!
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed font-medium">
-                <strong>{name}</strong> ({city} / {district}) dükkanınız ve <strong>{selectedPlanObj.name}</strong> paketiniz sisteme tanımlandı.
-              </p>
-            </div>
-
-            {/* Selected Plan Details Callout */}
-            <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] max-w-md mx-auto text-left space-y-2 text-xs">
-              <div className="flex items-center justify-between font-bold text-black dark:text-white border-b border-black/[0.04] dark:border-white/[0.06] pb-2">
-                <span>Seçilen Paket:</span>
-                <span className="text-brand">{selectedPlanObj.name}</span>
-              </div>
-              <div className="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
-                <span>Fiziki Kit Durumu:</span>
-                <span className="font-semibold text-black dark:text-white">{selectedPlanObj.features.physicalKit}</span>
-              </div>
-              <div className="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
-                <span>WhatsApp Hattınız:</span>
-                <span className="font-semibold text-black dark:text-white">{whatsapp}</span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
-              <Link
-                href={`/dukkanim?phone=${encodeURIComponent(whatsapp)}`}
-                className="flex-1 py-3 px-5 rounded-full bg-brand hover:bg-brand-hover text-white text-xs font-extrabold transition-all shadow-sm flex items-center justify-center gap-1.5 ios-press"
-              >
-                <Store className="w-4 h-4" />
-                <span>Dükkanım Paneline Git</span>
-              </Link>
-
-              <a
-                href={generateActivationWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-3 px-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 ios-press"
-              >
-                <MessageCircle className="w-4 h-4 fill-white/20" />
-                <span>WhatsApp Onayı</span>
-              </a>
-            </div>
-          </div>
-        ) : (
-          /* Multi-Step Apple Form */
-          <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
-            {/* Apple iOS Segmented Step Controller */}
+      {/* 2. Fixed Step Segmented Navigation Controller */}
+      {!isSubmitted && (
+        <div className="shrink-0 z-30 bg-[#F2F2F7]/95 dark:bg-black/95 backdrop-blur-md border-b border-black/[0.04] dark:border-white/[0.06]">
+          <div className="max-w-2xl mx-auto px-4 py-2.5">
             <div className="grid grid-cols-3 gap-1 p-1 bg-black/[0.05] dark:bg-white/[0.08] rounded-full text-center">
               <button
                 type="button"
@@ -401,6 +335,98 @@ function EsnafEkleWizard() {
                 3. Paket Seçimi
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Dedicated Scrollable Content Container */}
+      <main
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-28 sm:pb-12 touch-pan-y"
+      >
+        <div className="max-w-2xl mx-auto space-y-4">
+          {/* Value Proposition Capsule */}
+          {!isSubmitted && (
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20 dark:border-emerald-800/40 flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <h3 className="font-extrabold text-xs text-emerald-950 dark:text-emerald-200">
+                  %0 Komisyon · Doğrudan Müşteri WhatsApp Hattı
+                </h3>
+                <p className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80 leading-relaxed font-medium">
+                  Cironuzdan pay alınmaz. Dükkanınızı ekleyin, mahallenizin güvenilir ustası olarak öne çıkın.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Validation Error Alert */}
+          {formError && (
+            <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
+          {isSubmitted ? (
+            /* Step 4: Success / Activation View */
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-6 sm:p-8 text-center space-y-5 shadow-xs animate-in zoom-in-95">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 mx-auto flex items-center justify-center">
+                <CheckCircle2 className="w-9 h-9" />
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
+                  <Sparkles className="w-3.5 h-3.5" /> Başvurunuz Alındı
+                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-black dark:text-white tracking-tight">
+                  Tebrikler {masterName || "Ustam"}!
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed font-medium">
+                  <strong>{name}</strong> ({city} / {district}) dükkanınız ve <strong>{selectedPlanObj.name}</strong> paketiniz sisteme tanımlandı.
+                </p>
+              </div>
+
+              {/* Selected Plan Details Callout */}
+              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] max-w-md mx-auto text-left space-y-2 text-xs">
+                <div className="flex items-center justify-between font-bold text-black dark:text-white border-b border-black/[0.04] dark:border-white/[0.06] pb-2">
+                  <span>Seçilen Paket:</span>
+                  <span className="text-brand">{selectedPlanObj.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                  <span>Fiziki Kit Durumu:</span>
+                  <span className="font-semibold text-black dark:text-white">{selectedPlanObj.features.physicalKit}</span>
+                </div>
+                <div className="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                  <span>WhatsApp Hattınız:</span>
+                  <span className="font-semibold text-black dark:text-white">{whatsapp}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
+                <Link
+                  href={`/dukkanim?phone=${encodeURIComponent(whatsapp)}`}
+                  className="flex-1 py-3 px-5 rounded-full bg-brand hover:bg-brand-hover text-white text-xs font-extrabold transition-all shadow-sm flex items-center justify-center gap-1.5 ios-press"
+                >
+                  <Store className="w-4 h-4" />
+                  <span>Dükkanım Paneline Git</span>
+                </Link>
+
+                <a
+                  href={generateActivationWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-3 px-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 ios-press"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white/20" />
+                  <span>WhatsApp Onayı</span>
+                </a>
+              </div>
+            </div>
+          ) : (
+            /* Multi-Step Apple Form */
+            <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
 
             {/* ================= STEP 1: DÜKKAN & KONUM ================= */}
             {step === 1 && (
@@ -875,7 +901,8 @@ function EsnafEkleWizard() {
             )}
           </form>
         )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
