@@ -287,14 +287,7 @@ function EsnafEkleWizard() {
           <h1 className="font-extrabold text-sm text-black dark:text-white">
             Dükkan Başvuru Formu
           </h1>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            {!isSubmitted && (
-              <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-                {step}/3
-              </span>
-            )}
-          </div>
+          <ThemeToggle />
         </div>
       </header>
 
