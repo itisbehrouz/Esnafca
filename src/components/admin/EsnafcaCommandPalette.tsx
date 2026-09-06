@@ -175,7 +175,7 @@ export function EsnafcaCommandPalette({
               >
                 <div className="flex items-center gap-2">
                   <CalendarCheck className="w-4 h-4 text-emerald-500" />
-                  <span>Randevu & Talep Takip Masası</span>
+                  <span>Randevu & Talep İstatistikleri (Salt Okunur)</span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-400">/admin/appointments</span>
               </Command.Item>

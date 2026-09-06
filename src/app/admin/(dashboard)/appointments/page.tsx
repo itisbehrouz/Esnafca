@@ -6,16 +6,17 @@ import {
   CalendarCheck, 
   RefreshCw, 
   Search, 
-  Phone, 
-  MessageCircle, 
   Store, 
-  CheckCircle2, 
-  XCircle, 
   Clock, 
-  Tag, 
-  ExternalLink 
+  ExternalLink,
+  MessageCircle,
+  TrendingUp,
+  Coins,
+  CheckCircle,
+  AlertCircle,
+  Info
 } from "lucide-react";
-import { getAdminAppointments, updateAppointmentStatusAction } from "@/app/actions/admin";
+import { getAdminAppointments } from "@/app/actions/admin";
 
 export default function AppointmentsDeskPage() {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -23,8 +24,6 @@ export default function AppointmentsDeskPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [isMutating, setIsMutating] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const loadAppointments = async () => {
     try {
@@ -44,91 +43,62 @@ export default function AppointmentsDeskPage() {
     loadAppointments();
   }, []);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const handleStatusChange = async (
-    appointmentId: string,
-    newStatus: "pending" | "confirmed" | "completed" | "cancelled"
-  ) => {
-    setIsMutating(appointmentId);
-    try {
-      const res = await updateAppointmentStatusAction(appointmentId, newStatus);
-      if (res.success) {
-        setAppointments((prev) =>
-          prev.map((a) => (a.id === appointmentId ? { ...a, status: newStatus } : a))
-        );
-        showToast(`Randevu durumu '${newStatus.toUpperCase()}' olarak güncellendi.`);
-      } else {
-        showToast("Hata: " + res.error);
-      }
-    } catch {
-      showToast("Durum güncellenemedi.");
-    } finally {
-      setIsMutating(null);
-    }
-  };
-
   const filtered = useMemo(() => {
     return appointments.filter((a) => {
       if (selectedStatus !== "all" && a.status !== selectedStatus) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
-          a.customerName.toLowerCase().includes(q) ||
-          a.customerPhone.includes(q) ||
+          a.customerName?.toLowerCase().includes(q) ||
+          a.customerPhone?.includes(q) ||
           a.merchant?.name?.toLowerCase().includes(q) ||
-          a.date.includes(q)
+          a.date?.includes(q)
         );
       }
       return true;
     });
   }, [appointments, selectedStatus, searchQuery]);
 
+  // Analytics Metrics (Read-only)
+  const totalCount = appointments.length;
+  const totalValue = appointments.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+  const completedCount = appointments.filter((a) => a.status === "completed" || a.status === "confirmed").length;
+  const pendingCount = appointments.filter((a) => a.status === "pending").length;
+  const cancelledCount = appointments.filter((a) => a.status === "cancelled").length;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] text-xs font-mono text-slate-400">
         <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2" />
-        <span>Randevu Masası Yükleniyor...</span>
+        <span>Randevu İstatistikleri Yükleniyor...</span>
       </div>
     );
   }
 
-  const pendingCount = appointments.filter((a) => a.status === "pending").length;
-
   return (
-    <div className="space-y-4 font-sans select-none">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 border border-slate-700 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
+    <div className="space-y-5 font-sans select-none">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
             <CalendarCheck className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Randevu & Talep Takip Masası
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Müşterilerin esnaflardan aldığı randevu taleplerini, durumlarını ve saatlerini denetleyin.
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Randevu & Talep İstatistik Masası
+              </h1>
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                Salt Okunur Telemetri
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Platform üzerinden üretilen müşteri talep hacmini ve esnafa kazandırılan iş değerini izleyin.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-            {pendingCount} Bekleyen Randevu
-          </span>
-
           <button
             type="button"
             onClick={() => {
@@ -136,11 +106,73 @@ export default function AppointmentsDeskPage() {
               loadAppointments();
             }}
             disabled={isRefreshing}
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Listeyi Yenile"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50"
+            title="Verileri Yenile"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-blue-500" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-blue-500" : ""}`} />
+            <span>Yenile</span>
           </button>
+        </div>
+      </div>
+
+      {/* Strategic Notice Banner */}
+      <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 flex items-start gap-3">
+        <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+        <div className="space-y-1 text-xs text-blue-900 dark:text-blue-200">
+          <span className="font-extrabold block">Dükkan & Esnaf İnisiyatifi Prensibi</span>
+          <p className="text-[11px] leading-relaxed text-blue-800/80 dark:text-blue-300/80">
+            Randevu teyidi, saat belirleme, kabul ve iptal süreçleri doğrudan dükkan sahibi esnaf ile müşteri arasındadır. 
+            Şirket operatörleri bu masada işlem yapmaz; veriler platformun mahalle ekonomisine sağladığı katma değeri ve talep yoğunluğunu analiz etmek amacıyla salt okunur olarak tutulmaktadır.
+          </p>
+        </div>
+      </div>
+
+      {/* KPI Metrics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-mono uppercase font-bold tracking-wider">Toplam Talep</span>
+            <TrendingUp className="w-4 h-4 text-blue-500" />
+          </div>
+          <div className="text-xl font-extrabold font-mono tabular-nums text-slate-900 dark:text-white">
+            {totalCount}
+          </div>
+          <span className="text-[10px] text-slate-400 block">Sistem geneli kayıtlı talep</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-mono uppercase font-bold tracking-wider">Üretilen Ciro Hacmi</span>
+            <Coins className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-xl font-extrabold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
+            {totalValue.toLocaleString("tr-TR")} ₺
+          </div>
+          <span className="text-[10px] text-slate-400 block">Esnafa yönlendirilen iş hacmi</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-mono uppercase font-bold tracking-wider">Tamamlanan / Onaylı</span>
+            <CheckCircle className="w-4 h-4 text-blue-500" />
+          </div>
+          <div className="text-xl font-extrabold font-mono tabular-nums text-blue-600 dark:text-blue-400">
+            {completedCount}
+          </div>
+          <span className="text-[10px] text-slate-400 block">
+            %{totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0} gerçekleşme oranı
+          </span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-mono uppercase font-bold tracking-wider">Bekleyen / İptal</span>
+            <AlertCircle className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-xl font-extrabold font-mono tabular-nums text-slate-900 dark:text-white">
+            {pendingCount} <span className="text-xs font-normal text-slate-400 font-sans">bekleyen</span> / {cancelledCount} <span className="text-xs font-normal text-rose-500 font-sans">iptal</span>
+          </div>
+          <span className="text-[10px] text-slate-400 block">Esnaf onay/yanıt akışı</span>
         </div>
       </div>
 
@@ -185,7 +217,7 @@ export default function AppointmentsDeskPage() {
         </div>
       </div>
 
-      {/* Appointments List */}
+      {/* Read-Only Appointments List */}
       <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -196,15 +228,13 @@ export default function AppointmentsDeskPage() {
                 <th className="py-3 px-4 font-bold">Hizmet / Kalem</th>
                 <th className="py-3 px-4 font-bold">Tarih & Saat</th>
                 <th className="py-3 px-4 font-bold">Fiyat</th>
-                <th className="py-3 px-4 font-bold">Durum</th>
-                <th className="py-3 px-4 font-bold text-right">İşlem</th>
+                <th className="py-3 px-4 font-bold">Esnaf Tarafı Durumu</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
               {filtered.length > 0 ? (
                 filtered.map((apt) => {
-                  const isBusy = isMutating === apt.id;
-                  const waClean = apt.customerPhone.replace(/\D/g, "");
+                  const waClean = apt.customerPhone ? apt.customerPhone.replace(/\D/g, "") : "";
                   const waLink = waClean.startsWith("90")
                     ? `https://wa.me/${waClean}`
                     : `https://wa.me/90${waClean.replace(/^0/, "")}`;
@@ -215,28 +245,31 @@ export default function AppointmentsDeskPage() {
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       {/* Customer */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         <div className="space-y-0.5">
                           <span className="font-bold text-slate-900 dark:text-white block">
                             {apt.customerName}
                           </span>
                           <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums text-slate-500">
                             <span>{apt.customerPhone}</span>
-                            <a
-                              href={waLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5"
-                            >
-                              <MessageCircle className="w-3 h-3" />
-                              <span>WhatsApp</span>
-                            </a>
+                            {waClean && (
+                              <a
+                                href={waLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 text-[10px]"
+                                title="Müşteri Hizmetleri İletişimi"
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
                           </div>
                         </div>
                       </td>
 
                       {/* Merchant */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         <div className="space-y-0.5">
                           {apt.merchant ? (
                             <Link
@@ -244,9 +277,9 @@ export default function AppointmentsDeskPage() {
                               target="_blank"
                               className="font-bold text-slate-900 dark:text-white hover:text-blue-600 flex items-center gap-1"
                             >
-                              <Store className="w-3.5 h-3.5 text-blue-500" />
+                              <Store className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                               <span>{apt.merchant.name}</span>
-                              <ExternalLink className="w-3 h-3 text-slate-400" />
+                              <ExternalLink className="w-3 h-3 text-slate-400 shrink-0" />
                             </Link>
                           ) : (
                             <span className="text-slate-400">—</span>
@@ -258,16 +291,16 @@ export default function AppointmentsDeskPage() {
                       </td>
 
                       {/* Service */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         <span className="font-semibold text-slate-800 dark:text-slate-200 block">
                           {apt.service?.name || "Standart Hizmet"}
                         </span>
                       </td>
 
                       {/* Date & Time */}
-                      <td className="py-3 px-4 font-mono tabular-nums text-slate-600 dark:text-slate-300">
+                      <td className="py-3.5 px-4 font-mono tabular-nums text-slate-600 dark:text-slate-300">
                         <div className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>
                             {apt.date} · {apt.startTime}
                             {apt.endTime ? ` - ${apt.endTime}` : ""}
@@ -276,14 +309,14 @@ export default function AppointmentsDeskPage() {
                       </td>
 
                       {/* Price */}
-                      <td className="py-3 px-4 font-mono tabular-nums font-extrabold text-blue-600 dark:text-blue-400">
+                      <td className="py-3.5 px-4 font-mono tabular-nums font-extrabold text-blue-600 dark:text-blue-400">
                         {apt.price} ₺
                       </td>
 
-                      {/* Status */}
-                      <td className="py-3 px-4">
+                      {/* Read-Only Status */}
+                      <td className="py-3.5 px-4">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             apt.status === "confirmed"
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                               : apt.status === "completed"
@@ -294,59 +327,21 @@ export default function AppointmentsDeskPage() {
                           }`}
                         >
                           {apt.status === "confirmed"
-                            ? "Onaylandı"
+                            ? "Esnaf Onayladı"
                             : apt.status === "completed"
                             ? "Tamamlandı"
                             : apt.status === "cancelled"
                             ? "İptal Edildi"
-                            : "Bekliyor"}
+                            : "Esnaf Onayı Bekliyor"}
                         </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {apt.status !== "confirmed" && (
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleStatusChange(apt.id, "confirmed")}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-all active:scale-[0.98] disabled:opacity-50"
-                            >
-                              Onayla
-                            </button>
-                          )}
-
-                          {apt.status !== "completed" && (
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleStatusChange(apt.id, "completed")}
-                              className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold transition-all active:scale-[0.98] disabled:opacity-50"
-                            >
-                              Tamamla
-                            </button>
-                          )}
-
-                          {apt.status !== "cancelled" && (
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleStatusChange(apt.id, "cancelled")}
-                              className="px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] font-bold transition-all active:scale-[0.98] disabled:opacity-50"
-                            >
-                              İptal
-                            </button>
-                          )}
-                        </div>
                       </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    Kriterlere uygun randevu kaydı bulunamadı.
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                    Kayıtlı randevu veya talep verisi bulunamadı.
                   </td>
                 </tr>
               )}

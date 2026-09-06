@@ -48,8 +48,8 @@ const ROUTE_TITLES: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Tüm aktif dükkanlar, paket yönetimi, arama ve filtreleme",
   },
   "/admin/appointments": {
-    title: "Randevu & Talep Takip Masası",
-    subtitle: "Kullanıcı randevuları, saat teyitleri ve müşteri iletişim kanalları",
+    title: "Randevu & Talep İstatistik Masası (Salt Okunur)",
+    subtitle: "Platform üzerinden üretilen talep hacmi ve esnaf inisiyatifinde randevu telemetrisi",
   },
   "/admin/reviews": {
     title: "Müşteri Yorum Moderasyon Masası",

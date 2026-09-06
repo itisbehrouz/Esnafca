@@ -47,7 +47,7 @@ const NAV_ITEMS = [
     icon: Store,
   },
   {
-    label: "Randevu Masası",
+    label: "Randevu İstatistikleri",
     href: "/admin/appointments",
     icon: CalendarCheck,
   },
