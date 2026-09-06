@@ -8,7 +8,6 @@ import {
   TrendingUp, 
   Zap, 
   RefreshCw, 
-  Activity, 
   CheckCircle2, 
   ShieldCheck, 
   Users,
@@ -44,13 +43,7 @@ export function AdminKpiDashboard({
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-full shrink-0 shadow-xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-slate-500 dark:text-slate-400 font-semibold text-[11px]">Sistem Durumu:</span>
-          <span className="font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">Canlı & Sağlıklı (Port 3005)</span>
-        </div>
-
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-full shrink-0 shadow-xs">
-          <Activity className="w-3.5 h-3.5 text-blue-500" />
-          <span className="text-slate-500 dark:text-slate-400 font-semibold text-[11px]">DevTower Entegrasyonu:</span>
-          <span className="font-bold text-blue-600 dark:text-blue-400 text-[11px]">Telemetri Aktif</span>
+          <span className="font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">Canlı & Aktif</span>
         </div>
 
         <Link

@@ -92,12 +92,6 @@ export function AdminHeader({
           </kbd>
         </button>
 
-        {/* Live DevTower Indicator */}
-        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-mono font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>DevTower 3005</span>
-        </div>
-
         {/* Notification Bell */}
         <button
           type="button"
