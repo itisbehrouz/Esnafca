@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Calendar,
-  DollarSign,
   Gift,
   RotateCcw,
   Clock,
@@ -227,15 +226,15 @@ export default function AdminFinancePage() {
         </button>
       </div>
 
-      {/* Bento KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* MRR Card */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs relative overflow-hidden">
+      {/* 3 Sharp Financial KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: MRR */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Aylık Tekrarlayan Gelir (MRR)
+              Aylık Düzenli Gelir (MRR)
             </span>
-            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
@@ -247,39 +246,18 @@ export default function AdminFinancePage() {
               / ay
             </span>
           </div>
-          <p className="mt-1.5 text-[11px] font-mono text-slate-400">
-            {data?.proCount || 0} Pro (390₺ / 750₺) + {data?.plusCount || 0} Plus (890₺)
+          <p className="mt-1 text-[11px] font-mono text-slate-400">
+            {data?.proCount || 0} Pro + {data?.plusCount || 0} Plus esnaf
           </p>
         </div>
 
-        {/* Projected ARR */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Öngörülen Yıllık Gelir (ARR)
-            </span>
-            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black font-mono tabular-nums text-slate-900 dark:text-white">
-              {Number(data?.totalARR || 0).toLocaleString("tr-TR")} ₺
-            </span>
-            <span className="text-[11px] font-semibold text-slate-400">/ yıl</span>
-          </div>
-          <p className="mt-1.5 text-[11px] font-mono text-slate-400">
-            12 Aylık Projeksiyon Matrisi
-          </p>
-        </div>
-
-        {/* Active Subscribers */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs">
+        {/* Card 2: Active Subscribers */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Aktif Ücretli Abone
             </span>
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
               <CreditCard className="w-4 h-4" />
             </div>
           </div>
@@ -289,13 +267,13 @@ export default function AdminFinancePage() {
             </span>
             <span className="text-[11px] font-bold text-slate-400">Esnaf</span>
           </div>
-          <p className="mt-1.5 text-[11px] font-mono text-slate-400">
+          <p className="mt-1 text-[11px] font-mono text-slate-400">
             Önümüzdeki 7 günde: <strong className="text-amber-500">{data?.renewingIn7Days || 0}</strong> yenileme
           </p>
         </div>
 
-        {/* Payment Health */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs">
+        {/* Card 3: Payment Health */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Tahsilat Başarı Oranı
@@ -310,7 +288,7 @@ export default function AdminFinancePage() {
             </span>
             <span className="text-[11px] font-semibold text-slate-400">webhook başarısı</span>
           </div>
-          <p className="mt-1.5 text-[11px] font-mono text-slate-400">
+          <p className="mt-1 text-[11px] font-mono text-slate-400">
             {failedPayments.length > 0 ? (
               <span className="text-rose-500 font-bold">{failedPayments.length} Hata kurtarma bekliyor</span>
             ) : (

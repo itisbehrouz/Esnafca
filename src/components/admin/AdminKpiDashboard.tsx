@@ -1,18 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { 
   Store, 
   Clock, 
   TrendingUp, 
   Zap, 
-  RefreshCw, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Users,
-  Send,
-  MessageSquare
+  RefreshCw,
 } from "lucide-react";
 import { KpiStatCard } from "./KpiStatCard";
 
@@ -39,32 +34,36 @@ export function AdminKpiDashboard({
   return (
     <div className="space-y-4 font-sans select-none">
       {/* 1. Live Telemetry Pulse Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-mono scrollbar-none">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-full shrink-0 shadow-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-slate-500 dark:text-slate-400 font-semibold text-[11px]">Sistem Durumu:</span>
-          <span className="font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">Canlı & Aktif</span>
-        </div>
+      <div className="flex items-center justify-between gap-3 text-xs font-mono">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5">
+          <div className="flex items-center gap-2 px-3 py-1 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-full shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px]">Sistem Canlı</span>
+          </div>
 
-        <Link
-          href="/admin/applications"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B1120] hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 rounded-full shrink-0 transition-colors shadow-xs group cursor-pointer"
-        >
-          <Clock className="w-3.5 h-3.5 text-amber-500" />
-          <span className="text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white text-[11px] font-semibold">
-            Onay Bekleyenler:
-          </span>
-          <span className="font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400 text-[11px]">
-            {metrics.pendingCount} Başvuru
-          </span>
-        </Link>
+          {metrics.pendingCount > 0 ? (
+            <Link
+              href="/admin/applications"
+              className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-400 rounded-full transition-colors shadow-xs group cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span className="font-bold tabular-nums text-[11px]">
+                {metrics.pendingCount} Onay Bekleyen
+              </span>
+            </Link>
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 text-slate-400 rounded-full text-[11px]">
+              <span>Kuyruk Güncel</span>
+            </div>
+          )}
+        </div>
 
         {onRefresh && (
           <button
             type="button"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B1120] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full text-[11px] font-bold uppercase transition-colors shrink-0 shadow-xs cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-[#0B1120] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full text-[11px] font-bold uppercase transition-colors shrink-0 shadow-xs cursor-pointer disabled:opacity-50 active:scale-[0.98]"
             title="Telemetri Verilerini Yenile"
           >
             <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin text-blue-500" : ""}`} />

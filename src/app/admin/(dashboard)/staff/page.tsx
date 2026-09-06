@@ -1,27 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   Users,
   Shield,
-  ShieldCheck,
   UserCheck,
   UserPlus,
   History,
   CheckCircle2,
   Mail,
   Phone,
-  Clock,
-  Briefcase,
-  ExternalLink,
-  ChevronRight,
-  Filter,
-  FileText,
-  Truck,
-  CreditCard,
-  MessageSquare,
-  AlertCircle,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import {
   getAdminStaffData,
@@ -29,12 +19,31 @@ import {
   updateStaffMemberStatusAction,
 } from "@/app/actions/admin";
 
+const ROLE_DESCRIPTIONS: Record<string, { label: string; desc: string; badgeColor: string }> = {
+  SUPER_ADMIN: {
+    label: "Süper Yönetici",
+    desc: "Finans masası, iade (refund), personel ekleme/çıkarma ve tüm silme operasyonları dahil sınırsız yetki.",
+    badgeColor: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+  },
+  OPERATOR: {
+    label: "Operatör",
+    desc: "Esnaf başvurusu onay/red, derin düzenleyici ile menü düzenleme, randevu takibi ve toplu WhatsApp duyurusu.",
+    badgeColor: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  },
+  COMPLIANCE: {
+    label: "Kalite & Uyum (Compliance)",
+    desc: "Müşteri yorum moderasyonu, platform güvenilirlik denetimi ve şikayetli dükkan incelemeleri.",
+    badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  },
+};
+
 export default function AdminStaffPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState<string>("all");
   const [selectedOperatorForAudit, setSelectedOperatorForAudit] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isRoleMatrixOpen, setIsRoleMatrixOpen] = useState(false);
 
   // New staff modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -130,12 +139,13 @@ export default function AdminStaffPage() {
     operatorCount: 0,
     complianceCount: 0,
   };
-  const assignedQueues = data?.assignedQueues || {
-    pendingApplications: 0,
-    pendingPrintShipments: 0,
-    failedPayments: 0,
-    pendingReviews: 0,
-  };
+
+  const roleFilterTabs = [
+    { key: "all", label: `Tümü (${staffMembers.length})` },
+    { key: "SUPER_ADMIN", label: `Süper Yönetici (${stats.superAdminCount})` },
+    { key: "OPERATOR", label: `Operatör (${stats.operatorCount})` },
+    { key: "COMPLIANCE", label: `Uyum (${stats.complianceCount})` },
+  ];
 
   const filteredStaff = staffMembers.filter((s: any) => {
     if (selectedRole !== "all" && s.role !== selectedRole) return false;
@@ -161,188 +171,36 @@ export default function AdminStaffPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Çoklu Operatör & Personel Masası
+              Personel & Operatör Masası
             </h1>
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
               Zero-Trust RBAC
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Yetki matrisi, ekip dizini, bireysel operatör hareket denetimi ve görev dağılımı.
+            Ekip dizini, erişim yetkileri ve bireysel operatör hareket denetimi.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98] w-fit"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Yeni Operatör Ekle</span>
-        </button>
-      </div>
-
-      {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase text-slate-500">Toplam Ekip</span>
-            <Users className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="mt-2 text-2xl font-black font-mono tabular-nums text-slate-900 dark:text-white">
-            {stats.totalStaff}
-          </div>
-          <p className="text-[10px] text-slate-400 mt-1">Tüm birimler</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase text-slate-500">Süper Yönetici</span>
-            <Shield className="w-4 h-4 text-purple-500" />
-          </div>
-          <div className="mt-2 text-2xl font-black font-mono tabular-nums text-purple-500">
-            {stats.superAdminCount}
-          </div>
-          <p className="text-[10px] text-slate-400 mt-1">Tam sistem yetkisi</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase text-slate-500">Operasyon Uzmanı</span>
-            <UserCheck className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="mt-2 text-2xl font-black font-mono tabular-nums text-emerald-500">
-            {stats.operatorCount}
-          </div>
-          <p className="text-[10px] text-slate-400 mt-1">Esnaf onay & triyaj</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase text-slate-500">Kalite & Uyum (Compliance)</span>
-            <ShieldCheck className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="mt-2 text-2xl font-black font-mono tabular-nums text-amber-500">
-            {stats.complianceCount}
-          </div>
-          <p className="text-[10px] text-slate-400 mt-1">Yorum & denetim</p>
-        </div>
-      </div>
-
-      {/* Role Matrix Explanation Card */}
-      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
-        <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1.5">
-          <Shield className="w-3.5 h-3.5 text-blue-500" />
-          <span>Esnafça HQ Yetki & Rol Matrisi</span>
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div className="p-3 rounded-xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800">
-            <span className="font-extrabold text-purple-600 dark:text-purple-400 block mb-1">
-              SUPER_ADMIN
-            </span>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Finans masası, iade (refund), personel ekleme/çıkarma ve tüm silme operasyonları dahil sınırsız yetki.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800">
-            <span className="font-extrabold text-emerald-600 dark:text-emerald-400 block mb-1">
-              OPERATOR
-            </span>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Esnaf başvurusu onay/red, derin düzenleyici ile menü düzenleme, randevu takibi ve toplu WhatsApp duyurusu.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800">
-            <span className="font-extrabold text-amber-600 dark:text-amber-400 block mb-1">
-              COMPLIANCE
-            </span>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Müşteri yorum moderasyonu, platform güvenilirlik denetimi ve şikayetli dükkan incelemeleri.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Assigned Tasks & Active Queues Section */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-blue-500" />
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-              Atanmış Görevler & Canlı Operasyon Kuyrukları
-            </h2>
-          </div>
-          <span className="text-[10px] font-mono font-bold text-slate-400">
-            Kadro Bazlı İş Yükü
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Link
-            href="/admin/applications"
-            className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-blue-500 transition-all group"
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsRoleMatrixOpen(true)}
+            className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Yetki & Rol Matrisini İncele"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 group-hover:text-blue-500 transition-colors">
-                Bekleyen Başvuru Onayları
-              </span>
-              <FileText className="w-4 h-4 text-blue-500" />
-            </div>
-            <div className="mt-2 text-xl font-black font-mono tabular-nums text-slate-900 dark:text-white">
-              {assignedQueues.pendingApplications}
-            </div>
-            <p className="text-[10px] text-slate-400 mt-0.5">Sorumlu: OPERATOR</p>
-          </Link>
+            <HelpCircle className="w-3.5 h-3.5 text-blue-500" />
+            <span>Rol Rehberi</span>
+          </button>
 
-          <Link
-            href="/admin/logistics"
-            className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all group"
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 group-hover:text-amber-500 transition-colors">
-                Baskı Bekleyen Pleksi Stand
-              </span>
-              <Truck className="w-4 h-4 text-amber-500" />
-            </div>
-            <div className="mt-2 text-xl font-black font-mono tabular-nums text-slate-900 dark:text-white">
-              {assignedQueues.pendingPrintShipments}
-            </div>
-            <p className="text-[10px] text-slate-400 mt-0.5">Sorumlu: OPERATOR</p>
-          </Link>
-
-          <Link
-            href="/admin/finance"
-            className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-rose-500 transition-all group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 group-hover:text-rose-500 transition-colors">
-                Kurtarma Bekleyen Tahsilatlar
-              </span>
-              <CreditCard className="w-4 h-4 text-rose-500" />
-            </div>
-            <div className="mt-2 text-xl font-black font-mono tabular-nums text-slate-900 dark:text-white">
-              {assignedQueues.failedPayments}
-            </div>
-            <p className="text-[10px] text-slate-400 mt-0.5">Sorumlu: SUPER_ADMIN</p>
-          </Link>
-
-          <Link
-            href="/admin/reviews"
-            className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-emerald-500 transition-all group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 group-hover:text-emerald-500 transition-colors">
-                Doğrulama Bekleyen Yorumlar
-              </span>
-              <MessageSquare className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div className="mt-2 text-xl font-black font-mono tabular-nums text-slate-900 dark:text-white">
-              {assignedQueues.pendingReviews}
-            </div>
-            <p className="text-[10px] text-slate-400 mt-0.5">Sorumlu: COMPLIANCE</p>
-          </Link>
+            <UserPlus className="w-4 h-4" />
+            <span>+ Yeni Operatör Ekle</span>
+          </button>
         </div>
       </div>
 
@@ -350,27 +208,22 @@ export default function AdminStaffPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Staff Directory (7 cols) */}
         <div className="lg:col-span-7 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
-              Personel & Operatör Dizini
-            </h2>
-
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl text-xs">
-              {["all", "SUPER_ADMIN", "OPERATOR", "COMPLIANCE"].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setSelectedRole(r)}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                    selectedRole === r
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  {r === "all" ? "Tümü" : r}
-                </button>
-              ))}
-            </div>
+          {/* Single-line Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {roleFilterTabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setSelectedRole(tab.key)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedRole === tab.key
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-white dark:bg-[#0B1120] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           <div className="space-y-2.5">
@@ -514,6 +367,60 @@ export default function AdminStaffPage() {
         </div>
       </div>
 
+      {/* Role Matrix Modal / Drawer */}
+      {isRoleMatrixOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                  Esnafça HQ Yetki & Rol Rehberi
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRoleMatrixOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              {Object.entries(ROLE_DESCRIPTIONS).map(([key, info]) => (
+                <div
+                  key={key}
+                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-slate-900 dark:text-white">
+                      {info.label}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${info.badgeColor}`}>
+                      {key}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {info.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsRoleMatrixOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Staff Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
@@ -525,9 +432,9 @@ export default function AdminStaffPage() {
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-xs font-bold"
+                className="text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -541,7 +448,7 @@ export default function AdminStaffPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Örn: Canan Kurtuluş"
-                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -554,7 +461,7 @@ export default function AdminStaffPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="canan@achord.io"
-                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-white"
+                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -567,7 +474,7 @@ export default function AdminStaffPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="053..."
-                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-white"
+                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -580,7 +487,7 @@ export default function AdminStaffPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Kıdemli Operasyon Uzmanı"
-                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -591,12 +498,20 @@ export default function AdminStaffPage() {
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as any)}
-                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-white"
+                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="OPERATOR">OPERATOR (Onay & Düzenleme)</option>
                   <option value="COMPLIANCE">COMPLIANCE (Yorum & Denetim)</option>
                   <option value="SUPER_ADMIN">SUPER_ADMIN (Tam Yetki & Finans)</option>
                 </select>
+
+                {/* Inline contextual role description */}
+                <div className="mt-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block mb-0.5">
+                    {ROLE_DESCRIPTIONS[role]?.label} Yetki Kapsamı:
+                  </span>
+                  {ROLE_DESCRIPTIONS[role]?.desc}
+                </div>
               </div>
             </div>
 
@@ -604,7 +519,7 @@ export default function AdminStaffPage() {
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
               >
                 Vazgeç
               </button>
@@ -613,7 +528,7 @@ export default function AdminStaffPage() {
                 type="button"
                 disabled={submitting}
                 onClick={handleCreateStaff}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 {submitting ? "Kaydediliyor..." : "Operatörü Ekle"}
               </button>

@@ -4,19 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   MapPin,
-  Compass,
   AlertTriangle,
-  CheckCircle2,
   Filter,
-  Search,
-  Store,
-  Layers,
-  Sparkles,
-  ExternalLink,
-  ChevronRight,
-  ShieldCheck,
-  Zap,
-  TrendingUp,
 } from "lucide-react";
 import { getAdminMapCoverageData } from "@/app/actions/admin";
 import { CATEGORIES } from "@/data/categories";
@@ -56,6 +45,7 @@ export default function AdminMapCoveragePage() {
   const [selectedDistrict, setSelectedDistrict] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"map" | "grid">("map");
+  const [showSupplyGaps, setShowSupplyGaps] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -213,11 +203,27 @@ export default function AdminMapCoveragePage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {supplyGaps.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowSupplyGaps(!showSupplyGaps)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                showSupplyGaps
+                  ? "bg-amber-500 text-white shadow-xs"
+                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>{supplyGaps.length} Kritik Boşluk</span>
+              <span className="text-[10px] ml-0.5">{showSupplyGaps ? "▲" : "▼"}</span>
+            </button>
+          )}
+
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => setViewMode("map")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "map"
                   ? "bg-blue-600 text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
@@ -228,7 +234,7 @@ export default function AdminMapCoveragePage() {
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "grid"
                   ? "bg-blue-600 text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
@@ -240,9 +246,9 @@ export default function AdminMapCoveragePage() {
         </div>
       </div>
 
-      {/* Supply Gaps Alert Section */}
-      {supplyGaps.length > 0 && (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+      {/* Collapsible Supply Gaps Alert Section */}
+      {showSupplyGaps && supplyGaps.length > 0 && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3 animate-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -250,13 +256,17 @@ export default function AdminMapCoveragePage() {
                 Kritik Arz Boşlukları & Saha Büyüme Fırsatları ({supplyGaps.length} Bölge Uyarısı)
               </h2>
             </div>
-            <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold">
-              Otomatik Tarama
-            </span>
+            <button
+              type="button"
+              onClick={() => setShowSupplyGaps(false)}
+              className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
+            >
+              Gizle ✕
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {supplyGaps.slice(0, 6).map((gap: any, idx: number) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto">
+            {supplyGaps.map((gap: any, idx: number) => (
               <div
                 key={idx}
                 className="p-3 rounded-xl bg-white dark:bg-[#0B1120] border border-amber-500/20 text-xs space-y-1 shadow-xs"
@@ -285,7 +295,7 @@ export default function AdminMapCoveragePage() {
       )}
 
       {/* Filter Controls Bar */}
-      <div className="p-3.5 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="p-3 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase flex items-center gap-1">
             <Filter className="w-3.5 h-3.5" />
@@ -326,7 +336,7 @@ export default function AdminMapCoveragePage() {
 
       {/* Main View: Leaflet Map or Grid Matrix */}
       {viewMode === "map" ? (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs h-[550px] relative">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs h-[calc(100vh-230px)] min-h-[620px] relative">
           <div ref={mapContainerRef} className="w-full h-full z-10" />
         </div>
       ) : (

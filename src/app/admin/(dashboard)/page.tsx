@@ -4,20 +4,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Clock, 
-  Store, 
-  ShieldCheck, 
   ArrowRight, 
   CheckCircle2, 
-  MessageSquare, 
-  Send, 
-  History, 
-  ExternalLink,
-  Zap,
-  TrendingUp,
-  CreditCard,
-  Truck,
-  MapPin,
-  Users
+  History 
 } from "lucide-react";
 import { getAdminDashboardMetrics, approveApplicationAction, rejectApplicationAction } from "@/app/actions/admin";
 import { AdminKpiDashboard } from "@/components/admin/AdminKpiDashboard";
@@ -211,8 +200,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Right: Recent Operator Activity & Quick Launchpads (5 Cols) */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* Right: Recent Operator Activity (5 Cols) */}
+        <div className="lg:col-span-5 space-y-3">
           {/* Recent Audit Log */}
           <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
@@ -229,7 +218,7 @@ export default function AdminDashboardPage() {
 
             {recentLogs.length > 0 ? (
               <div className="space-y-2">
-                {recentLogs.slice(0, 5).map((log: any) => (
+                {recentLogs.slice(0, 8).map((log: any) => (
                   <div
                     key={log.id}
                     className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-2 text-xs"
@@ -250,82 +239,8 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 py-4 text-center">Henüz kayıtlı işlem yok.</p>
+              <p className="text-xs text-slate-400 py-6 text-center">Henüz kayıtlı işlem yok.</p>
             )}
-          </div>
-
-          {/* Quick Launchpad Buttons */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block pb-1">
-              Hızlı Operasyon Kısayolları
-            </span>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                href="/admin/finance"
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <CreditCard className="w-4 h-4 text-blue-500" />
-                <span>Finans & MRR</span>
-              </Link>
-
-              <Link
-                href="/admin/logistics"
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <Truck className="w-4 h-4 text-amber-500" />
-                <span>Pleksi & Lojistik</span>
-              </Link>
-
-              <Link
-                href="/admin/map"
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <MapPin className="w-4 h-4 text-rose-500" />
-                <span>Kapsama Haritası</span>
-              </Link>
-
-              <Link
-                href="/admin/staff"
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <Users className="w-4 h-4 text-indigo-500" />
-                <span>Personel Yetki</span>
-              </Link>
-
-              <Link
-                href="/admin/broadcast"
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <Send className="w-4 h-4 text-emerald-500" />
-                <span>Toplu WhatsApp</span>
-              </Link>
-
-              <Link
-                href="/admin/reviews"
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <MessageSquare className="w-4 h-4 text-purple-500" />
-                <span>Yorum Masası</span>
-              </Link>
-
-              <Link
-                href="/admin/merchants"
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <Store className="w-4 h-4 text-blue-500" />
-                <span>Esnaf Tablosu</span>
-              </Link>
-
-              <Link
-                href="/"
-                target="_blank"
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <ExternalLink className="w-4 h-4 text-amber-500" />
-                <span>Canlı Vitrin ↗</span>
-              </Link>
-            </div>
           </div>
         </div>
       </div>
