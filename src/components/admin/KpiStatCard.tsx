@@ -57,35 +57,39 @@ export function KpiStatCard({
 
   const CardContent = (
     <div
-      className={`p-5 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs transition-all group active:scale-[0.99] flex flex-col justify-between ${style.borderHover}`}
+      className={`p-5 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800/80 shadow-xs transition-all group active:scale-[0.99] flex flex-col justify-between h-full ${style.borderHover}`}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          {title}
-        </span>
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${style.iconBg}`}>
-          {icon}
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+            {title}
+          </span>
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${style.iconBg}`}>
+            {icon}
+          </div>
         </div>
-      </div>
 
-      <div className="mt-3">
-        <div className="text-2xl sm:text-3xl font-extrabold font-mono tabular-nums text-slate-900 dark:text-white tracking-tight">
-          {value}
-        </div>
-        <div className="mt-1 flex items-center justify-between">
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{subtitle}</span>
-          {trend && (
-            <span
-              className={`text-[10px] font-mono tabular-nums font-bold px-2 py-0.5 rounded-full ${style.badge}`}
-            >
-              {trend}
+        <div className="mt-3">
+          <div className="text-2xl sm:text-3xl font-extrabold font-mono tabular-nums text-slate-900 dark:text-white tracking-tight">
+            {value}
+          </div>
+          <div className="mt-1 flex items-center justify-between gap-2 min-w-0">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate" title={subtitle}>
+              {subtitle}
             </span>
-          )}
+            {trend && (
+              <span
+                className={`text-[10px] font-mono tabular-nums font-bold px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap ${style.badge}`}
+              >
+                {trend}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {href && (
-        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] font-bold text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+        <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] font-bold text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           <span>Detayları İncele</span>
           <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
@@ -94,7 +98,11 @@ export function KpiStatCard({
   );
 
   if (href) {
-    return <Link href={href}>{CardContent}</Link>;
+    return (
+      <Link href={href} className="h-full flex flex-col">
+        {CardContent}
+      </Link>
+    );
   }
 
   return CardContent;

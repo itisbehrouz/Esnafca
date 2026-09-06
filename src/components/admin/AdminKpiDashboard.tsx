@@ -74,7 +74,7 @@ export function AdminKpiDashboard({
       </div>
 
       {/* 2. 4-Card Primary Bento KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-stretch">
         {/* KPI 1: Total Live Merchants */}
         <KpiStatCard
           title="Toplam Aktif Esnaf"
@@ -93,7 +93,7 @@ export function AdminKpiDashboard({
           value={metrics.pendingCount}
           subtitle="İnceleme & Triage Gerekiyor"
           icon={<Clock className="w-5 h-5 text-amber-500" />}
-          trend={metrics.pendingCount > 0 ? "İşlem Bekliyor" : "Kuyruk Boş"}
+          trend={metrics.pendingCount > 0 ? `${metrics.pendingCount} Bekleyen` : "Kuyruk Boş"}
           trendPositive={metrics.pendingCount === 0}
           href="/admin/applications"
           accentColor="amber"
@@ -103,9 +103,9 @@ export function AdminKpiDashboard({
         <KpiStatCard
           title="Aylık Düzenli Gelir (MRR)"
           value={`${metrics.totalMRR.toLocaleString("tr-TR")} ₺`}
-          subtitle="Komisyonsuz Sabit Paket Modeli"
+          subtitle="Sabit Paket Modeli"
           icon={<TrendingUp className="w-5 h-5 text-emerald-500" />}
-          trend="%100 Esnaf Geliri"
+          trend="%0 Komisyon"
           trendPositive={true}
           href="/admin/merchants"
           accentColor="emerald"
@@ -114,7 +114,7 @@ export function AdminKpiDashboard({
         {/* KPI 4: Paid Tier Subscribers */}
         <KpiStatCard
           title="Pro & Plus Aboneler"
-          value={`${metrics.paidSubscribersCount} Dükkan`}
+          value={metrics.paidSubscribersCount}
           subtitle={`${metrics.plusCount} Plus · ${metrics.proCount} Pro · ${metrics.freeCount} Ücretsiz`}
           icon={<Zap className="w-5 h-5 text-indigo-500" />}
           trend={`${metrics.totalMerchants > 0 ? Math.round((metrics.paidSubscribersCount / metrics.totalMerchants) * 100) : 0}% Dönüşüm`}
