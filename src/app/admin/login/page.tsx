@@ -3,9 +3,8 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, ShieldAlert, ArrowRight, ShieldCheck, Shield } from "lucide-react";
+import { Lock, ShieldAlert, ArrowRight, ShieldCheck } from "lucide-react";
 import { loginAdminAction } from "@/app/actions/merchant";
-import { AdminThemeToggle } from "@/components/admin/AdminThemeToggle";
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -37,27 +36,9 @@ function AdminLoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col justify-between p-4 text-slate-900 dark:text-white transition-colors duration-200 selection:bg-blue-600 selection:text-white">
-      {/* Top Bar */}
-      <header className="max-w-md w-full mx-auto flex items-center justify-between py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold shadow-sm">
-            E
-          </div>
-          <div>
-            <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white block">
-              Esnafça
-            </span>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 block -mt-0.5">
-              HQ Workstation
-            </span>
-          </div>
-        </Link>
-        <AdminThemeToggle />
-      </header>
-
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col items-center justify-center p-4 text-slate-900 dark:text-white transition-colors duration-200 selection:bg-blue-600 selection:text-white">
       {/* Main Login Card */}
-      <main className="max-w-md w-full mx-auto py-6">
+      <main className="max-w-md w-full mx-auto">
         <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 sm:p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center shadow-xs">
@@ -115,13 +96,6 @@ function AdminLoginForm() {
           </div>
         </div>
       </main>
-
-      {/* Footer Note */}
-      <footer className="max-w-md w-full mx-auto text-center py-4">
-        <p className="text-[11px] font-mono text-slate-400">
-          Esnafça HQ Operator Workstation · Port 3005
-        </p>
-      </footer>
     </div>
   );
 }
