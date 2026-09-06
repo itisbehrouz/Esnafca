@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
+  ChevronLeft,
   Store, 
   Tag, 
   QrCode, 
@@ -340,7 +341,7 @@ function MerchantPortalContent() {
 
   if (!activeMerchant) {
     return (
-      <div className="flex-1 min-h-[calc(100dvh-3.5rem)] bg-[#F2F2F7] dark:bg-black text-black dark:text-white flex flex-col justify-center px-4 py-8 pb-20 sm:pb-8" suppressHydrationWarning>
+      <div className="h-[100dvh] overflow-hidden flex flex-col bg-[#F2F2F7] dark:bg-black text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
         {/* Toast Notification */}
         {toastMessage && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
@@ -349,15 +350,37 @@ function MerchantPortalContent() {
           </div>
         )}
 
-        <div className="max-w-md w-full mx-auto space-y-6" suppressHydrationWarning>
+        {/* 1. Fixed Top Header */}
+        <header
+          className="shrink-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
+          style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+        >
+          <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
+            <Link
+              href="/"
+              className="flex items-center gap-1 text-xs font-bold text-brand ios-press p-1.5 -ml-2 rounded-full hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
+            >
+              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <h1 className="font-extrabold text-sm text-black dark:text-white">
+              Dükkanım
+            </h1>
+            <ThemeToggle />
+          </div>
+        </header>
+
+        {/* 2. Scrollable Content Container */}
+        <main className="flex-1 overflow-y-auto overscroll-contain flex flex-col justify-center px-4 py-6 pb-28 sm:pb-12 touch-pan-y">
+          <div className="max-w-md w-full mx-auto space-y-6" suppressHydrationWarning>
             {/* Header / Brand */}
             <div className="text-center space-y-2">
               <div className="flex justify-center pb-1">
                 <EsnafcaLogo size="md" />
               </div>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-black dark:text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-black dark:text-white tracking-tight">
                 Esnaf Yönetim Portalı
-              </h1>
+              </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
                 Dükkanınızın canlı fiyat menüsünü düzenleyin, açık/kapalı durumunuzu değiştirin, vitrin karekodunuzu yazdırın.
               </p>
@@ -483,7 +506,8 @@ function MerchantPortalContent() {
               </Link>
             </div>
           </div>
-        </div>
+        </main>
+      </div>
     );
   }
 
@@ -501,7 +525,7 @@ function MerchantPortalContent() {
       {/* 2. AUTHENTICATED MERCHANT DASHBOARD                      */}
       {/* ======================================================== */}
       <header
-            className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
+        className="shrink-0 sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
           >
             <div className="max-w-3xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between gap-3">
