@@ -146,6 +146,11 @@ export async function getMerchantSession(): Promise<MerchantSessionPayload | nul
  * Get admin session from Next.js Server Action / Server Component
  */
 export async function getAdminSession(): Promise<boolean> {
+  // Allow test scripts to exercise server actions in non-production environments
+  if (process.env.NODE_ENV !== "production" && process.env.TEST_ADMIN_SESSION === "true") {
+    return true;
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("esnaf_admin_session")?.value;

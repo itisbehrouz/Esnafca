@@ -130,3 +130,19 @@ model OtpVerification {
   attempts   Int      @default(0)
   createdAt  DateTime @default(now())
 }
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  operator    String   @default("HQ Operatör")
+  action      String   // APPROVE_APPLICATION, REJECT_APPLICATION, UPDATE_TIER, TOGGLE_VERIFIED, MODERATE_REVIEW, BROADCAST_SENT
+  targetType  String   // APPLICATION, MERCHANT, REVIEW, BROADCAST
+  targetId    String
+  details     String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([action])
+  @@index([targetType])
+  @@index([createdAt])
+}
+

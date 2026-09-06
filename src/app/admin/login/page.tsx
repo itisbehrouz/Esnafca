@@ -3,9 +3,9 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, ShieldAlert, ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+import { Lock, ShieldAlert, ArrowRight, ShieldCheck, Shield } from "lucide-react";
 import { loginAdminAction } from "@/app/actions/merchant";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { AdminThemeToggle } from "@/components/admin/AdminThemeToggle";
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -29,7 +29,7 @@ function AdminLoginForm() {
       } else {
         setError(res.error || "Hatalı yönetici şifresi.");
       }
-    } catch (err) {
+    } catch {
       setError("Bağlantı hatası oluştu.");
     } finally {
       setIsLoading(false);
@@ -37,35 +37,42 @@ function AdminLoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black flex flex-col justify-between p-4 text-black dark:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col justify-between p-4 text-slate-900 dark:text-white transition-colors duration-200 selection:bg-blue-600 selection:text-white">
       {/* Top Bar */}
       <header className="max-w-md w-full mx-auto flex items-center justify-between py-4">
-        <Link href="/" className="font-extrabold text-sm tracking-tight text-black dark:text-white flex items-center gap-1.5">
-          <span>Esnafça</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-black dark:bg-white text-white dark:text-black font-bold">
-            Güvenli Giriş
-          </span>
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold shadow-sm">
+            E
+          </div>
+          <div>
+            <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white block">
+              Esnafça
+            </span>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 block -mt-0.5">
+              HQ Workstation
+            </span>
+          </div>
         </Link>
-        <ThemeToggle />
+        <AdminThemeToggle />
       </header>
 
       {/* Main Login Card */}
       <main className="max-w-md w-full mx-auto py-6">
-        <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 sm:p-8 space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-black dark:bg-white text-white dark:text-black mx-auto flex items-center justify-center shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center shadow-xs">
               <Lock className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-extrabold text-black dark:text-white tracking-tight">
+            <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Yönetici Kokpiti Girişi
             </h1>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              Bu alan sadece yetkili Esnafça yöneticileri içindir. Lütfen sistem şifrenizi giriniz.
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Bu istasyon yetkili operatörler içindir. Lütfen sistem güvenlik anahtarınızı giriniz.
             </p>
           </div>
 
           {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-in fade-in">
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -73,8 +80,8 @@ function AdminLoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block px-1">
-                Yönetici Şifresi
+              <label className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block px-1">
+                Operatör Şifresi
               </label>
               <input
                 type="password"
@@ -82,7 +89,7 @@ function AdminLoginForm() {
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-black/[0.04] dark:border-white/[0.08] text-sm font-bold text-black dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 required
               />
             </div>
@@ -90,20 +97,20 @@ function AdminLoginForm() {
             <button
               type="submit"
               disabled={isLoading || !password}
-              className="w-full py-3.5 rounded-full bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-98 disabled:opacity-50 text-xs font-extrabold shadow-sm flex items-center justify-center gap-2 ios-press transition-all"
+              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 text-white text-xs font-extrabold shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
-              <span>{isLoading ? "Giriş Doğrulanıyor..." : "Panele Güvenli Bağlan"}</span>
+              <span>{isLoading ? "Oturum Doğrulanıyor..." : "Panele Güvenli Bağlan"}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400">
-            <span className="flex items-center gap-1">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+            <span className="flex items-center gap-1 font-mono text-[10px]">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              256-Bit JWT Korumalı
+              Zero-Trust HS256 Korumalı
             </span>
-            <Link href="/" className="hover:text-black dark:hover:text-white font-semibold">
-              ← Ana Sayfaya Dön
+            <Link href="/" className="hover:text-slate-900 dark:hover:text-white font-semibold text-xs">
+              ← Vitrine Dön
             </Link>
           </div>
         </div>
@@ -111,8 +118,8 @@ function AdminLoginForm() {
 
       {/* Footer Note */}
       <footer className="max-w-md w-full mx-auto text-center py-4">
-        <p className="text-[11px] text-zinc-400 font-medium">
-          Esnafça Digital Business Platform · Tüm Hakları Saklıdır
+        <p className="text-[11px] font-mono text-slate-400">
+          Esnafça HQ Operator Workstation · Port 3005
         </p>
       </footer>
     </div>
@@ -121,7 +128,7 @@ function AdminLoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F2F2F7] dark:bg-black" />}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 dark:bg-[#020617]" />}>
       <AdminLoginForm />
     </Suspense>
   );
