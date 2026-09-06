@@ -338,22 +338,18 @@ function MerchantPortalContent() {
     return <div className="min-h-screen bg-[#F2F2F7] dark:bg-black" />;
   }
 
-  return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-28 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+  if (!activeMerchant) {
+    return (
+      <div className="flex-1 min-h-[calc(100dvh-3.5rem)] bg-[#F2F2F7] dark:bg-black text-black dark:text-white flex flex-col justify-center px-4 py-8 pb-20 sm:pb-8" suppressHydrationWarning>
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
 
-      {/* ======================================================== */}
-      {/* 1. UNAUTHENTICATED: LOGIN / ACTIVATION GATEWAY           */}
-      {/* ======================================================== */}
-      {!activeMerchant ? (
-        <div className="min-h-screen flex flex-col justify-between" suppressHydrationWarning>
-          <div className="max-w-md w-full mx-auto px-4 py-8 space-y-6" suppressHydrationWarning>
+        <div className="max-w-md w-full mx-auto space-y-6" suppressHydrationWarning>
             {/* Header / Brand */}
             <div className="text-center space-y-2">
               <div className="flex justify-center pb-1">
@@ -488,13 +484,23 @@ function MerchantPortalContent() {
             </div>
           </div>
         </div>
-      ) : (
-        /* ======================================================== */
-        /* 2. AUTHENTICATED MERCHANT DASHBOARD                      */
-        /* ======================================================== */
-        <>
-          {/* Header */}
-          <header
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24 sm:pb-8 text-black dark:text-white transition-colors duration-200" suppressHydrationWarning>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 2. AUTHENTICATED MERCHANT DASHBOARD                      */}
+      {/* ======================================================== */}
+      <header
             className="sticky top-0 z-40 ios-blur dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-colors pt-safe"
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
           >
@@ -1028,8 +1034,6 @@ function MerchantPortalContent() {
             onClose={() => setIsQrModalOpen(false)}
             merchant={activeMerchant}
           />
-        </>
-      )}
     </div>
   );
 }
