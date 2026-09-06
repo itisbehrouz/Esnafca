@@ -13,7 +13,11 @@ import {
   History, 
   ExternalLink,
   Zap,
-  TrendingUp
+  TrendingUp,
+  CreditCard,
+  Truck,
+  MapPin,
+  Users
 } from "lucide-react";
 import { getAdminDashboardMetrics, approveApplicationAction, rejectApplicationAction } from "@/app/actions/admin";
 import { AdminKpiDashboard } from "@/components/admin/AdminKpiDashboard";
@@ -257,6 +261,38 @@ export default function AdminDashboardPage() {
             </span>
 
             <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/admin/finance"
+                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <CreditCard className="w-4 h-4 text-blue-500" />
+                <span>Finans & MRR</span>
+              </Link>
+
+              <Link
+                href="/admin/logistics"
+                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <Truck className="w-4 h-4 text-amber-500" />
+                <span>Pleksi & Lojistik</span>
+              </Link>
+
+              <Link
+                href="/admin/map"
+                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <MapPin className="w-4 h-4 text-rose-500" />
+                <span>Kapsama Haritası</span>
+              </Link>
+
+              <Link
+                href="/admin/staff"
+                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <Users className="w-4 h-4 text-indigo-500" />
+                <span>Personel Yetki</span>
+              </Link>
+
               <Link
                 href="/admin/broadcast"
                 className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all active:scale-[0.98]"

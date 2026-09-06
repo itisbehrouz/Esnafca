@@ -15,7 +15,11 @@ import {
   ChevronLeft, 
   ChevronRight,
   ShieldCheck,
-  CalendarCheck
+  CalendarCheck,
+  CreditCard,
+  Truck,
+  MapPin,
+  Users
 } from "lucide-react";
 import { logoutAdminAction } from "@/app/actions/merchant";
 
@@ -46,6 +50,26 @@ const NAV_ITEMS = [
     label: "Randevu Masası",
     href: "/admin/appointments",
     icon: CalendarCheck,
+  },
+  {
+    label: "Finans & Tahsilat",
+    href: "/admin/finance",
+    icon: CreditCard,
+  },
+  {
+    label: "Akrilik QR & Lojistik",
+    href: "/admin/logistics",
+    icon: Truck,
+  },
+  {
+    label: "Kapsama Haritası",
+    href: "/admin/map",
+    icon: MapPin,
+  },
+  {
+    label: "Personel & Yetki",
+    href: "/admin/staff",
+    icon: Users,
   },
   {
     label: "Yorum Masası",

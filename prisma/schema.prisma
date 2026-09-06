@@ -47,6 +47,9 @@ model Merchant {
   services        ServiceItem[]
   reviews         Review[]
   appointments    Appointment[]
+  subscriptions   Subscription[]
+  payments        PaymentTransaction[]
+  shipments       StandShipment[]
 }
 
 model ServiceItem {
@@ -145,4 +148,84 @@ model AdminAuditLog {
   @@index([targetType])
   @@index([createdAt])
 }
+
+model Subscription {
+  id               String    @id @default(cuid())
+  merchantId       String
+  tier             String    // "pro", "plus"
+  status           String    @default("active") // "active", "past_due", "cancelled", "trialing"
+  billingInterval  String    @default("monthly") // "monthly", "annual"
+  price            Float
+  startDate        DateTime  @default(now())
+  currentPeriodEnd DateTime
+  nextRenewalDate  DateTime
+  cancelAtPeriodEnd Boolean  @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  merchant         Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([status])
+}
+
+model PaymentTransaction {
+  id            String    @id @default(cuid())
+  merchantId    String?
+  amount        Float
+  currency      String    @default("TRY")
+  status        String    // "SUCCESS", "FAILED", "REFUNDED", "PENDING"
+  provider      String    @default("mock") // "mock", "iyzico", "paytr"
+  paymentId     String    @unique
+  failureReason String?
+  payload       String?   // JSON payload simulation
+  refundReason  String?
+  refundedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  merchant      Merchant? @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model StandShipment {
+  id              String    @id @default(cuid())
+  merchantId      String
+  status          String    @default("PENDING_PRINT") // PENDING_PRINT, PRINTING, SHIPPED, DELIVERED, CANCELLED
+  carrier         String?   // "Yurtiçi Kargo", "Aras Kargo", "MNG Kargo", "Kolay Gelsin"
+  trackingNumber  String?
+  recipientName   String
+  recipientPhone  String
+  shippingAddress String
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  notes           String?
+  qrPayloadUrl    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  merchant        Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([status])
+}
+
+model StaffMember {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String?
+  role         String   // SUPER_ADMIN, OPERATOR, COMPLIANCE
+  title        String   // "Süper Yönetici", "Teknik Yönetici", "Operasyon Uzmanı", etc.
+  status       String   @default("ACTIVE") // ACTIVE, ON_LEAVE, INACTIVE
+  avatarUrl    String?
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([role])
+}
+
 

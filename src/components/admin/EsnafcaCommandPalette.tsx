@@ -13,7 +13,11 @@ import {
   ExternalLink,
   Zap,
   LayoutDashboard,
-  CalendarCheck
+  CalendarCheck,
+  CreditCard,
+  Truck,
+  MapPin,
+  Users
 } from "lucide-react";
 import { CATEGORIES } from "@/data/categories";
 
@@ -174,6 +178,50 @@ export function EsnafcaCommandPalette({
                   <span>Randevu & Talep Takip Masası</span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-400">/admin/appointments</span>
+              </Command.Item>
+
+              <Command.Item
+                onSelect={() => navigateTo("/admin/finance")}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-blue-500" />
+                  <span>Finans, Abonelik & Tahsilat Masası (MRR)</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">/admin/finance</span>
+              </Command.Item>
+
+              <Command.Item
+                onSelect={() => navigateTo("/admin/logistics")}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-amber-500" />
+                  <span>Fiziki Pleksi QR Stand & Lojistik Masası</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">/admin/logistics</span>
+              </Command.Item>
+
+              <Command.Item
+                onSelect={() => navigateTo("/admin/map")}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-rose-500" />
+                  <span>Mahalle Zanaatkar Kapsama & Yoğunluk Haritası</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">/admin/map</span>
+              </Command.Item>
+
+              <Command.Item
+                onSelect={() => navigateTo("/admin/staff")}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-indigo-500" />
+                  <span>Çoklu Operatör & Personel Yetki Masası</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">/admin/staff</span>
               </Command.Item>
 
               <Command.Item

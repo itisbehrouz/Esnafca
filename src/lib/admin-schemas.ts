@@ -69,3 +69,68 @@ export const merchantApplicationSubmitSchema = z.object({
     })
   ).optional(),
 });
+
+export const extendSubscriptionSchema = z.object({
+  merchantId: z.string().min(1, "Esnaf ID zorunludur."),
+  months: z.number().int().min(1).max(36),
+  reason: z.string().max(300).optional(),
+});
+
+export const grantGiftMonthSchema = z.object({
+  merchantId: z.string().min(1, "Esnaf ID zorunludur."),
+  months: z.number().int().min(1).max(12),
+  reason: z.string().min(3, "Gerekçe zorunludur.").max(300),
+});
+
+export const refundSubscriptionSchema = z.object({
+  paymentId: z.string().min(1, "Ödeme ID zorunludur."),
+  reason: z.string().min(3, "İade gerekçesi zorunludur.").max(300),
+});
+
+export const updateLogisticsStatusSchema = z.object({
+  shipmentId: z.string().min(1, "Sevkiyat ID zorunludur."),
+  status: z.enum(["PENDING_PRINT", "PRINTING", "SHIPPED", "DELIVERED", "CANCELLED"]),
+  carrier: z.string().optional().nullable(),
+  trackingNumber: z.string().optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
+});
+
+export const updateMerchantDetailsSchema = z.object({
+  name: z.string().min(2, "Dükkan adı en az 2 karakter olmalıdır."),
+  masterName: z.string().min(2, "Usta adı en az 2 karakter olmalıdır."),
+  craftTitle: z.string().min(2, "Zanaat unvanı zorunludur."),
+  category: z.string().min(2, "Kategori seçilmelidir."),
+  bio: z.string().max(1000).optional().default(""),
+  experienceYears: z.number().int().min(0).max(80).default(0),
+  phone: z.string().min(10, "Geçerli telefon numarası giriniz."),
+  whatsapp: z.string().min(10, "Geçerli WhatsApp numarası giriniz."),
+  city: z.string().min(2, "İl zorunludur."),
+  district: z.string().min(2, "İlçe zorunludur."),
+  neighborhood: z.string().min(2, "Mahalle zorunludur."),
+  address: z.string().min(5, "Açık adres zorunludur."),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  isOpenNow: z.boolean().default(false),
+  workingHours: z.any().optional(),
+  heroImage: z.string().url("Geçerli kapak görsel URL'i giriniz.").or(z.string().min(1)),
+  galleryImages: z.array(z.string()).optional().default([]),
+  services: z.array(
+    z.object({
+      id: z.string().optional(),
+      name: z.string().min(1, "Hizmet adı zorunludur."),
+      minPrice: z.number().nonnegative("Fiyat negatif olamaz."),
+      maxPrice: z.number().nonnegative().optional().nullable(),
+      popular: z.boolean().optional().default(false),
+      estimatedDuration: z.string().optional().nullable(),
+    })
+  ).optional().default([]),
+});
+
+export const createStaffMemberSchema = z.object({
+  name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
+  email: z.string().email("Geçerli bir e-posta giriniz."),
+  phone: z.string().optional().nullable(),
+  role: z.enum(["SUPER_ADMIN", "OPERATOR", "COMPLIANCE"]),
+  title: z.string().min(2, "Unvan zorunludur."),
+});
+

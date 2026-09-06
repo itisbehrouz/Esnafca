@@ -12,6 +12,12 @@ import {
   moderateReviewSchema,
   sendBroadcastSchema,
   updateAppointmentStatusSchema,
+  extendSubscriptionSchema,
+  grantGiftMonthSchema,
+  refundSubscriptionSchema,
+  updateLogisticsStatusSchema,
+  updateMerchantDetailsSchema,
+  createStaffMemberSchema,
 } from "@/lib/admin-schemas";
 import { generateAsciiSlug } from "@/lib/slug";
 
@@ -922,3 +928,1112 @@ export async function updateAppointmentStatusAction(
     return { success: false, error: error.message || "Randevu durumu güncellenemedi." };
   }
 }
+
+/**
+ * 16. Get Finance & Subscription Desk Metrics
+ */
+export async function getAdminFinanceMetrics() {
+  try {
+    await requireAdmin();
+
+    const [merchants, subscriptions, payments, recentLogs] = await Promise.all([
+      prisma.merchant.findMany({
+        where: { tier: { in: ["pro", "plus"] } },
+        select: {
+          id: true,
+          name: true,
+          masterName: true,
+          tier: true,
+          city: true,
+          district: true,
+          phone: true,
+          slug: true,
+          createdAt: true,
+        },
+      }),
+      prisma.subscription.findMany({
+        include: {
+          merchant: {
+            select: { id: true, name: true, masterName: true, tier: true, phone: true, city: true, district: true },
+          },
+        },
+        orderBy: { nextRenewalDate: "asc" },
+      }),
+      prisma.paymentTransaction.findMany({
+        include: {
+          merchant: {
+            select: { id: true, name: true, tier: true, slug: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      }),
+      prisma.adminAuditLog.findMany({
+        where: {
+          action: {
+            in: ["EXTEND_SUBSCRIPTION", "GRANT_GIFT_MONTH", "REFUND_PAYMENT", "RETRY_PAYMENT", "UPDATE_TIER"],
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ]);
+
+    const proCount = merchants.filter((m) => m.tier === "pro").length;
+    const plusCount = merchants.filter((m) => m.tier === "plus").length;
+
+    // Monthly Recurring Revenue calculation:
+    // Support active Pro (390₺ / 750₺) and Plus (890₺) recurring subscriptions.
+    // Sum active subscriptions; fallback to merchant tier if merchant has no subscription record yet.
+    const activeSubs = subscriptions.filter((s) => s.status === "active");
+    const subMerchantIds = new Set(activeSubs.map((s) => s.merchantId));
+
+    let calculatedMRR = 0;
+    for (const sub of activeSubs) {
+      if (sub.billingInterval === "annual") {
+        calculatedMRR += Math.round(sub.price / 12);
+      } else {
+        calculatedMRR += sub.price;
+      }
+    }
+
+    for (const m of merchants) {
+      if (!subMerchantIds.has(m.id)) {
+        calculatedMRR += m.tier === "plus" ? 890 : 390;
+      }
+    }
+
+    const calculatedARR = calculatedMRR * 12;
+
+    const now = new Date();
+    const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const renewingIn7Days = subscriptions.filter(
+      (s) => new Date(s.nextRenewalDate) <= in7Days && s.status === "active"
+    ).length;
+    const renewingIn30Days = subscriptions.filter(
+      (s) => new Date(s.nextRenewalDate) <= in30Days && s.status === "active"
+    ).length;
+
+    const successfulPayments = payments.filter((p) => p.status === "SUCCESS").length;
+    const failedPayments = payments.filter((p) => p.status === "FAILED");
+    const refundedPayments = payments.filter((p) => p.status === "REFUNDED").length;
+
+    const totalTrackedPayments = payments.length;
+    const successRate = totalTrackedPayments > 0
+      ? Number(((successfulPayments / totalTrackedPayments) * 100).toFixed(1))
+      : 100;
+
+    return {
+      success: true,
+      data: {
+        totalMRR: calculatedMRR,
+        totalARR: calculatedARR,
+        activePaidCount: proCount + plusCount,
+        proCount,
+        plusCount,
+        renewingIn7Days,
+        renewingIn30Days,
+        successRate,
+        subscriptions,
+        payments,
+        failedPayments,
+        refundedCount: refundedPayments,
+        recentFinanceLogs: recentLogs,
+      },
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Finans verileri yüklenemedi." };
+  }
+}
+
+/**
+ * 17. Extend Subscription Tier
+ */
+export async function extendSubscriptionAction(
+  merchantId: string,
+  additionalMonths: number,
+  reason = "Operatör tarafından manuel abonelik uzatımı"
+) {
+  try {
+    await requireAdmin();
+
+    const validation = extendSubscriptionSchema.safeParse({
+      merchantId,
+      months: additionalMonths,
+      reason,
+    });
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0]?.message || "Geçersiz parametre." };
+    }
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      include: { subscriptions: { orderBy: { currentPeriodEnd: "desc" }, take: 1 } },
+    });
+
+    if (!merchant) {
+      return { success: false, error: "Esnaf bulunamadı." };
+    }
+
+    const existingSub = merchant.subscriptions[0];
+    const now = new Date();
+    // If existing end date is in the future, extend from that date; if expired or missing, extend from now!
+    const baseDate =
+      existingSub?.currentPeriodEnd && new Date(existingSub.currentPeriodEnd) > now
+        ? new Date(existingSub.currentPeriodEnd)
+        : new Date(now);
+    const newPeriodEnd = new Date(baseDate.setMonth(baseDate.getMonth() + additionalMonths));
+
+    if (existingSub) {
+      await prisma.subscription.update({
+        where: { id: existingSub.id },
+        data: {
+          currentPeriodEnd: newPeriodEnd,
+          nextRenewalDate: newPeriodEnd,
+          status: "active",
+        },
+      });
+    } else {
+      await prisma.subscription.create({
+        data: {
+          merchantId,
+          tier: merchant.tier === "free" ? "pro" : (merchant.tier || "pro"),
+          price: merchant.tier === "plus" ? 890 : 390,
+          status: "active",
+          billingInterval: "monthly",
+          currentPeriodEnd: newPeriodEnd,
+          nextRenewalDate: newPeriodEnd,
+        },
+      });
+    }
+
+    // If merchant was free, upgrade to pro with verification
+    if (merchant.tier === "free") {
+      await prisma.merchant.update({
+        where: { id: merchantId },
+        data: { tier: "pro", verified: true, verifiedYear: new Date().getFullYear() },
+      });
+    }
+
+    // Log to AdminAuditLog
+    await prisma.adminAuditLog.create({
+      data: {
+        operator: "HQ Finans Masası",
+        action: "EXTEND_SUBSCRIPTION",
+        targetType: "MERCHANT",
+        targetId: merchantId,
+        details: JSON.stringify({
+          merchantName: merchant.name,
+          additionalMonths,
+          newPeriodEnd: newPeriodEnd.toISOString(),
+          reason,
+        }),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/finance");
+      revalidatePath("/admin/merchants");
+      revalidatePath("/admin/audit");
+    } catch {}
+
+    return { success: true, newPeriodEnd: newPeriodEnd.toISOString() };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Abonelik süresi uzatılamadı." };
+  }
+}
+
+/**
+ * 18. Grant Gift Month
+ */
+export async function grantGiftMonthAction(
+  merchantId: string,
+  giftMonths: number,
+  reason: string
+) {
+  try {
+    await requireAdmin();
+
+    const validation = grantGiftMonthSchema.safeParse({
+      merchantId,
+      months: giftMonths,
+      reason,
+    });
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0]?.message || "Geçersiz parametre." };
+    }
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      include: { subscriptions: { orderBy: { currentPeriodEnd: "desc" }, take: 1 } },
+    });
+
+    if (!merchant) {
+      return { success: false, error: "Esnaf bulunamadı." };
+    }
+
+    const existingSub = merchant.subscriptions[0];
+    const now = new Date();
+    // If existing end date is in the future, extend from that date; if expired or missing, extend from now!
+    const baseDate =
+      existingSub?.currentPeriodEnd && new Date(existingSub.currentPeriodEnd) > now
+        ? new Date(existingSub.currentPeriodEnd)
+        : new Date(now);
+    const newPeriodEnd = new Date(baseDate.setMonth(baseDate.getMonth() + giftMonths));
+
+    if (existingSub) {
+      await prisma.subscription.update({
+        where: { id: existingSub.id },
+        data: {
+          currentPeriodEnd: newPeriodEnd,
+          nextRenewalDate: newPeriodEnd,
+          status: "active",
+        },
+      });
+    } else {
+      await prisma.subscription.create({
+        data: {
+          merchantId,
+          tier: merchant.tier === "free" ? "pro" : merchant.tier,
+          price: merchant.tier === "plus" ? 890 : 390,
+          status: "active",
+          billingInterval: "monthly",
+          currentPeriodEnd: newPeriodEnd,
+          nextRenewalDate: newPeriodEnd,
+        },
+      });
+      // If was free, upgrade to pro
+      if (merchant.tier === "free") {
+        await prisma.merchant.update({
+          where: { id: merchantId },
+          data: { tier: "pro", verified: true, verifiedYear: new Date().getFullYear() },
+        });
+      }
+    }
+
+    // Log to AdminAuditLog
+    await prisma.adminAuditLog.create({
+      data: {
+        operator: "HQ Finans Masası",
+        action: "GRANT_GIFT_MONTH",
+        targetType: "MERCHANT",
+        targetId: merchantId,
+        details: JSON.stringify({
+          merchantName: merchant.name,
+          giftMonths,
+          reason,
+          newPeriodEnd: newPeriodEnd.toISOString(),
+        }),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/finance");
+      revalidatePath("/admin/merchants");
+      revalidatePath("/admin/audit");
+    } catch {}
+
+    return { success: true, newPeriodEnd: newPeriodEnd.toISOString() };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Hediye ay tanımlanamadı." };
+  }
+}
+
+/**
+ * 19. Refund Payment Action
+ */
+export async function refundSubscriptionAction(paymentId: string, reason: string) {
+  try {
+    await requireAdmin();
+
+    const validation = refundSubscriptionSchema.safeParse({ paymentId, reason });
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0]?.message || "Geçersiz parametre." };
+    }
+
+    const tx = await prisma.paymentTransaction.findUnique({
+      where: { paymentId },
+      include: { merchant: true },
+    });
+
+    if (!tx) {
+      return { success: false, error: "Ödeme işlemi bulunamadı." };
+    }
+
+    if (tx.status === "REFUNDED") {
+      return { success: false, error: "Bu ödeme zaten daha önce iade edilmiş." };
+    }
+
+    await prisma.paymentTransaction.update({
+      where: { paymentId },
+      data: {
+        status: "REFUNDED",
+        refundReason: reason,
+        refundedAt: new Date(),
+      },
+    });
+
+    // If payment was for a merchant's subscription, cancel active subscriptions
+    if (tx.merchantId) {
+      await prisma.subscription.updateMany({
+        where: { merchantId: tx.merchantId, status: "active" },
+        data: { status: "cancelled", cancelAtPeriodEnd: true },
+      });
+    }
+
+    // Record audit log
+    await prisma.adminAuditLog.create({
+      data: {
+        operator: "HQ Finans Masası",
+        action: "REFUND_PAYMENT",
+        targetType: "PAYMENT",
+        targetId: paymentId,
+        details: JSON.stringify({
+          amount: tx.amount,
+          currency: tx.currency,
+          merchantId: tx.merchantId,
+          merchantName: tx.merchant?.name,
+          reason,
+          cancelledActiveSubscriptions: Boolean(tx.merchantId),
+        }),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/finance");
+      revalidatePath("/admin/audit");
+    } catch {}
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Ödeme iade edilemedi." };
+  }
+}
+
+/**
+ * 20. Retry Failed Payment Action
+ */
+export async function retryFailedPaymentAction(paymentId: string) {
+  try {
+    await requireAdmin();
+
+    const tx = await prisma.paymentTransaction.findUnique({
+      where: { paymentId },
+      include: { merchant: true },
+    });
+
+    if (!tx) {
+      return { success: false, error: "Ödeme kaydı bulunamadı." };
+    }
+
+    // Simulate recovery attempt
+    await prisma.paymentTransaction.update({
+      where: { paymentId },
+      data: {
+        status: "SUCCESS",
+        failureReason: null,
+        payload: JSON.stringify({
+          recoveredAt: new Date().toISOString(),
+          recoveredBy: "HQ Operatör",
+          previousStatus: "FAILED",
+        }),
+      },
+    });
+
+    // If merchant had a subscription in past_due status, restore to active
+    if (tx.merchantId) {
+      await prisma.subscription.updateMany({
+        where: { merchantId: tx.merchantId, status: "past_due" },
+        data: { status: "active" },
+      });
+    }
+
+    // Log to AdminAuditLog
+    await prisma.adminAuditLog.create({
+      data: {
+        operator: "HQ Finans Masası",
+        action: "RETRY_PAYMENT",
+        targetType: "PAYMENT",
+        targetId: paymentId,
+        details: JSON.stringify({
+          merchantName: tx.merchant?.name,
+          amount: tx.amount,
+          resolved: true,
+          restoredSubscription: Boolean(tx.merchantId),
+        }),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/finance");
+      revalidatePath("/admin/audit");
+    } catch {}
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Ödeme yeniden denenemedi." };
+  }
+}
+
+/**
+ * 21. Get Merchant In-Depth Details (Phase 2)
+ */
+export async function getAdminMerchantDetails(merchantId: string) {
+  try {
+    await requireAdmin();
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      include: {
+        services: {
+          orderBy: { minPrice: "asc" },
+        },
+        reviews: {
+          orderBy: { date: "desc" },
+        },
+        appointments: {
+          take: 10,
+          orderBy: { date: "desc" },
+        },
+        subscriptions: {
+          orderBy: { createdAt: "desc" },
+        },
+        shipments: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!merchant) {
+      return { success: false, error: "Esnaf bulunamadı." };
+    }
+
+    return {
+      success: true,
+      data: {
+        ...merchant,
+        workingHours: parseJsonField(merchant.workingHours, {
+          weekdays: "09:00 - 19:30",
+          saturday: "09:00 - 19:00",
+          sunday: "Kapalı",
+        }),
+        galleryImages: parseJsonField(merchant.galleryImages, []),
+        specialties: parseJsonField(merchant.specialties, []),
+        features: parseJsonField(merchant.features, {}),
+        reviews: merchant.reviews.map((r) => ({
+          ...r,
+          tags: parseJsonField(r.tags, []),
+        })),
+      },
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Esnaf detayları yüklenemedi." };
+  }
+}
+
+/**
+ * 22. Update Merchant In-Depth Details & Service Items CRUD (Phase 2)
+ */
+export async function updateMerchantDetailsAction(merchantId: string, payload: any) {
+  try {
+    await requireAdmin();
+
+    const validation = updateMerchantDetailsSchema.safeParse(payload);
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0]?.message || "Geçersiz esnaf verisi." };
+    }
+
+    const data = validation.data;
+
+    const existing = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      include: { services: true },
+    });
+
+    if (!existing) {
+      return { success: false, error: "Esnaf bulunamadı." };
+    }
+
+    // Execute atomic transaction for merchant and service item updates
+    await prisma.$transaction(async (tx) => {
+      // 1. Calculate price boundary from services
+      const minPrices = (data.services || []).map((s) => s.minPrice);
+      const maxPrices = (data.services || []).map((s) => Math.max(s.minPrice, s.maxPrice ?? s.minPrice));
+
+      const calculatedMin = minPrices.length > 0 ? Math.min(...minPrices) : 0;
+      const calculatedMax = maxPrices.length > 0 ? Math.max(...maxPrices) : calculatedMin;
+
+      // 2. Update merchant record
+      await tx.merchant.update({
+        where: { id: merchantId },
+        data: {
+          name: data.name,
+          masterName: data.masterName,
+          craftTitle: data.craftTitle,
+          category: data.category,
+          bio: data.bio || "",
+          experienceYears: data.experienceYears,
+          phone: data.phone,
+          whatsapp: data.whatsapp,
+          city: data.city,
+          district: data.district,
+          neighborhood: data.neighborhood,
+          address: data.address,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          isOpenNow: data.isOpenNow,
+          heroImage: data.heroImage,
+          galleryImages: data.galleryImages || [],
+          workingHours: data.workingHours || existing.workingHours,
+          minPrice: calculatedMin,
+          maxPrice: calculatedMax,
+        },
+      });
+
+      // 3. Service Items CRUD
+      const incomingServices = data.services || [];
+      const incomingServiceIds = incomingServices.filter((s) => s.id).map((s) => s.id as string);
+
+      // Delete removed services
+      const servicesToDelete = existing.services.filter((s) => !incomingServiceIds.includes(s.id));
+      if (servicesToDelete.length > 0) {
+        await tx.serviceItem.deleteMany({
+          where: { id: { in: servicesToDelete.map((s) => s.id) } },
+        });
+      }
+
+      // Upsert incoming services
+      for (const s of incomingServices) {
+        const normalizedMax = Math.max(s.minPrice, s.maxPrice ?? s.minPrice);
+        if (s.id && existing.services.some((ex) => ex.id === s.id)) {
+          // Update existing
+          await tx.serviceItem.update({
+            where: { id: s.id },
+            data: {
+              name: s.name,
+              minPrice: s.minPrice,
+              maxPrice: normalizedMax,
+              popular: Boolean(s.popular),
+              estimatedDuration: s.estimatedDuration,
+            },
+          });
+        } else {
+          // Create new service
+          await tx.serviceItem.create({
+            data: {
+              merchantId,
+              name: s.name,
+              minPrice: s.minPrice,
+              maxPrice: normalizedMax,
+              popular: Boolean(s.popular),
+              estimatedDuration: s.estimatedDuration,
+            },
+          });
+        }
+      }
+
+      // 4. Record Audit Log
+      await tx.adminAuditLog.create({
+        data: {
+          operator: "HQ Operatör",
+          action: "UPDATE_MERCHANT_DETAILS",
+          targetType: "MERCHANT",
+          targetId: merchantId,
+          details: JSON.stringify({
+            merchantName: data.name,
+            updatedFields: Object.keys(data),
+            servicesCount: incomingServices.length,
+          }),
+        },
+      });
+    });
+
+    try {
+      revalidatePath("/admin");
+      revalidatePath("/admin/merchants");
+      revalidatePath(`/admin/merchants/${merchantId}`);
+      revalidatePath(`/esnaf/${existing.slug}`);
+      revalidatePath("/");
+    } catch {}
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("updateMerchantDetailsAction error:", error);
+    return { success: false, error: error.message || "Esnaf bilgileri güncellenemedi." };
+  }
+}
+
+/**
+ * 23. Get Logistics & QR Stand Desk Data (Phase 3)
+ */
+export async function getAdminLogisticsData() {
+  try {
+    await requireAdmin();
+
+    const [shipments, proAndPlusMerchants] = await Promise.all([
+      prisma.standShipment.findMany({
+        include: {
+          merchant: {
+            select: { id: true, name: true, masterName: true, tier: true, phone: true, city: true, district: true, slug: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.merchant.findMany({
+        where: { tier: { in: ["pro", "plus"] }, verified: true },
+        select: {
+          id: true,
+          name: true,
+          masterName: true,
+          tier: true,
+          phone: true,
+          address: true,
+          city: true,
+          district: true,
+          neighborhood: true,
+          slug: true,
+        },
+      }),
+    ]);
+
+    const pendingPrintCount = shipments.filter((s) => s.status === "PENDING_PRINT").length;
+    const printingCount = shipments.filter((s) => s.status === "PRINTING").length;
+    const shippedCount = shipments.filter((s) => s.status === "SHIPPED").length;
+    const deliveredCount = shipments.filter((s) => s.status === "DELIVERED").length;
+
+    // Merchants that don't have a stand shipment yet
+    const shippedMerchantIds = new Set(shipments.map((s) => s.merchantId));
+    const eligibleWithoutStand = proAndPlusMerchants.filter((m) => !shippedMerchantIds.has(m.id));
+
+    return {
+      success: true,
+      data: {
+        shipments,
+        eligibleWithoutStand,
+        metrics: {
+          totalShipments: shipments.length,
+          pendingPrintCount,
+          printingCount,
+          shippedCount,
+          deliveredCount,
+        },
+      },
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Lojistik verileri yüklenemedi." };
+  }
+}
+
+/**
+ * 24. Update Logistics Shipment Status (Phase 3)
+ */
+export async function updateLogisticsStatusAction(
+  shipmentId: string,
+  newStatus: "PENDING_PRINT" | "PRINTING" | "SHIPPED" | "DELIVERED" | "CANCELLED",
+  carrier?: string,
+  trackingNumber?: string,
+  notes?: string
+) {
+  try {
+    await requireAdmin();
+
+    const validation = updateLogisticsStatusSchema.safeParse({
+      shipmentId,
+      status: newStatus,
+      carrier,
+      trackingNumber,
+      notes,
+    });
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0]?.message || "Geçersiz lojistik verisi." };
+    }
+
+    const existing = await prisma.standShipment.findUnique({
+      where: { id: shipmentId },
+      include: { merchant: true },
+    });
+
+    if (!existing) {
+      return { success: false, error: "Sevkiyat kaydı bulunamadı." };
+    }
+
+    const dataToUpdate: any = {
+      status: newStatus,
+      notes: notes !== undefined ? notes : existing.notes,
+    };
+
+    if (carrier) dataToUpdate.carrier = carrier;
+    if (trackingNumber) dataToUpdate.trackingNumber = trackingNumber;
+
+    if (newStatus === "SHIPPED" && !existing.shippedAt) {
+      dataToUpdate.shippedAt = new Date();
+    }
+    if (newStatus === "DELIVERED" && !existing.deliveredAt) {
+      dataToUpdate.deliveredAt = new Date();
+    }
+
+    await prisma.standShipment.update({
+      where: { id: shipmentId },
+      data: dataToUpdate,
+    });
+
+    // Audit Log
+    await prisma.adminAuditLog.create({
+      data: {
+        operator: "HQ Lojistik Masası",
+        action: "UPDATE_LOGISTICS_STATUS",
+        targetType: "LOGISTICS",
+        targetId: shipmentId,
+        details: JSON.stringify({
+          merchantName: existing.merchant.name,
+          previousStatus: existing.status,
+          newStatus,
+          carrier: carrier || existing.carrier,
+          trackingNumber: trackingNumber || existing.trackingNumber,
+        }),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/logistics");
+      revalidatePath("/admin/audit");
+    } catch {}
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Lojistik durumu güncellenemedi." };
+  }
+}
+
+/**
+ * 25. Create New Stand Shipment Order (Phase 3)
+ */
+export async function createStandShipmentAction(
+  merchantId: string,
+  recipientName: string,
+  recipientPhone: string,
+  shippingAddress: string,
+  notes?: string
+) {
+  try {
+    await requireAdmin();
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+    });
+
+    if (!merchant) {
+      return { success: false, error: "Esnaf bulunamadı." };
+    }
+
+    const shipment = await prisma.standShipment.create({
+      data: {
+        merchantId,
+        status: "PENDING_PRINT",
+        recipientName: recipientName || merchant.masterName || merchant.name,
+        recipientPhone: recipientPhone || merchant.phone,
+        shippingAddress: shippingAddress || `${merchant.address}, ${merchant.district} / ${merchant.city}`,
+        notes: notes || "Pleksi stand & vitrin QR kiti talebi",
+        qrPayloadUrl: `https://esnafca.com/esnaf/${merchant.slug}`,
+      },
+    });
+
+    await prisma.adminAuditLog.create({
+      data: {
+        operator: "HQ Lojistik Masası",
+        action: "CREATE_STAND_SHIPMENT",
+        targetType: "LOGISTICS",
+        targetId: shipment.id,
+        details: JSON.stringify({
+          merchantName: merchant.name,
+          recipientName,
+        }),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/logistics");
+      revalidatePath("/admin/audit");
+    } catch {}
+
+    return { success: true, shipmentId: shipment.id };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Stand sevkiyat talebi oluşturulamadı." };
+  }
+}
+
+/**
+ * 26. Get Staff Desk Data (Phase 4)
+ */
+export async function getAdminStaffData() {
+  try {
+    await requireAdmin();
+
+    const [staffMembers, recentLogs, pendingAppsCount, pendingShipmentsCount, failedPaymentsCount, pendingReviewsCount] =
+      await Promise.all([
+        prisma.staffMember.findMany({
+          orderBy: [{ role: "asc" }, { name: "asc" }],
+        }),
+        prisma.adminAuditLog.findMany({
+          orderBy: { createdAt: "desc" },
+          take: 30,
+        }),
+        prisma.merchantApplication.count({
+          where: { status: "pending" },
+        }),
+        prisma.standShipment.count({
+          where: { status: { in: ["PENDING_PRINT", "PRINTING"] } },
+        }),
+        prisma.paymentTransaction.count({
+          where: { status: "FAILED" },
+        }),
+        prisma.review.count({
+          where: { verifiedCustomer: false },
+        }),
+      ]);
+
+    // Role distribution stats
+    const superAdminCount = staffMembers.filter((s) => s.role === "SUPER_ADMIN").length;
+    const operatorCount = staffMembers.filter((s) => s.role === "OPERATOR").length;
+    const complianceCount = staffMembers.filter((s) => s.role === "COMPLIANCE").length;
+
+    return {
+      success: true,
+      data: {
+        staffMembers,
+        recentLogs,
+        stats: {
+          totalStaff: staffMembers.length,
+          superAdminCount,
+          operatorCount,
+          complianceCount,
+        },
+        assignedQueues: {
+          pendingApplications: pendingAppsCount,
+          pendingPrintShipments: pendingShipmentsCount,
+          failedPayments: failedPaymentsCount,
+          pendingReviews: pendingReviewsCount,
+        },
+      },
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Personel listesi yüklenemedi." };
+  }
+}
+
+/**
+ * 27. Create Staff Member (Phase 4)
+ */
+export async function createStaffMemberAction(data: {
+  name: string;
+  email: string;
+  phone?: string;
+  role: "SUPER_ADMIN" | "OPERATOR" | "COMPLIANCE";
+  title: string;
+}) {
+  try {
+    await requireAdmin();
+
+    const validation = createStaffMemberSchema.safeParse(data);
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0]?.message || "Geçersiz personel verisi." };
+    }
+
+    const existing = await prisma.staffMember.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existing) {
+      return { success: false, error: "Bu e-posta adresiyle kayıtlı bir personel zaten var." };
+    }
+
+    const member = await prisma.staffMember.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+        title: data.title,
+        status: "ACTIVE",
+      },
+    });
+
+    await prisma.adminAuditLog.create({
+      data: {
+        operator: "HQ Personel Masası",
+        action: "CREATE_STAFF_MEMBER",
+        targetType: "STAFF",
+        targetId: member.id,
+        details: JSON.stringify({
+          name: member.name,
+          email: member.email,
+          role: member.role,
+        }),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/staff");
+      revalidatePath("/admin/audit");
+    } catch {}
+
+    return { success: true, memberId: member.id };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Personel oluşturulamadı." };
+  }
+}
+
+/**
+ * 28. Update Staff Member Status (Phase 4)
+ */
+export async function updateStaffMemberStatusAction(staffId: string, status: "ACTIVE" | "ON_LEAVE" | "INACTIVE") {
+  try {
+    await requireAdmin();
+
+    const member = await prisma.staffMember.findUnique({
+      where: { id: staffId },
+    });
+
+    if (!member) {
+      return { success: false, error: "Personel bulunamadı." };
+    }
+
+    await prisma.staffMember.update({
+      where: { id: staffId },
+      data: { status, lastActiveAt: new Date() },
+    });
+
+    await prisma.adminAuditLog.create({
+      data: {
+        operator: "HQ Personel Masası",
+        action: "UPDATE_STAFF_STATUS",
+        targetType: "STAFF",
+        targetId: staffId,
+        details: JSON.stringify({
+          name: member.name,
+          newStatus: status,
+        }),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/staff");
+      revalidatePath("/admin/audit");
+    } catch {}
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Personel durumu güncellenemedi." };
+  }
+}
+
+/**
+ * 29. Get Territory & Merchant Density Coverage Data (Phase 5)
+ */
+export async function getAdminMapCoverageData() {
+  try {
+    await requireAdmin();
+
+    const merchants = await prisma.merchant.findMany({
+      select: {
+        id: true,
+        name: true,
+        masterName: true,
+        category: true,
+        city: true,
+        district: true,
+        neighborhood: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        phone: true,
+        rating: true,
+        reviewCount: true,
+        tier: true,
+        verified: true,
+        slug: true,
+      },
+    });
+
+    // Group merchants by district
+    const districtStats: Record<
+      string,
+      {
+        total: number;
+        categories: Record<string, number>;
+        verifiedCount: number;
+        paidCount: number;
+      }
+    > = {};
+
+    const targetCategories = ["berber", "terzi", "cilingir", "oto-tamir", "veteriner", "lostra"];
+
+    for (const m of merchants) {
+      const dist = m.district || "Bilinmiyor";
+      if (!districtStats[dist]) {
+        districtStats[dist] = {
+          total: 0,
+          categories: {},
+          verifiedCount: 0,
+          paidCount: 0,
+        };
+      }
+      districtStats[dist].total++;
+      if (m.verified) districtStats[dist].verifiedCount++;
+      if (m.tier === "pro" || m.tier === "plus") districtStats[dist].paidCount++;
+
+      const cat = m.category.toLowerCase();
+      districtStats[dist].categories[cat] = (districtStats[dist].categories[cat] || 0) + 1;
+    }
+
+    // Detect Supply Gaps in key districts (e.g. Kadıköy, Beşiktaş, Şişli, Kağıthane)
+    const monitoredDistricts = ["Kadıköy", "Beşiktaş", "Kağıthane", "Şişli", "Bakırköy", "Üsküdar", "Beyoğlu"];
+    const supplyGaps: Array<{
+      district: string;
+      category: string;
+      currentCount: number;
+      recommendation: string;
+      severity: "HIGH" | "MEDIUM" | "LOW";
+    }> = [];
+
+    for (const dist of monitoredDistricts) {
+      const stats = districtStats[dist];
+      for (const cat of targetCategories) {
+        const count = stats?.categories[cat] || 0;
+        if (count === 0) {
+          supplyGaps.push({
+            district: dist,
+            category: cat,
+            currentCount: 0,
+            recommendation: `${dist} bölgesinde hiç ${cat.toUpperCase()} esnafı yok. Saha ekibi yönlendirilmeli.`,
+            severity: "HIGH",
+          });
+        } else if (count === 1) {
+          supplyGaps.push({
+            district: dist,
+            category: cat,
+            currentCount: 1,
+            recommendation: `${dist} bölgesinde yalnızca 1 ${cat.toUpperCase()} esnafı var. Alternatif usta kaydı açılmalı.`,
+            severity: "MEDIUM",
+          });
+        }
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        merchants,
+        districtStats,
+        supplyGaps,
+        totalMappedMerchants: merchants.filter((m) => m.latitude && m.longitude).length,
+        totalMerchants: merchants.length,
+      },
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Harita kapsama verileri yüklenemedi." };
+  }
+}
+

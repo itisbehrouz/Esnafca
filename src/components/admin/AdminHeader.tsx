@@ -23,6 +23,22 @@ const ROUTE_TITLES: Record<string, { title: string; subtitle: string }> = {
     title: "Genel Bakış & Operasyon Paneli",
     subtitle: "Bento KPI metrikleri, canlı başvuru radarı ve telemetri",
   },
+  "/admin/finance": {
+    title: "Finans, Abonelik & Tahsilat Masası",
+    subtitle: "Yinelenen abonelikler, MRR/ARR gelir projeksiyonu ve tahsilat kurtarma masası",
+  },
+  "/admin/logistics": {
+    title: "Fiziki Akrilik QR Stand & Lojistik Masası",
+    subtitle: "Doğrulanmış esnaf pleksi stand sevkiyatı, kargo takibi ve A6 baskı kiti",
+  },
+  "/admin/map": {
+    title: "Mahalle Zanaatkar Kapsama Haritası",
+    subtitle: "İlçe ve mahalle bazında zanaatkar yoğunluğu, arz açığı ve büyüme fırsatları",
+  },
+  "/admin/staff": {
+    title: "Çoklu Operatör & Personel Masası",
+    subtitle: "Zero-Trust yetki matrisi (RBAC), görev dağılımı ve denetim hareketleri",
+  },
   "/admin/applications": {
     title: "Başvuru Onay Masası",
     subtitle: "Yeni zanaatkar başvuruları derin inceleme ve tek tıkla onay iş istasyonu",
@@ -56,10 +72,17 @@ export function AdminHeader({
   sidebarCollapsed = false,
 }: AdminHeaderProps) {
   const pathname = usePathname();
-  const currentRouteInfo = ROUTE_TITLES[pathname] || {
-    title: "HQ Kontrol Masası",
-    subtitle: "Esnafça Digital Business Platform",
-  };
+  const currentRouteInfo =
+    ROUTE_TITLES[pathname] ||
+    (pathname.startsWith("/admin/merchants/") && pathname !== "/admin/merchants"
+      ? {
+          title: "Esnaf Derin Düzenleyici & Menü Masası",
+          subtitle: "Dükkan bilgileri, çalışma saatleri, galeri ve canlı hizmet fiyat menüsü CRUD",
+        }
+      : {
+          title: "HQ Kontrol Masası",
+          subtitle: "Esnafça Digital Business Platform",
+        });
 
   return (
     <header

@@ -19,7 +19,8 @@ import {
   MessageCircle,
   MapPin,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Edit3
 } from "lucide-react";
 import type { Merchant, SubscriptionTier } from "@/types";
 import { CITIES } from "@/data/cities";
@@ -443,6 +444,14 @@ export function MerchantsMasterTable({
                       {/* İşlemler */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            href={`/admin/merchants/${m.id}`}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            title="Derin Düzenleyiciyi Aç"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </Link>
+
                           <Link
                             href={`/esnaf/${m.slug}`}
                             target="_blank"
