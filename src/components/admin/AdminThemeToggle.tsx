@@ -22,7 +22,7 @@ export function AdminThemeToggle({
 
   if (!mounted) {
     return (
-      <div className={`w-9 h-9 rounded-xl border border-transparent ${className}`} />
+      <div className={`p-2 rounded-xl border border-transparent ${className}`} />
     );
   }
 
@@ -34,14 +34,14 @@ export function AdminThemeToggle({
       <button
         type="button"
         onClick={toggleTheme}
-        className={`h-9 px-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 hover:text-white border border-slate-700/60 transition-all cursor-pointer inline-flex items-center gap-2 active:scale-[0.98] ${className}`}
+        className={`h-9 px-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 transition-all cursor-pointer inline-flex items-center gap-2 active:scale-[0.98] ${className}`}
         title={tooltipText}
         aria-label={tooltipText}
       >
         {isDark ? (
-          <Sun className="w-4 h-4 text-amber-400" />
+          <Sun className="w-4 h-4 text-amber-500 dark:text-amber-400 animate-in spin-in-90 duration-200" />
         ) : (
-          <Moon className="w-4 h-4 text-blue-400" />
+          <Moon className="w-4 h-4 text-slate-700 dark:text-slate-300 animate-in spin-in-90 duration-200" />
         )}
         <span>{isDark ? "Aydınlık" : "Koyu"}</span>
       </button>
@@ -52,14 +52,14 @@ export function AdminThemeToggle({
     <button
       type="button"
       onClick={toggleTheme}
-      className={`w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700/40 hover:border-slate-600 transition-all cursor-pointer shrink-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${className}`}
+      className={`p-2 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60 transition-all cursor-pointer shrink-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${className}`}
       title={tooltipText}
       aria-label={tooltipText}
     >
       {isDark ? (
-        <Sun className="w-4 h-4 text-amber-400" />
+        <Sun className="w-4 h-4 text-amber-500 dark:text-amber-400 animate-in spin-in-90 duration-200" />
       ) : (
-        <Moon className="w-4 h-4 text-blue-400" />
+        <Moon className="w-4 h-4 text-slate-700 dark:text-slate-300 animate-in spin-in-90 duration-200" />
       )}
     </button>
   );
