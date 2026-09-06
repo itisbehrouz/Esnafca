@@ -284,9 +284,6 @@ function EsnafEkleWizard() {
             <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
             <span>Vazgeç</span>
           </Link>
-          <h1 className="font-extrabold text-sm text-black dark:text-white">
-            Dükkan Başvuru Formu
-          </h1>
           <ThemeToggle />
         </div>
       </header>

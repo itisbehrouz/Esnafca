@@ -64,7 +64,6 @@ export default async function CategoriesPage() {
             <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
             <span>Ana Sayfa</span>
           </Link>
-          <h1 className="font-extrabold text-sm text-black dark:text-white">Zanaat Kategorileri</h1>
           <ThemeToggle />
         </div>
       </header>

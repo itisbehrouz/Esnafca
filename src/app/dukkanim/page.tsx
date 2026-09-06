@@ -363,9 +363,6 @@ function MerchantPortalContent() {
               <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
               <span>Ana Sayfa</span>
             </Link>
-            <h1 className="font-extrabold text-sm text-black dark:text-white">
-              Dükkanım
-            </h1>
             <ThemeToggle />
           </div>
         </header>
