@@ -1,7 +1,23 @@
 {
-  "name": "achord-store",
-  "version": "0.1.0",
-  "private": true,
+  "name": "esnafca",
+  "version": "1.0.0",
+  "description": "Open-Source Local Commerce & Neighborhood Merchant Platform with Interactive Leaflet Maps, QR Discovery, and Zero-Trust Admin",
+  "license": "MIT",
+  "author": "Behrouz Bagherzadeh <contact@achord.io>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itisbehrouz/achord-store.git"
+  },
+  "keywords": [
+    "nextjs15",
+    "react19",
+    "prisma",
+    "leaflet",
+    "local-business",
+    "neighborhood-commerce",
+    "open-source",
+    "starter-kit"
+  ],
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3005",
     "dev:https": "next dev --experimental-https -H 0.0.0.0 -p 3005",

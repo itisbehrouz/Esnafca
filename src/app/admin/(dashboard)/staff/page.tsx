@@ -489,13 +489,13 @@ export default function AdminStaffPage() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-500 block mb-1">
-                  Kurumsal E-posta (@achord.io) *
+                  Kurumsal E-posta *
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="canan@achord.io"
+                  placeholder="operator@example.com"
                   className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>

@@ -20,4 +20,4 @@ Ancak canlı üretim (production) ortamında aynı köken (Same-Origin) altında
 2. **Canlıya (Production) Geçiş:**
    - Şirket kontrol paneli ana domainden kesin olarak izole edilecek; **`hq.esnafca.com`** (veya `admin.esnafca.com`) bağımsız subdomainine taşınacaktır.
    - Panel kamu internetine doğrudan açılmayacaktır; **Cloudflare Zero Trust (Access & Tunnels)** arkasına kilitlenecektir.
-   - Panele yalnızca yetkili kurumsal e-postalar (`@achord.io`) ve biyometrik FIDO2 Passkey doğrulaması ile erişilecektir. Dışarıdan hiç kimse giriş formunu dahi göremeyecektir.
+   - Panele yalnızca yetkili kurumsal e-postalar (`@yourcompany.com`) ve biyometrik FIDO2 Passkey doğrulaması ile erişilecektir. Dışarıdan hiç kimse giriş formunu dahi göremeyecektir.

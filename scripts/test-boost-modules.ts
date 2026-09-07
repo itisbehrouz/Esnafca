@@ -297,17 +297,17 @@ async function runBoostVerificationSuite() {
 
     const staffRes = await getAdminStaffData();
     assert(staffRes.success === true, "Personel listesi çekildi");
-    assert((staffRes.data?.staffMembers?.length ?? 0) >= 2, "Duygu Yazar & Behrouz Bagherzadeh kadroda mevcut");
+    assert((staffRes.data?.staffMembers?.length ?? 0) >= 1, "Personel kadrosu mevcut");
 
-    const duygu = staffRes.data?.staffMembers?.find((s: any) => s.name.includes("Duygu"));
-    assert(duygu?.role === "SUPER_ADMIN", "Duygu Yazar SUPER_ADMIN rolünde");
+    const admin = staffRes.data?.staffMembers?.find((s: any) => s.role === "SUPER_ADMIN");
+    assert(admin?.role === "SUPER_ADMIN", "En az bir SUPER_ADMIN rolünde personel mevcut");
     assert(
       typeof staffRes.data?.assignedQueues?.pendingApplications === "number" &&
       typeof staffRes.data?.assignedQueues?.pendingPrintShipments === "number",
       "Personel masasında atanmış canlı operasyon kuyrukları ve iş yükü metrikleri doğrulandı"
     );
 
-    const testStaffEmail = `test.operator.${Date.now()}@achord.io`;
+    const testStaffEmail = `test.operator.${Date.now()}@example.com`;
     const createStaffRes = await createStaffMemberAction({
       name: "Test Operatör",
       email: testStaffEmail,

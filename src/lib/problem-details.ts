@@ -37,7 +37,7 @@ export function badRequestProblem(
   instance?: string
 ): NextResponse {
   return createProblemResponse({
-    type: "https://achord.io/errors/bad-request",
+    type: "https://esnafca.dev/errors/bad-request",
     title: "Geçersiz İstek (Bad Request)",
     status: 400,
     detail,
@@ -51,7 +51,7 @@ export function unauthorizedProblem(
   instance?: string
 ): NextResponse {
   return createProblemResponse({
-    type: "https://achord.io/errors/unauthorized",
+    type: "https://esnafca.dev/errors/unauthorized",
     title: "Yetkisiz Erişim (Unauthorized)",
     status: 401,
     detail,
@@ -64,7 +64,7 @@ export function forbiddenProblem(
   instance?: string
 ): NextResponse {
   return createProblemResponse({
-    type: "https://achord.io/errors/forbidden",
+    type: "https://esnafca.dev/errors/forbidden",
     title: "Erişim Engellendi (Forbidden)",
     status: 403,
     detail,
@@ -77,7 +77,7 @@ export function notFoundProblem(
   instance?: string
 ): NextResponse {
   return createProblemResponse({
-    type: "https://achord.io/errors/not-found",
+    type: "https://esnafca.dev/errors/not-found",
     title: "Kayıt Bulunamadı (Not Found)",
     status: 404,
     detail,
@@ -96,7 +96,7 @@ export function zodProblem(
   }));
 
   return createProblemResponse({
-    type: "https://achord.io/errors/validation-error",
+    type: "https://esnafca.dev/errors/validation-error",
     title: "Doğrulama Hatası (Validation Error)",
     status: 422,
     detail,
@@ -110,7 +110,7 @@ export function internalErrorProblem(
   instance?: string
 ): NextResponse {
   return createProblemResponse({
-    type: "https://achord.io/errors/internal-server-error",
+    type: "https://esnafca.dev/errors/internal-server-error",
     title: "Sunucu Hatası (Internal Server Error)",
     status: 500,
     detail,
