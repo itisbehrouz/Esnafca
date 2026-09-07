@@ -25,12 +25,12 @@ Before you start, install these tools on your system:
 1. Fork the repository on GitHub.
 2. Clone your fork to your local machine:
    ```bash
-   git clone https://github.com/<your-username>/achord-store.git esnafca
+   git clone https://github.com/<your-username>/Esnafca.git esnafca
    cd esnafca
    ```
-3. Add the upstream remote:
+3. Add the upstream remote to keep your fork in sync:
    ```bash
-   git remote add upstream https://github.com/itisbehrouz/achord-store.git
+   git remote add upstream https://github.com/itisbehrouz/Esnafca.git
    ```
 
 ### 3. Install Dependencies
