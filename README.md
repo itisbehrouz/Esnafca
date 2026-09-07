@@ -1,5 +1,10 @@
 <div align="center">
 
+<img src="./public/brand/banner.png" alt="ESNAFÇA — Open-Source Local Commerce & Neighborhood Engine" width="100%" />
+
+<br />
+<br />
+
 # ESNAFÇA
 
 **Open-Source Local Commerce & Neighborhood Engine**
@@ -7,13 +12,13 @@
 _Discover neighborhood artisans. Digitize local storefronts. Zero platform fees._
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests: 47 passed](https://img.shields.io/badge/Tests-47%20passed-success.svg)](#-automated-testing)
+[![Tests: 47 passed](https://img.shields.io/badge/Tests-47%20passed-success.svg)](#automated-testing)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15.1-black.svg?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19-blue.svg?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript 5.7](https://img.shields.io/badge/TypeScript-5.7-blue.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Prisma 6](https://img.shields.io/badge/Prisma-6.x-2D3748.svg?logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![Maps: Leaflet](https://img.shields.io/badge/Maps-Leaflet%201.9-green.svg?logo=leaflet&logoColor=white)](https://leafletjs.com/)
-[![Zero Lock-in](https://img.shields.io/badge/Platform-Zero%20Commission-brightgreen.svg)](#-5-core-principles)
+[![Zero Lock-in](https://img.shields.io/badge/Platform-Zero%20Commission-brightgreen.svg)](#5-core-principles)
 
 <br />
 
@@ -23,7 +28,7 @@ _Discover neighborhood artisans. Digitize local storefronts. Zero platform fees.
 
 ---
 
-### 🌍 The Hyper-Local Thesis
+### The Hyper-Local Thesis
 
 Traditional commerce marketplaces charge extractive commissions (15–30%) on local neighborhood businesses while locking their customer relationships behind proprietary walled gardens.
 
@@ -35,7 +40,7 @@ Traditional commerce marketplaces charge extractive commissions (15–30%) on lo
 
 ---
 
-### ⚖️ 5 Core Principles
+### 5 Core Principles
 
 |   #   | Principle                              | Engineering Mandate                                                                 |
 | :---: | :------------------------------------- | :---------------------------------------------------------------------------------- |
@@ -47,7 +52,7 @@ Traditional commerce marketplaces charge extractive commissions (15–30%) on lo
 
 ---
 
-### 🏗️ Architecture & Core Engines
+### Architecture & Core Engines
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -83,7 +88,7 @@ Traditional commerce marketplaces charge extractive commissions (15–30%) on lo
 
 ---
 
-### ⚡ Quickstart
+### Quickstart
 
 Get Esnafça running locally in under 3 minutes:
 
@@ -113,7 +118,7 @@ Open [http://localhost:3005](http://localhost:3005) in your web browser.
 
 ---
 
-### 🧭 Key Application Surfaces
+### Key Application Surfaces
 
 ```bash
 # Public Surface
@@ -129,7 +134,7 @@ http://localhost:3005/admin        # Real-time telemetry, live SSE stream, audit
 
 ---
 
-### 🛡️ Security & Zero-Trust Architecture
+### Security & Zero-Trust Architecture
 
 - **Edge Session Protection:** Authenticated cookies use `HttpOnly`, `Secure`, and `SameSite=Lax` flags validated at Next.js Edge Middleware.
 - **RFC 7807 Error Contracts:** Standardized Problem Details responses across all `/api` endpoints for predictable client failure handling.
@@ -138,7 +143,7 @@ http://localhost:3005/admin        # Real-time telemetry, live SSE stream, audit
 
 ---
 
-### 🧪 Automated Testing
+### Automated Testing
 
 Esnafça enforces automated testing across all business engines, data models, and concurrency limits:
 
@@ -165,7 +170,7 @@ npm run build
 
 ---
 
-### 📂 Repository Structure
+### Repository Structure
 
 ```text
 ├── .github/
@@ -176,6 +181,7 @@ npm run build
 │   ├── schema.prisma        # Complete relational schema (Merchants, Bookings, Staff, Logs)
 │   └── seed.ts              # Baseline database seed script
 ├── public/
+│   ├── brand/               # Brand assets and hero banner
 │   ├── llms.txt             # AI engine indexer and discovery metadata
 │   └── uploads/             # Merchant imagery and store assets
 ├── scripts/
@@ -196,7 +202,7 @@ npm run build
 
 ---
 
-### 🗺️ Product Roadmap
+### Product Roadmap
 
 - [x] **Phase 1: Core Map & Geolocation:** Leaflet map clustering and district search.
 - [x] **Phase 2: Merchant Storefronts:** Dynamic QR code generation, hours, and service menus.
@@ -209,7 +215,7 @@ npm run build
 
 ---
 
-### 🤝 Contributing
+### Contributing
 
 Contributions, issues, and feature requests are welcome!  
 Check the [issues page](https://github.com/itisbehrouz/Esnafca/issues) for open tasks.
@@ -218,7 +224,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_
 
 ---
 
-### 📄 License
+### License
 
 Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for more information.
 
