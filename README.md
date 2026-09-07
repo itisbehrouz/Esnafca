@@ -40,7 +40,7 @@ Traditional commerce marketplaces charge extractive commissions (15–30%) on lo
 
 ---
 
-### <img src="docs/assets/icons/adjustments.svg" width="18" height="18" valign="middle" /> 5 Core Principles
+### <img src="docs/assets/icons/sliders-horizontal.svg" width="18" height="18" valign="middle" /> 5 Core Principles
 
 |   #   | Principle                              | Engineering Mandate                                                                 |
 | :---: | :------------------------------------- | :---------------------------------------------------------------------------------- |
@@ -118,7 +118,7 @@ Open [http://localhost:3005](http://localhost:3005) in your web browser.
 
 ---
 
-### <img src="docs/assets/icons/map.svg" width="18" height="18" valign="middle" /> Key Application Surfaces
+### <img src="docs/assets/icons/map-pin.svg" width="18" height="18" valign="middle" /> Key Application Surfaces
 
 ```bash
 # Public Surface
@@ -134,7 +134,7 @@ http://localhost:3005/admin        # Real-time telemetry, live SSE stream, audit
 
 ---
 
-### <img src="docs/assets/icons/shield.svg" width="18" height="18" valign="middle" /> Security & Zero-Trust Architecture
+### <img src="docs/assets/icons/shield-check.svg" width="18" height="18" valign="middle" /> Security & Zero-Trust Architecture
 
 - **Edge Session Protection:** Authenticated cookies use `HttpOnly`, `Secure`, and `SameSite=Lax` flags validated at Next.js Edge Middleware.
 - **RFC 7807 Error Contracts:** Standardized Problem Details responses across all `/api` endpoints for predictable client failure handling.
@@ -143,7 +143,7 @@ http://localhost:3005/admin        # Real-time telemetry, live SSE stream, audit
 
 ---
 
-### <img src="docs/assets/icons/beaker.svg" width="18" height="18" valign="middle" /> Automated Testing
+### <img src="docs/assets/icons/flask-conical.svg" width="18" height="18" valign="middle" /> Automated Testing
 
 Esnafça enforces automated testing across all business engines, data models, and concurrency limits:
 
@@ -170,7 +170,7 @@ npm run build
 
 ---
 
-### <img src="docs/assets/icons/code.svg" width="18" height="18" valign="middle" /> Repository Structure
+### <img src="docs/assets/icons/folder-tree.svg" width="18" height="18" valign="middle" /> Repository Structure
 
 ```text
 ├── .github/
@@ -204,7 +204,7 @@ npm run build
 
 ---
 
-### <img src="docs/assets/icons/chart.svg" width="18" height="18" valign="middle" /> Product Roadmap
+### <img src="docs/assets/icons/bar-chart-3.svg" width="18" height="18" valign="middle" /> Product Roadmap
 
 - [x] **Phase 1: Core Map & Geolocation:** Leaflet map clustering and district search.
 - [x] **Phase 2: Merchant Storefronts:** Dynamic QR code generation, hours, and service menus.
@@ -217,7 +217,7 @@ npm run build
 
 ---
 
-### <img src="docs/assets/icons/book.svg" width="18" height="18" valign="middle" /> Contributing
+### <img src="docs/assets/icons/git-pull-request.svg" width="18" height="18" valign="middle" /> Contributing
 
 Contributions, issues, and feature requests are welcome!  
 Check the [issues page](https://github.com/itisbehrouz/Esnafca/issues) for open tasks.

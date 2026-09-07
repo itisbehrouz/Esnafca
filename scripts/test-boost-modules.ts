@@ -1,3 +1,5 @@
+process.env.TEST_ADMIN_SESSION = "true";
+
 /**
  * Comprehensive Automated Verification Suite for Esnafça Boost Phases 1-6
  */
@@ -24,9 +26,6 @@ import {
   getAdminNotifications,
   getPendingApplicationsCount,
 } from "../src/app/actions/admin";
-
-// Enable admin session for test environment
-process.env.TEST_ADMIN_SESSION = "true";
 
 async function runBoostVerificationSuite() {
   console.log("================================================================");
