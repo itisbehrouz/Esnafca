@@ -163,6 +163,64 @@ export async function seedBoostData() {
     }
   }
   console.log("✅ Stand shipments seeded.");
+
+  // 5. Sample Appointments for Appointments Desk
+  const existingApts = await prisma.appointment.count();
+  if (existingApts === 0 && paidMerchants.length > 0) {
+    const m1 = paidMerchants[0];
+    const m2 = paidMerchants.length > 1 ? paidMerchants[1] : paidMerchants[0];
+    const servicesM1 = await prisma.serviceItem.findMany({ where: { merchantId: m1.id } });
+    const servicesM2 = await prisma.serviceItem.findMany({ where: { merchantId: m2.id } });
+
+    await prisma.appointment.create({
+      data: {
+        merchantId: m1.id,
+        serviceId: servicesM1[0]?.id || null,
+        customerName: "Canan Yılmaz",
+        customerPhone: "05321112233",
+        customerNote: "İlk randevum, lütfen saç modelleme için zaman ayıralım.",
+        date: "2026-10-16",
+        startTime: "11:00",
+        endTime: "11:45",
+        price: servicesM1[0]?.minPrice || 350,
+        status: "confirmed",
+      },
+    });
+
+    if (m2.id !== m1.id) {
+      await prisma.appointment.create({
+        data: {
+          merchantId: m2.id,
+          serviceId: servicesM2[0]?.id || null,
+          customerName: "Murat Demir",
+          customerPhone: "05334445566",
+          customerNote: "Periyodik bakım ve kontrol.",
+          date: "2026-10-16",
+          startTime: "14:30",
+          endTime: "15:30",
+          price: servicesM2[0]?.minPrice || 450,
+          status: "pending",
+        },
+      });
+    } else {
+      await prisma.appointment.create({
+        data: {
+          merchantId: m1.id,
+          serviceId: servicesM1[0]?.id || null,
+          customerName: "Murat Demir",
+          customerPhone: "05334445566",
+          customerNote: "Periyodik bakım ve kontrol.",
+          date: "2026-10-16",
+          startTime: "15:00",
+          endTime: "16:00",
+          price: servicesM1[0]?.minPrice || 450,
+          status: "pending",
+        },
+      });
+    }
+    console.log("✅ Sample appointments seeded.");
+  }
+
   console.log("🎉 Seed boost data finished successfully.");
 }
 

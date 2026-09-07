@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 
 export type Theme = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
@@ -22,7 +22,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   // Apply theme to DOM
-  const applyTheme = (targetTheme: Theme) => {
+  const applyTheme = useCallback((targetTheme: Theme) => {
     if (typeof window === "undefined") return;
 
     let effectiveTheme: ResolvedTheme = "light";
@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       root.classList.remove("dark");
     }
-  };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -66,9 +66,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  }, [applyTheme]);
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     try {
       localStorage.setItem(STORAGE_KEY, newTheme);
@@ -76,12 +76,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // ignore storage error
     }
     applyTheme(newTheme);
-  };
+  }, [applyTheme]);
 
-  const toggleTheme = () => {
-    const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-  };
+  const toggleTheme = useCallback(() => {
+    setThemeState((current) => {
+      const isDark = typeof window !== "undefined" ? document.documentElement.classList.contains("dark") : false;
+      const nextTheme = isDark ? "light" : "dark";
+      try {
+        localStorage.setItem(STORAGE_KEY, nextTheme);
+      } catch {}
+      applyTheme(nextTheme);
+      return nextTheme;
+    });
+  }, [applyTheme]);
 
   const value = useMemo(
     () => ({
@@ -90,7 +97,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setTheme,
       toggleTheme,
     }),
-    [theme, resolvedTheme, mounted]
+    [theme, resolvedTheme, mounted, setTheme, toggleTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

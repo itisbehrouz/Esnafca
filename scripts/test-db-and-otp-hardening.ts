@@ -1,5 +1,6 @@
 import { generateOtp, verifyOtpCode } from "../src/lib/otp";
 import { createAppointmentAction } from "../src/app/actions/appointment";
+import { prisma } from "../src/lib/db";
 
 async function main() {
   console.log("=== 1. Testing Serverless OTP Logic ===");
@@ -29,35 +30,64 @@ async function main() {
   console.log("✅ OTP persistence & timing-safe verification verified!");
 
   console.log("\n=== 2. Testing Double-Booking Collision Handling ===");
-  // Test appointment action error handling on slot collision
+  const merchant = await prisma.merchant.findFirst();
+  if (!merchant) {
+    throw new Error("No merchant found in database for testing double-booking");
+  }
+
+  const testDate = "2026-10-15";
+  const testTime = "14:00";
+
+  // Clean any pre-existing appointment on this test slot
+  await prisma.appointment.deleteMany({
+    where: {
+      merchantId: merchant.id,
+      date: testDate,
+      startTime: testTime,
+    },
+  });
+
   const bookingPayload = {
-    merchantId: "seed-berber-1",
+    merchantId: merchant.id,
     customerName: "Test Müşteri 1",
     customerPhone: "05321112233",
-    date: "2026-10-15",
-    startTime: "14:00",
+    date: testDate,
+    startTime: testTime,
   };
 
-  const firstAttempt = await createAppointmentAction(bookingPayload);
-  console.log("First booking attempt:", firstAttempt);
+  let createdAppointmentId: string | null = null;
+  try {
+    const firstAttempt = await createAppointmentAction(bookingPayload);
+    console.log("First booking attempt:", firstAttempt);
+    if (!firstAttempt.success) {
+      throw new Error(`First booking attempt failed unexpectedly: ${firstAttempt.error}`);
+    }
+    createdAppointmentId = firstAttempt.appointmentId || firstAttempt.data?.appointmentId || null;
 
-  const secondAttempt = await createAppointmentAction({
-    ...bookingPayload,
-    customerName: "Test Müşteri 2",
-  });
-  console.log("Second concurrent/identical booking attempt:", secondAttempt);
+    const secondAttempt = await createAppointmentAction({
+      ...bookingPayload,
+      customerName: "Test Müşteri 2",
+    });
+    console.log("Second concurrent/identical booking attempt:", secondAttempt);
 
-  if (firstAttempt.success) {
     if (secondAttempt.success) {
       throw new Error("Second booking on same slot should have been rejected!");
     }
     if (!secondAttempt.error?.includes("Bu saat dilimi az önce başka bir müşteri tarafından rezerve edildi")) {
-      console.warn("Second attempt error:", secondAttempt.error);
-    } else {
-      console.log("✅ Double-booking correctly rejected with graceful Turkish error message!");
+      throw new Error(`Unexpected error message for second attempt: ${secondAttempt.error}`);
     }
-  } else {
-    console.log("First attempt handled gracefully (database might not be running in local build mode):", firstAttempt.error);
+    console.log("✅ Double-booking correctly rejected with graceful Turkish error message!");
+  } finally {
+    if (createdAppointmentId) {
+      await prisma.appointment.delete({ where: { id: createdAppointmentId } }).catch(() => {});
+    }
+    await prisma.appointment.deleteMany({
+      where: {
+        merchantId: merchant.id,
+        date: testDate,
+        startTime: testTime,
+      },
+    });
   }
 
   console.log("\n✅ ALL DB & OTP HARDENING TESTS COMPLETED!");

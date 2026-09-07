@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Bell, 
@@ -64,14 +64,14 @@ export function AdminNotificationDrawer({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       const res = await getAdminNotifications();
       if (res.success && res.data) {
         setNotifications(res.data);
 
         // Recalculate true unread count by checking against readIds
-        let currentRead = readIds;
+        let currentRead = new Set<string>();
         try {
           const stored = localStorage.getItem(READ_STORAGE_KEY);
           if (stored) {
@@ -86,13 +86,13 @@ export function AdminNotificationDrawer({
     } catch {
       // ignore
     }
-  };
+  }, [onUpdateBadge]);
 
   useEffect(() => {
     if (isOpen) {
       loadNotifications();
     }
-  }, [isOpen]);
+  }, [isOpen, loadNotifications]);
 
   if (!isOpen) return null;
 

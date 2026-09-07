@@ -124,9 +124,12 @@ export function AppointmentBookingModal({
         }
       }
 
-      if (!selectedService && merchant.services?.length) {
-        setSelectedService(merchant.services[0]);
-      }
+      setSelectedService((prev) => {
+        if (!prev && merchant.services?.length) {
+          return merchant.services[0];
+        }
+        return prev;
+      });
       setStep(1);
     }
   }, [isOpen, preselectedServiceId, merchant.services]);

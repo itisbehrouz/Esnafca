@@ -21,7 +21,6 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
@@ -59,7 +58,11 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/esnafca?schema=public
 
       - name: Run verification test suite
-        run: npm test
+        run: |
+          npm test
+          npm run test:all
+          npm run test:reviewer
+          npm run test:hardening
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/esnafca?schema=public
           JWT_SECRET: ci-temporary-jwt-secret-key-for-testing-purposes-only

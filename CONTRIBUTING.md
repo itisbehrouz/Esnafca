@@ -82,9 +82,9 @@ You must run tests before you submit code:
    ```bash
    npm test
    ```
-3. Run the full verification suite:
+3. Run all 6 automated test suites:
    ```bash
-   npm run test:all
+   npm run test:suites
    ```
 4. Build the production application:
    ```bash

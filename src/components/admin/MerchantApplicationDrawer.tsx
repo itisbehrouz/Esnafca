@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useCallback, useId } from "react";
 import { 
   X, 
   CheckCircle2, 
@@ -39,6 +39,29 @@ export function MerchantApplicationDrawer({
   const [showRejectPrompt, setShowRejectPrompt] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
+  const handleApprove = useCallback(async () => {
+    if (!application) return;
+    setIsUpdating(true);
+    setActionMessage(null);
+    try {
+      const res = await approveApplicationAction(application.id);
+      if (res.success) {
+        setActionMessage("Başvuru başarıyla onaylandı ve vitrine alındı.");
+        onApproved?.(application.id);
+        setTimeout(() => {
+          onClose();
+          setActionMessage(null);
+        }, 1200);
+      } else {
+        setActionMessage("Hata: " + res.error);
+      }
+    } catch (err: any) {
+      setActionMessage("İşlem sırasında sunucu hatası oluştu.");
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [application, onApproved, onClose]);
+
   // Keyboard shortcut listener: 'A' to approve, 'R' to reject, 'Esc' to close/cancel
   useEffect(() => {
     if (!isOpen || !application) return;
@@ -75,7 +98,7 @@ export function MerchantApplicationDrawer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, application, showRejectPrompt, onClose]);
+  }, [isOpen, application, showRejectPrompt, onClose, handleApprove]);
 
   if (!isOpen || !application) return null;
 
@@ -111,28 +134,6 @@ export function MerchantApplicationDrawer({
   };
   const categoryKey = (application.category || "").toLowerCase();
   const shopPreviewImage = defaultCategoryImages[categoryKey] || defaultCategoryImages.berber;
-
-  const handleApprove = async () => {
-    setIsUpdating(true);
-    setActionMessage(null);
-    try {
-      const res = await approveApplicationAction(application.id);
-      if (res.success) {
-        setActionMessage("Başvuru başarıyla onaylandı ve vitrine alındı.");
-        onApproved?.(application.id);
-        setTimeout(() => {
-          onClose();
-          setActionMessage(null);
-        }, 1200);
-      } else {
-        setActionMessage("Hata: " + res.error);
-      }
-    } catch (err: any) {
-      setActionMessage("İşlem sırasında sunucu hatası oluştu.");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   const handleReject = async () => {
     if (!rejectReason.trim()) return;

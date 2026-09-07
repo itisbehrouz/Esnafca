@@ -115,8 +115,8 @@ npm run lint
 # Run automated boost verification suite (Phases 1-6)
 npm test
 
-# Run all integration suites
-npm run test:all
+# Run all 6 automated test suites (boost, all phases, reviewer, hardening, admin, security)
+npm run test:suites
 
 # Verify production build
 npm run build
@@ -129,15 +129,22 @@ npm run build
 ```text
 ├── .github/
 │   ├── workflows/ci.yml    # Continuous Integration pipeline
-│   └── ISSUE_TEMPLATE/     # Standard bug and feature templates
+│   ├── ISSUE_TEMPLATE/     # Standard bug and feature templates
+│   └── dependabot.yml      # Automated dependency updates
+├── mobile/                 # Flutter mobile companion client (Android/iOS)
+│   ├── lib/                # Flutter Riverpod app (map, store, profile)
+│   └── README.md           # Mobile setup and run instructions
 ├── prisma/
 │   ├── schema.prisma       # Database schema (Merchants, Services, Appointments, Staff)
 │   └── seed.ts             # Demo data seeder
 ├── public/
 │   └── uploads/            # Static assets and merchant images
 ├── scripts/
-│   ├── seed-boost-data.ts  # Seed subscriptions, logistics, and staff data
-│   └── test-boost-modules.ts # Full verification suite (Phases 1-6)
+│   ├── seed-boost-data.ts  # Seed subscriptions, logistics, staff, and appointments
+│   ├── test-boost-modules.ts # Full verification suite (Phases 1-6)
+│   ├── test-all-phases.ts  # Integration suite (Phases 0-5)
+│   ├── test-reviewer-deep-verification.ts # Concurrency & zero-trust reviewer tests
+│   └── test-db-and-otp-hardening.ts # Double-booking & OTP security tests
 ├── src/
 │   ├── app/
 │   │   ├── (public)/       # Neighborhood map, merchant directory, search

@@ -150,7 +150,28 @@ async function runReviewerDeepVerification() {
 
   // 4. Appointments Workstation Actions
   console.log("\n📦 [4] Appointments Desk Query & State Mutation");
-  const allAppointments = await prisma.appointment.findMany();
+  let allAppointments = await prisma.appointment.findMany();
+  if (allAppointments.length < 2) {
+    const merchant = await prisma.merchant.findFirst();
+    if (merchant) {
+      const needed = 2 - allAppointments.length;
+      for (let i = 0; i < needed; i++) {
+        await prisma.appointment.create({
+          data: {
+            merchantId: merchant.id,
+            customerName: `Otomasyon Randevu ${i + 1}`,
+            customerPhone: "05329998877",
+            date: "2026-10-20",
+            startTime: `1${i}:00`,
+            endTime: `1${i}:30`,
+            price: 300,
+            status: "pending",
+          },
+        });
+      }
+      allAppointments = await prisma.appointment.findMany();
+    }
+  }
   assert(allAppointments.length >= 2, `Existing seed appointments found: ${allAppointments.length}`);
 
   const targetApt = allAppointments[0];

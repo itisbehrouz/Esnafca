@@ -201,6 +201,16 @@ async function runBoostVerificationSuite() {
       const detailRes = await getAdminMerchantDetails(sampleMerchant.id);
       assert(detailRes.success === true && detailRes.data?.name === sampleMerchant.name, "Esnaf detayları ve ilişkili modeller çekildi");
 
+      const originalServices = sampleMerchant.services.map((s) => ({
+        name: s.name,
+        description: s.description,
+        minPrice: s.minPrice,
+        maxPrice: s.maxPrice,
+        isStartingPrice: s.isStartingPrice,
+        estimatedDuration: s.estimatedDuration,
+        popular: s.popular,
+      }));
+
       // Execute Update Action
       const testUpdateName = `${sampleMerchant.name} (Doğrulandı)`;
       const updatePayload = {
@@ -252,10 +262,31 @@ async function runBoostVerificationSuite() {
       assert(verifiedMerchantInDb?.maxPrice === 350, "En yüksek fiyat (maxPrice) menüden otomatik hesaplandı (350 ₺)");
       assert(verifiedMerchantInDb?.services.length === 2, "Hizmet menüsü CRUD işlemleriyle 2 hizmete senkronize edildi");
 
-      // Revert name back
+      // Revert merchant and services back
+      await prisma.serviceItem.deleteMany({ where: { merchantId: sampleMerchant.id } });
+      if (originalServices.length > 0) {
+        await prisma.serviceItem.createMany({
+          data: originalServices.map((s) => ({
+            merchantId: sampleMerchant.id,
+            name: s.name,
+            description: s.description,
+            minPrice: s.minPrice,
+            maxPrice: s.maxPrice,
+            isStartingPrice: s.isStartingPrice,
+            estimatedDuration: s.estimatedDuration,
+            popular: s.popular,
+          })),
+        });
+      }
       await prisma.merchant.update({
         where: { id: sampleMerchant.id },
-        data: { name: sampleMerchant.name },
+        data: {
+          name: sampleMerchant.name,
+          minPrice: sampleMerchant.minPrice,
+          maxPrice: sampleMerchant.maxPrice,
+          bio: sampleMerchant.bio,
+          experienceYears: sampleMerchant.experienceYears,
+        },
       });
     }
 
@@ -292,6 +323,9 @@ async function runBoostVerificationSuite() {
 
       const inDbShipment = await prisma.standShipment.findUnique({ where: { id: shipmentId } });
       assert(inDbShipment?.status === "SHIPPED" && inDbShipment.carrier === "Yurtiçi Kargo", "Sevkiyat DB doğrulaması yapıldı");
+
+      // Clean up test shipment
+      await prisma.standShipment.delete({ where: { id: shipmentId } });
     }
 
     // -------------------------------------------------------------

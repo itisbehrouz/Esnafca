@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { EsnafcaCommandPalette } from "@/components/admin/EsnafcaCommandPalette";
@@ -30,7 +30,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   };
 
   // Initial notification and pending count load
-  const syncNotifications = async () => {
+  const syncNotifications = useCallback(async () => {
     try {
       const res = await getAdminNotifications();
       if (res.success && res.data) {
@@ -43,11 +43,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     } catch {
       // Non-blocking
     }
-  };
+  }, []);
 
   useEffect(() => {
     syncNotifications();
-  }, []);
+  }, [syncNotifications]);
 
   // Listen to application updates across windows
   useEffect(() => {
@@ -61,7 +61,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       window.removeEventListener("applications_updated", handleApplicationUpdate);
       window.removeEventListener("application_updated", handleApplicationUpdate);
     };
-  }, []);
+  }, [syncNotifications]);
 
   // Server-Sent Events (SSE) live telemetry stream connection
   useEffect(() => {
@@ -121,7 +121,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         eventSource.close();
       }
     };
-  }, []);
+  }, [syncNotifications]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] text-slate-900 dark:text-white font-sans antialiased transition-colors duration-200 selection:bg-blue-600 selection:text-white">

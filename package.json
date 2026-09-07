@@ -28,6 +28,10 @@
     "test:boost": "tsx scripts/test-boost-modules.ts",
     "test:all": "tsx scripts/test-all-phases.ts",
     "test:reviewer": "tsx scripts/test-reviewer-deep-verification.ts",
+    "test:hardening": "tsx scripts/test-db-and-otp-hardening.ts",
+    "test:admin": "tsx scripts/test-admin-workstation.ts",
+    "test:security": "tsx scripts/test-phase0-security.ts",
+    "test:suites": "npm run test:boost && npm run test:all && npm run test:reviewer && npm run test:hardening && npm run test:admin && npm run test:security",
     "seed": "prisma db seed",
     "seed:boost": "tsx scripts/seed-boost-data.ts",
     "postinstall": "prisma generate"
