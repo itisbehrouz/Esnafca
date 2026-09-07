@@ -67,7 +67,7 @@ Instead of heavy corporate marketplace models, Esnafça provides a lean, hyper-l
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/itisbehrouz/achord-store.git esnafca
+git clone https://github.com/itisbehrouz/Esnafca.git esnafca
 cd esnafca
 ```
 
@@ -174,7 +174,7 @@ npm run build
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome.  
-Check the [issues page](https://github.com/itisbehrouz/achord-store/issues) for open tasks.
+Check the [issues page](https://github.com/itisbehrouz/Esnafca/issues) for open tasks.
 
 Please read our [Contributing Guidelines](./CONTRIBUTING.md) and [Code of Conduct](./CODE_OF_CONDUCT.md) before you start.
 
