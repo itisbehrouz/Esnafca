@@ -11,14 +11,9 @@
 
 _Discover neighborhood artisans. Digitize local storefronts. Zero platform fees._
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests: 47 passed](https://img.shields.io/badge/Tests-47%20passed-success.svg)](#automated-testing)
-[![Next.js 15](https://img.shields.io/badge/Next.js-15.1-black.svg?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![React 19](https://img.shields.io/badge/React-19-blue.svg?logo=react&logoColor=white)](https://react.dev/)
-[![TypeScript 5.7](https://img.shields.io/badge/TypeScript-5.7-blue.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Prisma 6](https://img.shields.io/badge/Prisma-6.x-2D3748.svg?logo=prisma&logoColor=white)](https://www.prisma.io/)
-[![Maps: Leaflet](https://img.shields.io/badge/Maps-Leaflet%201.9-green.svg?logo=leaflet&logoColor=white)](https://leafletjs.com/)
-[![Zero Lock-in](https://img.shields.io/badge/Platform-Zero%20Commission-brightgreen.svg)](#5-core-principles)
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,prisma,postgres,docker" alt="Esnafça Tech Stack" height="42" />
+</p>
 
 <br />
 
