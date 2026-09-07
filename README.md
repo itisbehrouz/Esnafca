@@ -28,7 +28,7 @@ _Discover neighborhood artisans. Digitize local storefronts. Zero platform fees.
 
 ---
 
-### The Hyper-Local Thesis
+### <img src="docs/assets/icons/globe.svg" width="18" height="18" valign="middle" /> The Hyper-Local Thesis
 
 Traditional commerce marketplaces charge extractive commissions (15–30%) on local neighborhood businesses while locking their customer relationships behind proprietary walled gardens.
 
@@ -40,7 +40,7 @@ Traditional commerce marketplaces charge extractive commissions (15–30%) on lo
 
 ---
 
-### 5 Core Principles
+### <img src="docs/assets/icons/adjustments.svg" width="18" height="18" valign="middle" /> 5 Core Principles
 
 |   #   | Principle                              | Engineering Mandate                                                                 |
 | :---: | :------------------------------------- | :---------------------------------------------------------------------------------- |
@@ -52,7 +52,7 @@ Traditional commerce marketplaces charge extractive commissions (15–30%) on lo
 
 ---
 
-### Architecture & Core Engines
+### <img src="docs/assets/icons/cpu.svg" width="18" height="18" valign="middle" /> Architecture & Core Engines
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -88,7 +88,7 @@ Traditional commerce marketplaces charge extractive commissions (15–30%) on lo
 
 ---
 
-### Quickstart
+### <img src="docs/assets/icons/terminal.svg" width="18" height="18" valign="middle" /> Quickstart
 
 Get Esnafça running locally in under 3 minutes:
 
@@ -118,7 +118,7 @@ Open [http://localhost:3005](http://localhost:3005) in your web browser.
 
 ---
 
-### Key Application Surfaces
+### <img src="docs/assets/icons/map.svg" width="18" height="18" valign="middle" /> Key Application Surfaces
 
 ```bash
 # Public Surface
@@ -134,7 +134,7 @@ http://localhost:3005/admin        # Real-time telemetry, live SSE stream, audit
 
 ---
 
-### Security & Zero-Trust Architecture
+### <img src="docs/assets/icons/shield.svg" width="18" height="18" valign="middle" /> Security & Zero-Trust Architecture
 
 - **Edge Session Protection:** Authenticated cookies use `HttpOnly`, `Secure`, and `SameSite=Lax` flags validated at Next.js Edge Middleware.
 - **RFC 7807 Error Contracts:** Standardized Problem Details responses across all `/api` endpoints for predictable client failure handling.
@@ -143,7 +143,7 @@ http://localhost:3005/admin        # Real-time telemetry, live SSE stream, audit
 
 ---
 
-### Automated Testing
+### <img src="docs/assets/icons/beaker.svg" width="18" height="18" valign="middle" /> Automated Testing
 
 Esnafça enforces automated testing across all business engines, data models, and concurrency limits:
 
@@ -170,12 +170,14 @@ npm run build
 
 ---
 
-### Repository Structure
+### <img src="docs/assets/icons/code.svg" width="18" height="18" valign="middle" /> Repository Structure
 
 ```text
 ├── .github/
 │   ├── workflows/ci.yml     # Automated CI build and lint testing
 │   └── ISSUE_TEMPLATE/      # Bug reports, feature requests, and blank issues
+├── docs/
+│   └── assets/icons/        # Vector SVG section icons
 ├── mobile/                  # Flutter iOS/Android mobile client with Riverpod
 ├── prisma/
 │   ├── schema.prisma        # Complete relational schema (Merchants, Bookings, Staff, Logs)
@@ -202,7 +204,7 @@ npm run build
 
 ---
 
-### Product Roadmap
+### <img src="docs/assets/icons/chart.svg" width="18" height="18" valign="middle" /> Product Roadmap
 
 - [x] **Phase 1: Core Map & Geolocation:** Leaflet map clustering and district search.
 - [x] **Phase 2: Merchant Storefronts:** Dynamic QR code generation, hours, and service menus.
@@ -215,7 +217,7 @@ npm run build
 
 ---
 
-### Contributing
+### <img src="docs/assets/icons/book.svg" width="18" height="18" valign="middle" /> Contributing
 
 Contributions, issues, and feature requests are welcome!  
 Check the [issues page](https://github.com/itisbehrouz/Esnafca/issues) for open tasks.
@@ -224,7 +226,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_
 
 ---
 
-### License
+### <img src="docs/assets/icons/scale.svg" width="18" height="18" valign="middle" /> License
 
 Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for more information.
 
