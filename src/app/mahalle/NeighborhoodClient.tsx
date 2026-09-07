@@ -51,7 +51,7 @@ export function NeighborhoodClient({
             Şeffaf Fiyatlı Mahalle Esnafları
           </h2>
           <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
-            İstanbul, Ankara, İzmir, Bursa, Antalya ve Eskişehir'de zanaatkârları doğrudan WhatsApp ile buluşturan mahalle rehberi.
+            İstanbul, Ankara, İzmir, Bursa, Antalya ve Eskişehir&apos;de zanaatkârları doğrudan WhatsApp ile buluşturan mahalle rehberi.
           </p>
         </div>
 

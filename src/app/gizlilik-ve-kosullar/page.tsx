@@ -48,7 +48,7 @@ export default function GizlilikVeKosullarPage() {
             Esnafça (<strong>esnafca.com</strong>), 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun kapsamında bir elektronik ticaret pazaryeri veya aracı ödeme kuruluşu <strong>değildir</strong>.
           </p>
           <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
-            Esnafça, 5651 sayılı Kanun'un 5. maddesi uyarınca bir <strong>"Yer Sağlayıcı"</strong> ve yerel esnaf dizin rehberidir. Platform üzerinden doğrudan sipariş alınmaz, ödeme tahsil edilmez veya komisyon kesilmez. Kullanıcı ile esnaf arasındaki tüm iletişim ve iş akdi, tarafların kendi iradeleriyle WhatsApp veya yüz yüze iletişim kanalları üzerinden yürütülür.
+            Esnafça, 5651 sayılı Kanun&apos;un 5. maddesi uyarınca bir <strong>&quot;Yer Sağlayıcı&quot;</strong> ve yerel esnaf dizin rehberidir. Platform üzerinden doğrudan sipariş alınmaz, ödeme tahsil edilmez veya komisyon kesilmez. Kullanıcı ile esnaf arasındaki tüm iletişim ve iş akdi, tarafların kendi iradeleriyle WhatsApp veya yüz yüze iletişim kanalları üzerinden yürütülür.
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export default function GizlilikVeKosullarPage() {
             <h3>4. Uyar-Kaldır (Notice & Takedown) Prosedürü</h3>
           </div>
           <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
-            Dükkanınızın bilgilerini güncellemek, sahiplenmek veya Esnafça dizininden tamamen kaldırılmasını talep etmek için dükkan profilindeki *"Bu Dükkan Benim"* butonunu kullanabilir veya doğrudan destek hattımıza başvurabilirsiniz. Talebiniz en geç 24 saat içinde işleme alınır.
+            Dükkanınızın bilgilerini güncellemek, sahiplenmek veya Esnafça dizininden tamamen kaldırılmasını talep etmek için dükkan profilindeki *&quot;Bu Dükkan Benim&quot;* butonunu kullanabilir veya doğrudan destek hattımıza başvurabilirsiniz. Talebiniz en geç 24 saat içinde işleme alınır.
           </p>
           <div className="pt-2">
             <a

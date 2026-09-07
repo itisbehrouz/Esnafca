@@ -1,0 +1,40 @@
+name: "💡 Feature Request"
+description: Suggest an idea or feature enhancement for Esnafça.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement for Esnafça!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Explain the problem or limitation you want to solve.
+      placeholder: I encounter a limitation when trying to...
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you propose.
+      placeholder: Provide details on how the feature should work.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Considered Alternatives
+      description: Describe alternative solutions or workarounds you considered.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Readiness
+      options:
+        - label: I searched existing issues to ensure this request is not a duplicate.
+          required: true
+        - label: I am willing to contribute code or help test this feature.
+          required: false

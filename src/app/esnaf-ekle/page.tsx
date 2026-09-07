@@ -866,7 +866,7 @@ function EsnafEkleWizard() {
                     <Link href="/gizlilik-ve-kosullar" target="_blank" className="text-black dark:text-white font-bold underline">
                       KVKK Aydınlatma Metni
                     </Link>
-                    'ni ve şeffaf fiyat taahhüdünü okudum, dükkanımın listelenmesini onaylıyorum.
+                    &apos;ni ve şeffaf fiyat taahhüdünü okudum, dükkanımın listelenmesini onaylıyorum.
                   </label>
                 </div>
 

@@ -19,6 +19,10 @@ import {
   createStaffMemberAction,
   updateStaffMemberStatusAction,
   getAdminMapCoverageData,
+  getAdminDashboardMetrics,
+  getAdminAuditLogs,
+  getAdminNotifications,
+  getPendingApplicationsCount,
 } from "../src/app/actions/admin";
 
 // Enable admin session for test environment
@@ -335,6 +339,28 @@ async function runBoostVerificationSuite() {
     assert(Array.isArray(mapRes.data?.merchants), "Harita koordinatlı esnaflar listelendi");
     assert(typeof mapRes.data?.districtStats === "object", "İlçe bazında kümeleme (districtStats) oluşturuldu");
     assert(Array.isArray(mapRes.data?.supplyGaps), "Kritik arz açıkları ve fırsat analizleri üretildi");
+
+    // -------------------------------------------------------------
+    // FAZ 6: CANLI OPERASYON TELEMETRİSİ, AUDIT LOG & SİSTEM BÜTÜNLÜĞÜ
+    // -------------------------------------------------------------
+    console.log("\n📦 [FAZ 6] Canlı Operasyon Telemetrisi, Audit Log & Sistem Bütünlüğü");
+
+    const dashboardMetricsRes = await getAdminDashboardMetrics();
+    assert(dashboardMetricsRes.success === true && Boolean(dashboardMetricsRes.data), "Admin dashboard ana metrikleri başarıyla çekildi");
+    assert(typeof dashboardMetricsRes.data?.totalMerchants === "number", "Toplam esnaf sayısı doğrulandı");
+    assert(typeof dashboardMetricsRes.data?.paidSubscribersCount === "number", "Ücretli abone sayısı hesaplandı");
+    assert(Array.isArray(dashboardMetricsRes.data?.recentLogs), "Son operasyon kütükleri listelendi");
+
+    const auditLogsRes = await getAdminAuditLogs(10);
+    assert(auditLogsRes.success === true, "Admin audit log kütüğü başarıyla sorgulandı");
+    assert(Array.isArray(auditLogsRes.data), "Audit kayıtları dizi olarak döndü");
+
+    const notificationsRes = await getAdminNotifications();
+    assert(notificationsRes.success === true, "Operatör bildirimleri ve bekleyen iş yükü sorgulandı");
+    assert(typeof notificationsRes.unreadCount === "number", "Okunmamış bildirim sayısı hesaplandı");
+
+    const pendingCountRes = await getPendingApplicationsCount();
+    assert(pendingCountRes.success === true && typeof pendingCountRes.count === "number", "Bekleyen başvuru sayısı canlı sorgulandı");
 
     console.log("\n================================================================");
     console.log(`📊 TEST RAPORU: ${passed} Başarılı Test, ${failed} Hata`);

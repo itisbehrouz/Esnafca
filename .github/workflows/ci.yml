@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: esnafca
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Push database schema
+        run: npx prisma db push --skip-generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/esnafca?schema=public
+
+      - name: Seed test data
+        run: |
+          npm run seed
+          npm run seed:boost
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/esnafca?schema=public
+
+      - name: Run verification test suite
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/esnafca?schema=public
+          JWT_SECRET: ci-temporary-jwt-secret-key-for-testing-purposes-only
+          ADMIN_PASSWORD: esnafca-ci-admin-test-password
+
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/esnafca?schema=public
+          JWT_SECRET: ci-temporary-jwt-secret-key-for-testing-purposes-only
+          ADMIN_PASSWORD: esnafca-ci-admin-test-password

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability Report
+    url: mailto:contact@achord.io
+    about: Please report security issues directly to our security team.
+  - name: Questions & General Discussions
+    url: https://github.com/itisbehrouz/achord-store/discussions
+    about: Ask questions and discuss with the community.

@@ -57,9 +57,9 @@ Instead of heavy corporate marketplace models, Esnafça provides a lean, hyper-l
 | **Framework** | Next.js 15 (App Router, Server Actions, Edge Middleware) |
 | **Frontend** | React 19, Tailwind CSS, Lucide Icons, Cmdk |
 | **Maps & Geo** | Leaflet 1.9, OpenStreetMap tiles |
-| **ORM & Database** | Prisma 6.x (SQLite for local dev, PostgreSQL / Supabase for production) |
+| **ORM & Database** | Prisma 6.x (PostgreSQL / Supabase / Neon / Local Docker) |
 | **Security** | Jose JWT, HttpOnly cookies, RFC 7807 Problem Details |
-| **Package Manager** | Bun or npm |
+| **Package Manager** | npm or Bun |
 
 ---
 
@@ -74,8 +74,6 @@ cd esnafca
 ### 2. Install dependencies
 ```bash
 npm install
-# or
-bun install
 ```
 
 ### 3. Configure Environment Variables
@@ -83,32 +81,63 @@ Copy the example environment file:
 ```bash
 cp .env.example .env
 ```
-*(Default settings use local SQLite database `file:./dev.db` which requires zero external configuration).*
 
-### 4. Setup Database & Seed Data
+### 4. Start Local Database (Docker)
+Start the PostgreSQL container:
+```bash
+docker compose up -d
+```
+
+### 5. Setup Database & Seed Data
+Push the Prisma schema and populate sample data:
 ```bash
 npx prisma db push
-npx prisma db seed
+npm run seed
+npm run seed:boost
 ```
 
-### 5. Start Development Server
+### 6. Start Development Server
 ```bash
 npm run dev
-# or
-bun dev
 ```
-Open [http://localhost:3005](http://localhost:3005) in your browser.
+Open [http://localhost:3005](http://localhost:3005) in your web browser.
+
+---
+
+## 🧪 Testing & Verification
+
+Run the test commands before opening a pull request:
+
+```bash
+# Run lint check
+npm run lint
+
+# Run automated boost verification suite (Phases 1-6)
+npm test
+
+# Run all integration suites
+npm run test:all
+
+# Verify production build
+npm run build
+```
 
 ---
 
 ## 📂 Project Structure
 
 ```text
+├── .github/
+│   ├── workflows/ci.yml    # Continuous Integration pipeline
+│   └── ISSUE_TEMPLATE/     # Standard bug and feature templates
 ├── prisma/
-│   ├── schema.prisma       # Database models (Merchants, Services, Appointments, Staff)
+│   ├── schema.prisma       # Database schema (Merchants, Services, Appointments, Staff)
 │   └── seed.ts             # Demo data seeder
 ├── public/
 │   └── uploads/            # Static assets and merchant images
+├── scripts/
+│   ├── seed-boost-data.ts  # Seed subscriptions, logistics, and staff data
+│   └── test-boost-modules.ts # Full verification suite (Phases 1-6)
 ├── src/
 │   ├── app/
 │   │   ├── (public)/       # Neighborhood map, merchant directory, search
@@ -118,6 +147,9 @@ Open [http://localhost:3005](http://localhost:3005) in your browser.
 │   │   └── api/            # API route handlers (SSE, webhooks, payments)
 │   ├── components/         # Reusable UI components & Leaflet map widgets
 │   └── lib/                # Database clients, auth, problem-details error handler
+├── CONTRIBUTING.md         # Contribution guidelines
+├── CODE_OF_CONDUCT.md      # Community code of conduct
+├── SECURITY.md             # Vulnerability reporting policy
 └── DECISIONS.md            # Architectural Decision Records (ADR)
 ```
 
@@ -128,19 +160,22 @@ Open [http://localhost:3005](http://localhost:3005) in your browser.
 - **Isolated Admin Subdomain:** Ready for deployment behind Cloudflare Zero Trust (Access & Tunnels).
 - **Edge Middleware:** Strict session validation with HttpOnly and SameSite cookie policies.
 - **Problem Details (RFC 7807):** Standardized API error responses across all endpoints.
+- Read our full [Security Policy](./SECURITY.md) to report vulnerabilities.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome!  
-Feel free to check the [issues page](https://github.com/itisbehrouz/achord-store/issues).
+Contributions, issues, and feature requests are welcome.  
+Check the [issues page](https://github.com/itisbehrouz/achord-store/issues) for open tasks.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Please read our [Contributing Guidelines](./CONTRIBUTING.md) and [Code of Conduct](./CODE_OF_CONDUCT.md) before you start.
+
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feat/amazing-feature`).
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`).
+4. Push to the branch (`git push origin feat/amazing-feature`).
+5. Open a pull request.
 
 ---
 

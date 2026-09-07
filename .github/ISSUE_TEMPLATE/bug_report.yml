@@ -1,0 +1,56 @@
+name: "🐛 Bug Report"
+description: File a report to help us fix a problem.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue with Esnafça!
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Provide a clear and concise description of the bug.
+      placeholder: A clear description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: List the exact steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: Explain what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: Node version, OS, browser, database type.
+      placeholder: |
+        - OS: macOS 15 / Ubuntu 22.04
+        - Node Version: v20.x
+        - Browser: Chrome 128 / Safari 18
+        - Database: PostgreSQL 16
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Confirmations
+      options:
+        - label: I verified that this bug is not already reported in existing issues.
+          required: true
+        - label: I confirmed that this is a bug and not a security vulnerability (see SECURITY.md).
+          required: true

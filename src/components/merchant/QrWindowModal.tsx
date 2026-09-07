@@ -80,7 +80,7 @@ export function QrWindowModal({ isOpen, onClose, merchant }: QrWindowModalProps)
               Kameranızla Okutun
             </p>
             <p className="text-[11px] text-stone-500 dark:text-zinc-400 max-w-xs mx-auto">
-              Şeffaf fiyat listemizi görün, WhatsApp'tan doğrudan fiyat alın veya randevu isteyin.
+              Şeffaf fiyat listemizi görün, WhatsApp&apos;tan doğrudan fiyat alın veya randevu isteyin.
             </p>
           </div>
 

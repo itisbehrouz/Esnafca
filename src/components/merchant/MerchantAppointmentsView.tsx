@@ -590,7 +590,7 @@ export function MerchantAppointmentsView({
                     <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-black/[0.04] dark:border-white/[0.06] flex items-start gap-2 text-xs">
                       <FileText className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
                       <p className="text-zinc-600 dark:text-zinc-300 font-medium leading-relaxed">
-                        "{appointment.customerNote}"
+                        &quot;{appointment.customerNote}&quot;
                       </p>
                     </div>
                   )}

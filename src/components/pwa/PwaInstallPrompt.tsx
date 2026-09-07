@@ -62,7 +62,7 @@ export function PwaInstallPrompt() {
           <Smartphone className="w-5 h-5" />
         </div>
         <div>
-          <h4 className="text-xs font-bold text-white">Esnafça'yı Ana Ekrana Ekleyin</h4>
+          <h4 className="text-xs font-bold text-white">Esnafça&apos;yı Ana Ekrana Ekleyin</h4>
           <p className="text-[11px] text-zinc-400">Tek dokunuşla yerel uygulama gibi kullanın.</p>
         </div>
       </div>

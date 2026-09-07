@@ -24,6 +24,12 @@
     "build": "prisma generate && next build",
     "start": "next start -p 3005",
     "lint": "next lint",
+    "test": "tsx scripts/test-boost-modules.ts",
+    "test:boost": "tsx scripts/test-boost-modules.ts",
+    "test:all": "tsx scripts/test-all-phases.ts",
+    "test:reviewer": "tsx scripts/test-reviewer-deep-verification.ts",
+    "seed": "prisma db seed",
+    "seed:boost": "tsx scripts/seed-boost-data.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -47,9 +53,12 @@
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.1.7",
     "postcss": "^8.4.49",
     "prisma": "^6.19.3",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.13",
     "typescript": "^5.7.3"
   },
   "prisma": {
