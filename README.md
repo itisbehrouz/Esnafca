@@ -231,4 +231,4 @@ Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for more infor
   <sub>Authored by <b>Behrouz Bagherzadeh</b> · Open-Source Neighborhood Commerce</sub>
 </div>
 
-<!-- sync: 6 -->
+<!-- sync: 7 -->
